@@ -1,10 +1,8 @@
-package main
+package server
 
 import (
-	"fmt"
 	"handler"
 	"net/http"
-	"storage"
 )
 
 const (
@@ -24,18 +22,6 @@ func webhook(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func run() error {
+func Run() error {
 	return http.ListenAndServe(CONN_HOST+":"+CONN_PORT, http.HandlerFunc(webhook))
-}
-
-func main() {
-	if err := run(); err != nil {
-		panic(err)
-	}
-
-	err := storage.Load()
-	if err != nil {
-		fmt.Println(err)
-	}
-
 }
