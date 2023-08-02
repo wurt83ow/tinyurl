@@ -8,9 +8,9 @@ replace storage => ../storage
 
 replace shorturl => ../shorturl
 
-require (
-	handler v0.0.0-00010101000000-000000000000
-	storage v0.0.0-00010101000000-000000000000
-)
+require handler v0.0.0-00010101000000-000000000000
 
-require shorturl v0.0.0-00010101000000-000000000000 // indirect
+require (
+	shorturl v0.0.0-00010101000000-000000000000 // indirect
+	storage v0.0.0-00010101000000-000000000000 // indirect
+)
