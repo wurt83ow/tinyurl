@@ -8,8 +8,16 @@ import (
 	"strings"
 )
 
+type Handler struct {
+	storage storage.Storage
+}
+
+func NewHandler(storage storage.Storage) *Handler {
+	return &Handler{storage: storage}
+}
+
 // POST
-func ShortenURL(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) ShortenURL(w http.ResponseWriter, r *http.Request) {
 	// установим правильный заголовок для типа данных
 	body, err := io.ReadAll(r.Body)
 	if err != nil || len(body) == 0 {
@@ -27,7 +35,7 @@ func ShortenURL(w http.ResponseWriter, r *http.Request) {
 	key, shurl := shorturl.Shorten(string(body), proto, r.Host)
 
 	// save full url to storage with the key received earlier
-	storage.SaveURL(key, string(body))
+	h.storage.Insert(key, string(body))
 
 	// respond to client
 	w.Header().Set("content-type", "text/plain")
@@ -37,7 +45,7 @@ func ShortenURL(w http.ResponseWriter, r *http.Request) {
 }
 
 // GET
-func GetFullUrl(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetFullUrl(w http.ResponseWriter, r *http.Request) {
 	key := r.URL.Path
 	key = strings.Replace(key, "/", "", -1)
 	if len(key) == 0 {
@@ -46,8 +54,8 @@ func GetFullUrl(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// get full url from storage
-	url := storage.LOOKUP(key)
-	if len(url) == 0 {
+	url, err := h.storage.Get(key)
+	if err != nil || len(url) == 0 {
 		// value not found for the passed key
 		w.WriteHeader(http.StatusBadRequest) // 400
 		return

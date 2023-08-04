@@ -3,7 +3,6 @@ package shorturl
 import (
 	"crypto/md5"
 	"encoding/hex"
-	"fmt"
 	"math/big"
 	"strings"
 )
@@ -28,7 +27,7 @@ func strToUint64(str string) uint64 {
 	h := md5.New()
 	h.Write([]byte(str))
 	hexstr := hex.EncodeToString(h.Sum(nil))
-	fmt.Println(hexstr)
+
 	bi.SetString(hexstr, 16)
 	return bi.Uint64()
 }

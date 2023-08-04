@@ -1,84 +1,38 @@
 package storage
 
-import (
-	"encoding/gob"
-	"fmt"
-	"os"
-)
+import "errors"
 
-var (
-	DATA     = make(map[string]string)
-	DATAFILE = "/tmp/dataFile.gob"
-)
+type Storage interface {
+	Insert(k string, v string) error
+	Get(k string) (string, error)
+	Delete(k string) error
+}
 
-func SaveURL(k string, v string) {
-	if ADD(k, v) {
-		err := save()
-		if err != nil {
-			fmt.Println(err)
-		}
+type MemoryStorage struct {
+	data map[string]string
+}
+
+func NewMemoryStorage() *MemoryStorage {
+	return &MemoryStorage{
+		data: make(map[string]string),
 	}
 }
 
-func save() error {
-	removeFile(DATAFILE)
+func (s *MemoryStorage) Insert(k string, v string) error {
+	s.data[k] = v
 
-	saveTo, err := os.Create(DATAFILE)
-	if err != nil {
-		fmt.Println("Cannot create", DATAFILE)
-		return err
-	}
-	defer saveTo.Close()
-
-	encoder := gob.NewEncoder(saveTo)
-	err = encoder.Encode(DATA)
-	if err != nil {
-		fmt.Println("Cannot save to", DATAFILE)
-		return err
-	}
 	return nil
 }
 
-func Load() error {
-
-	loadFrom, err := os.Open(DATAFILE)
-
-	if err != nil {
-		fmt.Println("Empty key/value store!")
-		return err
+func (s *MemoryStorage) Get(k string) (string, error) {
+	v, exists := s.data[k]
+	if !exists {
+		return "", errors.New("value with such key doesn't exist")
 	}
-	defer loadFrom.Close()
+	return v, nil
+}
 
-	decoder := gob.NewDecoder(loadFrom)
-	err = decoder.Decode(&DATA)
-	if err != nil {
-		fmt.Println(err)
-		return err
-	}
+func (s *MemoryStorage) Delete(key string) error {
+	delete(s.data, key)
 	return nil
-}
-
-func ADD(k string, v string) bool {
-	if k != "" && LOOKUP(k) == "" {
-		DATA[k] = v
-		return true
-	}
-	return false
-}
-
-func LOOKUP(k string) string {
-	_, ok := DATA[k]
-	if ok {
-		return DATA[k]
-	}
-	return ""
-}
-
-func removeFile(path string) {
-	if _, err := os.Stat(path); err == nil {
-		err := os.Remove(path)
-		if err != nil {
-			fmt.Println(err)
-		}
-	}
 }
