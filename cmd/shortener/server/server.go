@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	CONN_HOST = ""
+	CONN_HOST = "localhost"
 	CONN_PORT = "8080"
 )
 
