@@ -3,9 +3,10 @@ package controllers
 import (
 	"net/http"
 	"net/http/httptest"
-	"storage"
 	"strings"
 	"testing"
+
+	"github.com/wurt83ow/tinyurl/cmd/shortener/storage"
 
 	"github.com/stretchr/testify/assert"
 )

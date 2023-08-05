@@ -3,8 +3,9 @@ package controllers
 import (
 	"io"
 	"net/http"
-	"shorturl"
 	"strings"
+
+	"github.com/wurt83ow/tinyurl/cmd/shortener/shorturl"
 )
 
 type Storage interface {

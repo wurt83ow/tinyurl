@@ -1,9 +1,11 @@
 package server
 
 import (
-	"controllers"
 	"net/http"
-	"storage"
+
+	"github.com/wurt83ow/tinyurl/cmd/shortener/storage"
+
+	"github.com/wurt83ow/tinyurl/internal/controllers"
 )
 
 const (
