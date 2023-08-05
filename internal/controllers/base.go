@@ -25,7 +25,7 @@ func (h *BaseController) Webhook(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
 		h.shortenURL(w, r)
 	} else if r.Method == http.MethodGet {
-		h.getFullUrl(w, r)
+		h.getFullURL(w, r)
 	} else {
 		// allow only post/get requests, otherwise send a 405 code
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -65,7 +65,7 @@ func (h *BaseController) shortenURL(w http.ResponseWriter, r *http.Request) {
 }
 
 // GET
-func (h *BaseController) getFullUrl(w http.ResponseWriter, r *http.Request) {
+func (h *BaseController) getFullURL(w http.ResponseWriter, r *http.Request) {
 	key := r.URL.Path
 	key = strings.Replace(key, "/", "", -1)
 	if len(key) == 0 {
