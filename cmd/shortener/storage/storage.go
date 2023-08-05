@@ -26,7 +26,7 @@ func (s *MemoryStorage) Insert(k string, v string) error {
 func (s *MemoryStorage) Get(k string) (string, error) {
 	v, exists := s.data[k]
 	if !exists {
-		return "", errors.New("value with such key doesn't exist.")
+		return "", errors.New("value with such key doesn't exist")
 	}
 	return v, nil
 }
