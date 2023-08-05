@@ -8,13 +8,10 @@ import (
 	"github.com/wurt83ow/tinyurl/internal/controllers"
 )
 
-const (
-	CONN_HOST = "localhost"
-	CONN_PORT = "8080"
-)
-
 func Run() error {
+	host := "localhost"
+	port := "8080"
 	memoryStorage := storage.NewMemoryStorage()
 	handler := controllers.NewBaseController(memoryStorage)
-	return http.ListenAndServe(CONN_HOST+":"+CONN_PORT, http.HandlerFunc(handler.Webhook))
+	return http.ListenAndServe(host+":"+port, http.HandlerFunc(handler.Webhook))
 }
