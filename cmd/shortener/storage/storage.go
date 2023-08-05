@@ -5,7 +5,6 @@ import "errors"
 type Storage interface {
 	Insert(k string, v string) error
 	Get(k string) (string, error)
-	Delete(k string) error
 }
 
 type MemoryStorage struct {
@@ -30,9 +29,4 @@ func (s *MemoryStorage) Get(k string) (string, error) {
 		return "", errors.New("value with such key doesn't exist")
 	}
 	return v, nil
-}
-
-func (s *MemoryStorage) Delete(key string) error {
-	delete(s.data, key)
-	return nil
 }
