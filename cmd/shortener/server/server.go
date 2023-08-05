@@ -13,6 +13,6 @@ const (
 
 func Run() error {
 	memoryStorage := storage.NewMemoryStorage()
-	handler := controllers.NewHandler(memoryStorage)
+	handler := controllers.NewBaseController(memoryStorage)
 	return http.ListenAndServe(CONN_HOST+":"+CONN_PORT, http.HandlerFunc(handler.Webhook))
 }

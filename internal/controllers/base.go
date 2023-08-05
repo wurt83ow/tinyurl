@@ -12,15 +12,15 @@ type Storage interface {
 	Get(k string) (string, error)
 }
 
-type Handler struct {
+type BaseController struct {
 	storage Storage
 }
 
-func NewHandler(storage Storage) *Handler {
-	return &Handler{storage: storage}
+func NewBaseController(storage Storage) *BaseController {
+	return &BaseController{storage: storage}
 }
 
-func (h *Handler) Webhook(w http.ResponseWriter, r *http.Request) {
+func (h *BaseController) Webhook(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == http.MethodPost {
 		h.shortenURL(w, r)
@@ -34,7 +34,7 @@ func (h *Handler) Webhook(w http.ResponseWriter, r *http.Request) {
 }
 
 // POST
-func (h *Handler) shortenURL(w http.ResponseWriter, r *http.Request) {
+func (h *BaseController) shortenURL(w http.ResponseWriter, r *http.Request) {
 	// установим правильный заголовок для типа данных
 	body, err := io.ReadAll(r.Body)
 	if err != nil || len(body) == 0 {
@@ -52,7 +52,7 @@ func (h *Handler) shortenURL(w http.ResponseWriter, r *http.Request) {
 	key, shurl := shorturl.Shorten(string(body), proto, r.Host)
 
 	// save full url to storage with the key received earlier
-	h.storage.Insert(key, string(body))
+	err = h.storage.Insert(key, string(body))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -65,7 +65,7 @@ func (h *Handler) shortenURL(w http.ResponseWriter, r *http.Request) {
 }
 
 // GET
-func (h *Handler) getFullUrl(w http.ResponseWriter, r *http.Request) {
+func (h *BaseController) getFullUrl(w http.ResponseWriter, r *http.Request) {
 	key := r.URL.Path
 	key = strings.Replace(key, "/", "", -1)
 	if len(key) == 0 {
