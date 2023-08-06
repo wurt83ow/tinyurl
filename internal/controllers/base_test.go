@@ -18,7 +18,7 @@ func TestShortenURL(t *testing.T) {
 	requestBody := strings.NewReader(url)
 	defaultBody := strings.NewReader("")
 	// описываем ожидаемое тело ответа при успешном запросе
-	successBody := "http://example.com/nOykhckC3Od"
+	successBody := "http://localhost:8080/nOykhckC3Od"
 
 	// описываем набор данных: метод запроса, ожидаемый код ответа, ожидаемое тело
 	testCases := []struct {
