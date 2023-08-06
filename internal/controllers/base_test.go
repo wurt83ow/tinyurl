@@ -20,6 +20,8 @@ func TestWebhook(t *testing.T) {
 	successBody := "http://example.com/nOykhckC3Od"
 
 	defaultPath := "/"
+	path := "/nOykhckC3Od"
+
 	// описываем набор данных: метод запроса, ожидаемый код ответа, ожидаемое тело
 	testCases := []struct {
 		method       string
@@ -30,7 +32,7 @@ func TestWebhook(t *testing.T) {
 		location     string
 	}{
 		{method: http.MethodPost, path: defaultPath, expectedCode: http.StatusCreated, expectedBody: successBody, requestBody: requestBody},
-		{method: http.MethodGet, path: "/nOykhckC3Od", expectedCode: http.StatusTemporaryRedirect, expectedBody: "", requestBody: defaultBody, location: url},
+		{method: http.MethodGet, path: path, expectedCode: http.StatusTemporaryRedirect, expectedBody: "", requestBody: defaultBody, location: url},
 		{method: http.MethodPut, path: defaultPath, expectedCode: http.StatusMethodNotAllowed, expectedBody: "", requestBody: defaultBody},
 		{method: http.MethodDelete, path: defaultPath, expectedCode: http.StatusMethodNotAllowed, expectedBody: "", requestBody: defaultBody},
 	}
