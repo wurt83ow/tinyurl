@@ -35,7 +35,7 @@ func TestShortenURL(t *testing.T) {
 
 	memoryStorage := storage.NewMemoryStorage()
 	handler := NewBaseController(memoryStorage)
-	config.ParseFlags()
+	// config.ParseFlags()
 	for _, tc := range testCases {
 		t.Run(tc.method, func(t *testing.T) {
 
