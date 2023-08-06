@@ -16,7 +16,7 @@ func TestShorten(t *testing.T) {
 		{
 			name:           "simple test #1",
 			url:            "https://practicum.yandex.ru/",
-			shortURLAdress: "http://localhost:8080",
+			shortURLAdress: "http://localhost:8080/",
 			key:            "nOykhckC3Od",
 			shurl:          "http://localhost:8080/nOykhckC3Od",
 		},
