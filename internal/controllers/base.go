@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/go-chi/chi"
 	"github.com/wurt83ow/tinyurl/cmd/shortener/shorturl"
 )
 
@@ -21,21 +22,35 @@ func NewBaseController(storage Storage) *BaseController {
 	return &BaseController{storage: storage}
 }
 
-func (h *BaseController) Webhook(w http.ResponseWriter, r *http.Request) {
-
-	if r.Method == http.MethodPost {
-		h.shortenURL(w, r)
-	} else if r.Method == http.MethodGet {
-		h.getFullURL(w, r)
-	} else {
-		// allow only post/get requests, otherwise send a 405 code
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		return
-	}
+func (h *BaseController) Route() *chi.Mux {
+	r := chi.NewRouter()
+	r.Post("/", h.shortenURL)
+	r.Get("/{name}", h.getFullURL)
+	return r
 }
+
+// func (h *BaseController) Webhook(w http.ResponseWriter, r *http.Request) {
+
+// 	if r.Method == http.MethodPost {
+// 		h.shortenURL(w, r)
+// 	} else if r.Method == http.MethodGet {
+// 		h.getFullURL(w, r)
+// 	} else {
+// 		// allow only post/get requests, otherwise send a 405 code
+// 		w.WriteHeader(http.StatusMethodNotAllowed)
+// 		return
+// 	}
+// }
 
 // POST
 func (h *BaseController) shortenURL(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method != http.MethodPost {
+		//allow only post requests, otherwise send a 405 code
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
 	// установим правильный заголовок для типа данных
 	body, err := io.ReadAll(r.Body)
 	if err != nil || len(body) == 0 {
@@ -67,6 +82,13 @@ func (h *BaseController) shortenURL(w http.ResponseWriter, r *http.Request) {
 
 // GET
 func (h *BaseController) getFullURL(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method != http.MethodGet {
+		//allow only get requests, otherwise send a 405 code
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
 	key := r.URL.Path
 	key = strings.Replace(key, "/", "", -1)
 	if len(key) == 0 {

@@ -46,7 +46,7 @@ func TestWebhook(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			// вызовем хендлер как обычную функцию, без запуска самого сервера
-			handler.Webhook(w, r)
+			handler.shortenURL(w, r)
 
 			assert.Equal(t, tc.expectedCode, w.Code, "Код ответа не совпадает с ожидаемым")
 			// проверим корректность полученного тела ответа, если мы его ожидаем
@@ -57,6 +57,16 @@ func TestWebhook(t *testing.T) {
 
 			assert.Equal(t, tc.location, w.Header().Get("Location"), "Заголовок Location не совпадает с ожидаемым")
 
+			handler.getFullURL(w, r)
+
+			assert.Equal(t, tc.expectedCode, w.Code, "Код ответа не совпадает с ожидаемым")
+			// проверим корректность полученного тела ответа, если мы его ожидаем
+			if tc.expectedBody != "" {
+				// assert.JSONEq помогает сравнить две JSON-строки
+				assert.Equal(t, tc.expectedBody, w.Body.String(), "Тело ответа не совпадает с ожидаемым")
+			}
+
+			assert.Equal(t, tc.location, w.Header().Get("Location"), "Заголовок Location не совпадает с ожидаемым")
 		})
 	}
 }
