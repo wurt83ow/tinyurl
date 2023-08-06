@@ -33,11 +33,7 @@ func strToUint64(str string) uint64 {
 }
 
 // calculate the short url from url
-func Shorten(url string, proto string, host string) (string, string) {
+func Shorten(url string, shortURLAdress string) (string, string) {
 	key := strHash(strToUint64(strings.TrimSpace(url)))
-	return key,
-		strings.TrimSpace(proto) +
-			"://" + strings.TrimSpace(host) +
-			"/" + key
-
+	return key, strings.TrimSpace(shortURLAdress) + key
 }

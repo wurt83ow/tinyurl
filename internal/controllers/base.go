@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi"
+	"github.com/wurt83ow/tinyurl/cmd/shortener/config"
 	"github.com/wurt83ow/tinyurl/cmd/shortener/shorturl"
 )
 
@@ -46,13 +47,10 @@ func (h *BaseController) shortenURL(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "text/plain")
 
-	proto := "http"
-	if r.TLS != nil {
-		proto = "https"
-	}
+	shortURLAdress := config.ShortURLAdress()
 
 	// get short url
-	key, shurl := shorturl.Shorten(string(body), proto, r.Host)
+	key, shurl := shorturl.Shorten(string(body), shortURLAdress)
 
 	// save full url to storage with the key received earlier
 	err = h.storage.Insert(key, string(body))
