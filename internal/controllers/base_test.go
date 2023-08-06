@@ -46,7 +46,6 @@ func TestShortenURL(t *testing.T) {
 			assert.Equal(t, tc.expectedCode, w.Code, "Код ответа не совпадает с ожидаемым")
 			// проверим корректность полученного тела ответа, если мы его ожидаем
 			if tc.expectedBody != "" {
-				// assert.JSONEq помогает сравнить две JSON-строки
 				assert.Equal(t, tc.expectedBody, w.Body.String(), "Тело ответа не совпадает с ожидаемым")
 			}
 
