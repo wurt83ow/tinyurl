@@ -29,19 +29,6 @@ func (h *BaseController) Route() *chi.Mux {
 	return r
 }
 
-// func (h *BaseController) Webhook(w http.ResponseWriter, r *http.Request) {
-
-// 	if r.Method == http.MethodPost {
-// 		h.shortenURL(w, r)
-// 	} else if r.Method == http.MethodGet {
-// 		h.getFullURL(w, r)
-// 	} else {
-// 		// allow only post/get requests, otherwise send a 405 code
-// 		w.WriteHeader(http.StatusMethodNotAllowed)
-// 		return
-// 	}
-// }
-
 // POST
 func (h *BaseController) shortenURL(w http.ResponseWriter, r *http.Request) {
 
