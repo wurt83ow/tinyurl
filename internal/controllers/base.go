@@ -47,6 +47,7 @@ func (h *BaseController) shortenURL(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "text/plain")
 
+	config.ParseFlags()
 	shortURLAdress := config.ShortURLAdress()
 
 	// get short url
