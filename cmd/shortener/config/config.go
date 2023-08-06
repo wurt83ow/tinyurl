@@ -14,7 +14,7 @@ var options struct {
 func ParseFlags() {
 	// регистрируем переменную flagRunAddr
 	// как аргумент -a со значением :8080 по умолчанию
-	flag.StringVar(&options.flagRunAddr, "a", "localhost:8080", "address and port to run server")
+	flag.StringVar(&options.flagRunAddr, "a", ":8080", "address and port to run server")
 	flag.StringVar(&options.flagShortURLAdress, "b", "http://localhost:8080/", "server`s address for shor url")
 	// парсим переданные серверу аргументы в зарегистрированные переменные
 	flag.Parse()
