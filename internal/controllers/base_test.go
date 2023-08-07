@@ -6,7 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/wurt83ow/tinyurl/cmd/shortener/config"
 	"github.com/wurt83ow/tinyurl/cmd/shortener/storage"
 
 	"github.com/stretchr/testify/assert"
@@ -77,7 +76,7 @@ func TestGetFullURL(t *testing.T) {
 
 	memoryStorage := storage.NewMemoryStorage()
 	handler := NewBaseController(memoryStorage)
-	config.ParseFlags()
+	// config.ParseFlags()
 	//Поместим данные для дальнейшего их получения методом get
 	requestBody := strings.NewReader(url)
 	r := httptest.NewRequest(http.MethodPost, "/", requestBody)
