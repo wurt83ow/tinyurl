@@ -3,6 +3,7 @@ package shorturl
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"fmt"
 	"math/big"
 	"strings"
 )
@@ -35,5 +36,10 @@ func strToUint64(str string) uint64 {
 // calculate the short url from url
 func Shorten(url string, shortURLAdress string) (string, string) {
 	key := strHash(strToUint64(strings.TrimSpace(url)))
-	return key, strings.TrimSpace(shortURLAdress) + key
+	shortURLAdress = strings.TrimSpace(shortURLAdress)
+	if string(shortURLAdress[len(shortURLAdress)-1]) != "/" {
+		shortURLAdress += "/"
+	}
+	fmt.Println(shortURLAdress)
+	return key, shortURLAdress + key
 }
