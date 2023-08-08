@@ -27,15 +27,14 @@ func TestShortenURL(t *testing.T) {
 		requestBody  *strings.Reader
 	}{
 		{method: http.MethodPost, expectedCode: http.StatusCreated, expectedBody: successBody, requestBody: requestBody},
-		{method: http.MethodGet, expectedCode: http.StatusMethodNotAllowed, expectedBody: "", requestBody: defaultBody},
-		{method: http.MethodPut, expectedCode: http.StatusMethodNotAllowed, expectedBody: "", requestBody: defaultBody},
-		{method: http.MethodDelete, expectedCode: http.StatusMethodNotAllowed, expectedBody: "", requestBody: defaultBody},
+		{method: http.MethodGet, expectedCode: http.StatusBadRequest, expectedBody: "", requestBody: defaultBody},
+		{method: http.MethodPut, expectedCode: http.StatusBadRequest, expectedBody: "", requestBody: defaultBody},
+		{method: http.MethodDelete, expectedCode: http.StatusBadRequest, expectedBody: "", requestBody: defaultBody},
 	}
 
 	option := config.NewOptions()
-	option.ParseFlags()
-
 	memoryStorage := storage.NewMemoryStorage()
+
 	handler := NewBaseController(memoryStorage, option)
 
 	for _, tc := range testCases {
@@ -72,15 +71,14 @@ func TestGetFullURL(t *testing.T) {
 		location     string
 	}{
 		{method: http.MethodGet, path: path, expectedCode: http.StatusTemporaryRedirect, location: url},
-		{method: http.MethodPost, path: defaultPath, expectedCode: http.StatusMethodNotAllowed},
-		{method: http.MethodPut, path: defaultPath, expectedCode: http.StatusMethodNotAllowed},
-		{method: http.MethodDelete, path: defaultPath, expectedCode: http.StatusMethodNotAllowed},
+		{method: http.MethodPost, path: defaultPath, expectedCode: http.StatusBadRequest},
+		{method: http.MethodPut, path: defaultPath, expectedCode: http.StatusBadRequest},
+		{method: http.MethodDelete, path: defaultPath, expectedCode: http.StatusBadRequest},
 	}
 
 	option := config.NewOptions()
-	option.ParseFlags()
-
 	memoryStorage := storage.NewMemoryStorage()
+
 	handler := NewBaseController(memoryStorage, option)
 
 	//Поместим данные для дальнейшего их получения методом get
