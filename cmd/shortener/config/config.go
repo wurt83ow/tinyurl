@@ -20,10 +20,10 @@ func NewOptions() *Options {
 // parseFlags обрабатывает аргументы командной строки
 // и сохраняет их значения в соответствующих переменных
 func (o *Options) ParseFlags() {
-	// регистрируем переменную flagRunAddr
-	// как аргумент -a со значением :8080 по умолчанию
-	flag.StringVar(&o.flagRunAddr, "a", ":8080", "address and port to run server")
-	flag.StringVar(&o.flagShortURLAdress, "b", "http://localhost:8080/", "server`s address for shor url")
+
+	regStringVar(&o.flagRunAddr, "a", ":8080", "address and port to run server")
+	regStringVar(&o.flagShortURLAdress, "b", "http://localhost:8080/", "server`s address for shor url")
+
 	// парсим переданные серверу аргументы в зарегистрированные переменные
 	flag.Parse()
 
@@ -37,9 +37,19 @@ func (o *Options) ParseFlags() {
 }
 
 func (o *Options) RunAddr() string {
-	return o.flagRunAddr
+	return getStringFlag("a")
 }
 
 func (o *Options) ShortURLAdress() string {
-	return o.flagShortURLAdress
+	return getStringFlag("b")
+}
+
+func regStringVar(p *string, name string, value string, usage string) {
+	if flag.Lookup(name) == nil {
+		flag.StringVar(p, name, value, usage)
+	}
+}
+
+func getStringFlag(name string) string {
+	return flag.Lookup(name).Value.(flag.Getter).Get().(string)
 }

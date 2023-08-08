@@ -33,6 +33,7 @@ func TestShortenURL(t *testing.T) {
 	}
 
 	option := config.NewOptions()
+	option.ParseFlags()
 	memoryStorage := storage.NewMemoryStorage()
 
 	handler := NewBaseController(memoryStorage, option)
@@ -77,6 +78,7 @@ func TestGetFullURL(t *testing.T) {
 	}
 
 	option := config.NewOptions()
+	option.ParseFlags()
 	memoryStorage := storage.NewMemoryStorage()
 
 	handler := NewBaseController(memoryStorage, option)
