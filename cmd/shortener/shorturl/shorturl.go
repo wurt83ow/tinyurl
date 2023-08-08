@@ -3,7 +3,6 @@ package shorturl
 import (
 	"crypto/md5"
 	"encoding/hex"
-	"fmt"
 	"math/big"
 	"strings"
 )
@@ -40,6 +39,6 @@ func Shorten(url string, shortURLAdress string) (string, string) {
 	if string(shortURLAdress[len(shortURLAdress)-1]) != "/" {
 		shortURLAdress += "/"
 	}
-	fmt.Println(shortURLAdress)
+
 	return key, shortURLAdress + key
 }

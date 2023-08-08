@@ -5,34 +5,41 @@ import (
 	"os"
 )
 
-var options struct {
+type Options struct {
 	flagRunAddr        string
 	flagShortURLAdress string
 }
 
+func NewOptions() *Options {
+	return &Options{
+		flagRunAddr:        "",
+		flagShortURLAdress: "",
+	}
+}
+
 // parseFlags обрабатывает аргументы командной строки
 // и сохраняет их значения в соответствующих переменных
-func ParseFlags() {
+func (o *Options) ParseFlags() {
 	// регистрируем переменную flagRunAddr
 	// как аргумент -a со значением :8080 по умолчанию
-	flag.StringVar(&options.flagRunAddr, "a", ":8080", "address and port to run server")
-	flag.StringVar(&options.flagShortURLAdress, "b", "http://localhost:8080/", "server`s address for shor url")
+	flag.StringVar(&o.flagRunAddr, "a", ":8080", "address and port to run server")
+	flag.StringVar(&o.flagShortURLAdress, "b", "http://localhost:8080/", "server`s address for shor url")
 	// парсим переданные серверу аргументы в зарегистрированные переменные
 	flag.Parse()
 
 	if envRunAddr := os.Getenv("SERVER_ADDRESS"); envRunAddr != "" {
-		options.flagRunAddr = envRunAddr
+		o.flagRunAddr = envRunAddr
 	}
 
 	if envShortURLAdress := os.Getenv("BASE_URL"); envShortURLAdress != "" {
-		options.flagShortURLAdress = envShortURLAdress
+		o.flagShortURLAdress = envShortURLAdress
 	}
 }
 
-func RunAddr() string {
-	return options.flagRunAddr
+func (o *Options) RunAddr() string {
+	return o.flagRunAddr
 }
 
-func ShortURLAdress() string {
-	return options.flagShortURLAdress
+func (o *Options) ShortURLAdress() string {
+	return o.flagShortURLAdress
 }

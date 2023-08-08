@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi"
-	"github.com/wurt83ow/tinyurl/cmd/shortener/config"
 	"github.com/wurt83ow/tinyurl/cmd/shortener/shorturl"
 )
 
@@ -15,12 +14,19 @@ type Storage interface {
 	Get(k string) (string, error)
 }
 
-type BaseController struct {
-	storage Storage
+type Options interface {
+	ParseFlags()
+	RunAddr() string
+	ShortURLAdress() string
 }
 
-func NewBaseController(storage Storage) *BaseController {
-	return &BaseController{storage: storage}
+type BaseController struct {
+	storage Storage
+	options Options
+}
+
+func NewBaseController(storage Storage, options Options) *BaseController {
+	return &BaseController{storage: storage, options: options}
 }
 
 func (h *BaseController) Route() *chi.Mux {
@@ -33,12 +39,6 @@ func (h *BaseController) Route() *chi.Mux {
 // POST
 func (h *BaseController) shortenURL(w http.ResponseWriter, r *http.Request) {
 
-	if r.Method != http.MethodPost {
-		//allow only post requests, otherwise send a 405 code
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		return
-	}
-
 	// установим правильный заголовок для типа данных
 	body, err := io.ReadAll(r.Body)
 	if err != nil || len(body) == 0 {
@@ -47,12 +47,8 @@ func (h *BaseController) shortenURL(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "text/plain")
 
-	shortURLAdress := config.ShortURLAdress()
-	// handle the test case
-	if shortURLAdress == "" {
-		config.ParseFlags()
-		shortURLAdress = config.ShortURLAdress()
-	}
+	shortURLAdress := h.options.ShortURLAdress()
+
 	// get short url
 	key, shurl := shorturl.Shorten(string(body), shortURLAdress)
 
@@ -71,12 +67,6 @@ func (h *BaseController) shortenURL(w http.ResponseWriter, r *http.Request) {
 
 // GET
 func (h *BaseController) getFullURL(w http.ResponseWriter, r *http.Request) {
-
-	if r.Method != http.MethodGet {
-		//allow only get requests, otherwise send a 405 code
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		return
-	}
 
 	key := r.URL.Path
 	key = strings.Replace(key, "/", "", -1)

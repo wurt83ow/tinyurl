@@ -2,11 +2,6 @@ package storage
 
 import "errors"
 
-// type Storage interface {
-// 	Insert(k string, v string) error
-// 	Get(k string) (string, error)
-// }
-
 type MemoryStorage struct {
 	data map[string]string
 }

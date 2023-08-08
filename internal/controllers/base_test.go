@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/wurt83ow/tinyurl/cmd/shortener/storage"
-
 	"github.com/stretchr/testify/assert"
+	"github.com/wurt83ow/tinyurl/cmd/shortener/config"
+	"github.com/wurt83ow/tinyurl/cmd/shortener/storage"
 )
 
 func TestShortenURL(t *testing.T) {
@@ -32,9 +32,12 @@ func TestShortenURL(t *testing.T) {
 		{method: http.MethodDelete, expectedCode: http.StatusMethodNotAllowed, expectedBody: "", requestBody: defaultBody},
 	}
 
+	option := config.NewOptions()
+	option.ParseFlags()
+
 	memoryStorage := storage.NewMemoryStorage()
-	handler := NewBaseController(memoryStorage)
-	// config.ParseFlags()
+	handler := NewBaseController(memoryStorage, option)
+
 	for _, tc := range testCases {
 		t.Run(tc.method, func(t *testing.T) {
 
@@ -74,9 +77,12 @@ func TestGetFullURL(t *testing.T) {
 		{method: http.MethodDelete, path: defaultPath, expectedCode: http.StatusMethodNotAllowed},
 	}
 
+	option := config.NewOptions()
+	option.ParseFlags()
+
 	memoryStorage := storage.NewMemoryStorage()
-	handler := NewBaseController(memoryStorage)
-	// config.ParseFlags()
+	handler := NewBaseController(memoryStorage, option)
+
 	//Поместим данные для дальнейшего их получения методом get
 	requestBody := strings.NewReader(url)
 	r := httptest.NewRequest(http.MethodPost, "/", requestBody)
