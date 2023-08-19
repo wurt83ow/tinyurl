@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/wurt83ow/tinyurl/cmd/shortener/config"
 	"github.com/wurt83ow/tinyurl/cmd/shortener/storage"
+	"github.com/wurt83ow/tinyurl/internal/logger"
 )
 
 func TestShortenURL(t *testing.T) {
@@ -34,9 +35,14 @@ func TestShortenURL(t *testing.T) {
 
 	option := config.NewOptions()
 	option.ParseFlags()
+
+	if err := logger.Initialize(option.LogLevel()); err != nil {
+		return
+	}
+
 	memoryStorage := storage.NewMemoryStorage()
 
-	handler := NewBaseController(memoryStorage, option)
+	handler := NewBaseController(memoryStorage, option, logger.Log, logger.RequestLogger)
 
 	for _, tc := range testCases {
 		t.Run(tc.method, func(t *testing.T) {
@@ -79,9 +85,13 @@ func TestGetFullURL(t *testing.T) {
 
 	option := config.NewOptions()
 	option.ParseFlags()
+
+	if err := logger.Initialize(option.LogLevel()); err != nil {
+		return
+	}
 	memoryStorage := storage.NewMemoryStorage()
 
-	handler := NewBaseController(memoryStorage, option)
+	handler := NewBaseController(memoryStorage, option, logger.Log, logger.RequestLogger)
 
 	//Поместим данные для дальнейшего их получения методом get
 	requestBody := strings.NewReader(url)

@@ -8,12 +8,14 @@ import (
 type Options struct {
 	flagRunAddr        string
 	flagShortURLAdress string
+	flagLogLevel       string
 }
 
 func NewOptions() *Options {
 	return &Options{
 		flagRunAddr:        "",
 		flagShortURLAdress: "",
+		flagLogLevel:       "",
 	}
 }
 
@@ -23,6 +25,7 @@ func (o *Options) ParseFlags() {
 
 	regStringVar(&o.flagRunAddr, "a", ":8080", "address and port to run server")
 	regStringVar(&o.flagShortURLAdress, "b", "http://localhost:8080/", "server`s address for shor url")
+	regStringVar(&o.flagLogLevel, "l", "info", "log level")
 
 	// парсим переданные серверу аргументы в зарегистрированные переменные
 	flag.Parse()
@@ -34,6 +37,10 @@ func (o *Options) ParseFlags() {
 	if envShortURLAdress := os.Getenv("BASE_URL"); envShortURLAdress != "" {
 		o.flagShortURLAdress = envShortURLAdress
 	}
+
+	if envLogLevel := os.Getenv("LOG_LEVEL"); envLogLevel != "" {
+		o.flagLogLevel = envLogLevel
+	}
 }
 
 func (o *Options) RunAddr() string {
@@ -42,6 +49,10 @@ func (o *Options) RunAddr() string {
 
 func (o *Options) ShortURLAdress() string {
 	return getStringFlag("b")
+}
+
+func (o *Options) LogLevel() string {
+	return getStringFlag("l")
 }
 
 func regStringVar(p *string, name string, value string, usage string) {

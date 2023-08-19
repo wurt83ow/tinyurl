@@ -7,6 +7,8 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/wurt83ow/tinyurl/cmd/shortener/shorturl"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 type Storage interface {
@@ -20,19 +22,26 @@ type Options interface {
 	ShortURLAdress() string
 }
 
-type BaseController struct {
-	storage Storage
-	options Options
+type Log interface {
+	Info(string, ...zapcore.Field)
 }
 
-func NewBaseController(storage Storage, options Options) *BaseController {
-	return &BaseController{storage: storage, options: options}
+type BaseController struct {
+	storage       Storage
+	options       Options
+	log           Log
+	requestLogger func(h http.HandlerFunc) http.HandlerFunc
+}
+
+func NewBaseController(storage Storage, options Options, log Log, requestLogger func(h http.HandlerFunc) http.HandlerFunc) *BaseController {
+	return &BaseController{storage: storage, options: options, log: log, requestLogger: requestLogger}
 }
 
 func (h *BaseController) Route() *chi.Mux {
 	r := chi.NewRouter()
-	r.Post("/", h.shortenURL)
-	r.Get("/{name}", h.getFullURL)
+
+	r.Post("/", h.requestLogger(h.shortenURL))
+	r.Get("/{name}", h.requestLogger(h.getFullURL))
 	return r
 }
 
@@ -43,6 +52,7 @@ func (h *BaseController) shortenURL(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil || len(body) == 0 {
 		w.WriteHeader(http.StatusBadRequest)
+		h.log.Info("got bad request status 400", zap.String("method", r.Method))
 		return
 	}
 	w.Header().Set("Content-Type", "text/plain")
@@ -63,6 +73,7 @@ func (h *BaseController) shortenURL(w http.ResponseWriter, r *http.Request) {
 	// set code 201
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte(shurl))
+	h.log.Info("sending HTTP 201 response")
 }
 
 // GET
@@ -73,6 +84,7 @@ func (h *BaseController) getFullURL(w http.ResponseWriter, r *http.Request) {
 	if len(key) == 0 {
 		// passed empty key
 		w.WriteHeader(http.StatusBadRequest) // 400
+		h.log.Info("got bad request status 400", zap.String("method", r.Method))
 		return
 	}
 	// get full url from storage
@@ -84,4 +96,5 @@ func (h *BaseController) getFullURL(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Location", url)
 	w.WriteHeader(http.StatusTemporaryRedirect) // 307
+	h.log.Info("temporary redirect status 307")
 }
