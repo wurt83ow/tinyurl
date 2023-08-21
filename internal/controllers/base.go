@@ -1,12 +1,14 @@
 package controllers
 
 import (
+	"encoding/json"
 	"io"
 	"net/http"
 	"strings"
 
 	"github.com/go-chi/chi"
 	"github.com/wurt83ow/tinyurl/cmd/shortener/shorturl"
+	"github.com/wurt83ow/tinyurl/internal/models"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -40,9 +42,57 @@ func NewBaseController(storage Storage, options Options, log Log, requestLogger 
 func (h *BaseController) Route() *chi.Mux {
 	r := chi.NewRouter()
 
+	r.Post("/api/shorten", h.requestLogger(h.shortenJSON))
 	r.Post("/", h.requestLogger(h.shortenURL))
 	r.Get("/{name}", h.requestLogger(h.getFullURL))
 	return r
+}
+
+// POST JSON
+func (h *BaseController) shortenJSON(w http.ResponseWriter, r *http.Request) {
+	// десериализуем запрос в структуру модели
+	h.log.Info("decoding request")
+	var req models.Request
+	dec := json.NewDecoder(r.Body)
+	if err := dec.Decode(&req); err != nil {
+		h.log.Info("cannot decode request JSON body", zap.Error(err))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if req.URL == "" {
+		h.log.Info("request JSON body is empty")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	shortURLAdress := h.options.ShortURLAdress()
+
+	// get short url
+	key, shurl := shorturl.Shorten(string(req.URL), shortURLAdress)
+
+	// save full url to storage with the key received earlier
+	err := h.storage.Insert(key, string(req.URL))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	// заполняем модель ответа
+	resp := models.Response{
+		Result: shurl,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+
+	// сериализуем ответ сервера
+	enc := json.NewEncoder(w)
+	if err := enc.Encode(resp); err != nil {
+		h.log.Info("error encoding response", zap.Error(err))
+		return
+	}
+	h.log.Info("sending HTTP 201 response")
 }
 
 // POST
