@@ -29,22 +29,23 @@ type Log interface {
 }
 
 type BaseController struct {
-	storage       Storage
-	options       Options
-	log           Log
-	requestLogger func(h http.HandlerFunc) http.HandlerFunc
+	storage        Storage
+	options        Options
+	log            Log
+	requestLogger  func(h http.HandlerFunc) http.HandlerFunc
+	gzipMiddleware func(h http.HandlerFunc) http.HandlerFunc
 }
 
-func NewBaseController(storage Storage, options Options, log Log, requestLogger func(h http.HandlerFunc) http.HandlerFunc) *BaseController {
-	return &BaseController{storage: storage, options: options, log: log, requestLogger: requestLogger}
+func NewBaseController(storage Storage, options Options, log Log, requestLogger func(h http.HandlerFunc) http.HandlerFunc, gzipMiddleware func(h http.HandlerFunc) http.HandlerFunc) *BaseController {
+	return &BaseController{storage: storage, options: options, log: log, requestLogger: requestLogger, gzipMiddleware: gzipMiddleware}
 }
 
 func (h *BaseController) Route() *chi.Mux {
 	r := chi.NewRouter()
 
-	r.Post("/api/shorten", h.requestLogger(h.shortenJSON))
-	r.Post("/", h.requestLogger(h.shortenURL))
-	r.Get("/{name}", h.requestLogger(h.getFullURL))
+	r.Post("/api/shorten", h.requestLogger(h.gzipMiddleware(h.shortenJSON)))
+	r.Post("/", h.requestLogger(h.gzipMiddleware(h.shortenURL)))
+	r.Get("/{name}", h.requestLogger(h.gzipMiddleware(h.getFullURL)))
 	return r
 }
 
