@@ -11,9 +11,9 @@ import (
 )
 
 type DataURL struct {
-	Uuid        int64  `json:"result"`
-	ShortUrl    string `json:"short_url"`
-	OriginalUrl string `json:"original_url"`
+	UUID        int64  `json:"result"`
+	ShortURL    string `json:"short_url"`
+	OriginalURL string `json:"original_url"`
 }
 
 type MemoryStorage struct {
@@ -70,7 +70,7 @@ func (s *MemoryStorage) Load() error {
 	for decoder.More() {
 		var m DataURL
 		err := decoder.Decode(&m)
-		s.data[m.ShortUrl] = m.OriginalUrl
+		s.data[m.ShortURL] = m.OriginalURL
 		fmt.Println(m)
 		if err != nil {
 			s.log.Info("cannot decode JSON file", zap.Error(err))
@@ -100,12 +100,12 @@ func (s *MemoryStorage) save() error {
 	defer saveTo.Close()
 
 	var i int64 = 0
-	data := DataURL{}
+
 	for k, v := range s.data {
 		i++
-		data = DataURL{
-			Uuid: i, ShortUrl: k,
-			OriginalUrl: v}
+		data := DataURL{
+			UUID: i, ShortURL: k,
+			OriginalURL: v}
 		encoder := json.NewEncoder(saveTo)
 		err = encoder.Encode(data)
 		if err != nil {
