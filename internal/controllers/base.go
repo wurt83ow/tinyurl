@@ -36,7 +36,10 @@ type BaseController struct {
 	gzipMiddleware func(h http.HandlerFunc) http.HandlerFunc
 }
 
-func NewBaseController(storage Storage, options Options, log Log, requestLogger func(h http.HandlerFunc) http.HandlerFunc, gzipMiddleware func(h http.HandlerFunc) http.HandlerFunc) *BaseController {
+func NewBaseController(storage Storage, options Options, log Log,
+	requestLogger func(h http.HandlerFunc) http.HandlerFunc,
+	gzipMiddleware func(h http.HandlerFunc) http.HandlerFunc) *BaseController {
+
 	return &BaseController{storage: storage, options: options, log: log, requestLogger: requestLogger, gzipMiddleware: gzipMiddleware}
 }
 

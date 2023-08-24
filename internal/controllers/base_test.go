@@ -65,7 +65,7 @@ func testPostReq(t *testing.T, requestBody *strings.Reader, successBody string, 
 		return
 	}
 
-	memoryStorage := storage.NewMemoryStorage()
+	memoryStorage := storage.NewMemoryStorage(option.FileStoragePath, logger.Log)
 
 	controller := NewBaseController(memoryStorage, option, logger.Log, logger.RequestLogger, compressor.GzipMiddleware)
 
@@ -118,7 +118,7 @@ func TestGetFullURL(t *testing.T) {
 	if err := logger.Initialize(option.LogLevel()); err != nil {
 		return
 	}
-	memoryStorage := storage.NewMemoryStorage()
+	memoryStorage := storage.NewMemoryStorage(option.FileStoragePath, logger.Log)
 
 	controller := NewBaseController(memoryStorage, option, logger.Log, logger.RequestLogger, compressor.GzipMiddleware)
 
@@ -177,7 +177,7 @@ func testGzipCompression(t *testing.T, requestBody string, successBody string, i
 		return
 	}
 
-	memoryStorage := storage.NewMemoryStorage()
+	memoryStorage := storage.NewMemoryStorage(option.FileStoragePath, logger.Log)
 
 	controller := NewBaseController(memoryStorage, option, logger.Log, logger.RequestLogger, compressor.GzipMiddleware)
 

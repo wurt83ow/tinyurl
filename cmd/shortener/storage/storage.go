@@ -1,20 +1,45 @@
 package storage
 
-import "errors"
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"os"
+
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+)
+
+type DataURL struct {
+	Uuid        int64  `json:"result"`
+	ShortUrl    string `json:"short_url"`
+	OriginalUrl string `json:"original_url"`
+}
 
 type MemoryStorage struct {
 	data map[string]string
+	path func() string
+	log  Log
 }
 
-func NewMemoryStorage() *MemoryStorage {
+type Log interface {
+	Info(string, ...zapcore.Field)
+}
+
+func NewMemoryStorage(path func() string, log Log) *MemoryStorage {
 	return &MemoryStorage{
 		data: make(map[string]string),
+		path: path,
+		log:  log,
 	}
 }
 
 func (s *MemoryStorage) Insert(k string, v string) error {
 	s.data[k] = v
-
+	err := s.save()
+	if err != nil {
+		s.log.Info("cannot insert value to JSON file", zap.Error(err))
+	}
 	return nil
 }
 
@@ -24,4 +49,70 @@ func (s *MemoryStorage) Get(k string) (string, error) {
 		return "", errors.New("value with such key doesn't exist")
 	}
 	return v, nil
+}
+
+func (s *MemoryStorage) Load() error {
+	dataFile := s.path()
+	if _, err := os.Stat(dataFile); err != nil {
+		fmt.Println("file not found", dataFile)
+		return nil
+	}
+
+	loadFrom, err := os.Open(dataFile)
+	fmt.Println("11111111111111", loadFrom)
+	if err != nil {
+		fmt.Println("Empty key/value store!")
+		return err
+	}
+	defer loadFrom.Close()
+
+	decoder := json.NewDecoder(loadFrom)
+	for decoder.More() {
+		var m DataURL
+		err := decoder.Decode(&m)
+		s.data[m.ShortUrl] = m.OriginalUrl
+		fmt.Println(m)
+		if err != nil {
+			s.log.Info("cannot decode JSON file", zap.Error(err))
+		}
+	}
+
+	fmt.Println(s.data)
+	return nil
+}
+
+func (s *MemoryStorage) save() error {
+
+	dataFile := s.path()
+
+	if _, err := os.Stat(dataFile); err == nil {
+		err := os.Remove(dataFile)
+		if err != nil {
+			s.log.Info("Cannot remove file", zap.Error(err))
+		}
+	}
+
+	saveTo, err := os.Create(dataFile)
+	if err != nil {
+		s.log.Info("Cannot create file", zap.Error(err))
+		return err
+	}
+	defer saveTo.Close()
+
+	var i int64 = 0
+	data := DataURL{}
+	for k, v := range s.data {
+		i++
+		data = DataURL{
+			Uuid: i, ShortUrl: k,
+			OriginalUrl: v}
+		encoder := json.NewEncoder(saveTo)
+		err = encoder.Encode(data)
+		if err != nil {
+			s.log.Info("cannot encode JSON data", zap.Error(err))
+			return err
+		}
+	}
+
+	return nil
 }

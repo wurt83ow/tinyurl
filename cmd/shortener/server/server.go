@@ -22,7 +22,13 @@ func Run() error {
 		return err
 	}
 
-	memoryStorage := storage.NewMemoryStorage()
+	memoryStorage := storage.NewMemoryStorage(option.FileStoragePath, logger.Log)
+
+	err := memoryStorage.Load()
+	if err != nil {
+		logger.Log.Info("cannot decode JSON file", zap.Error(err))
+	}
+
 	controller := controllers.NewBaseController(memoryStorage, option, logger.Log, logger.RequestLogger, compressor.GzipMiddleware)
 
 	r := chi.NewRouter()
