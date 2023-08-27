@@ -123,7 +123,7 @@ func (h *BaseController) shortenURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// respond to client
-	w.Header().Set("content-type", "text/plain")
+	w.Header().Set("Content-Type", "text/plain")
 	// set code 201
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte(shurl))
