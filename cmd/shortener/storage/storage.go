@@ -3,7 +3,6 @@ package storage
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"os"
 
 	"go.uber.org/zap"
@@ -54,14 +53,14 @@ func (s *MemoryStorage) Get(k string) (string, error) {
 func (s *MemoryStorage) Load() error {
 	dataFile := s.path()
 	if _, err := os.Stat(dataFile); err != nil {
-		fmt.Println("file not found", dataFile)
+		s.log.Info("file not found", zap.Error(err))
 		return nil
 	}
 
 	loadFrom, err := os.Open(dataFile)
-	fmt.Println("11111111111111", loadFrom)
+
 	if err != nil {
-		fmt.Println("Empty key/value store!")
+		s.log.Info("Empty key/value store!", zap.Error(err))
 		return err
 	}
 	defer loadFrom.Close()
@@ -71,13 +70,12 @@ func (s *MemoryStorage) Load() error {
 		var m DataURL
 		err := decoder.Decode(&m)
 		s.data[m.ShortURL] = m.OriginalURL
-		fmt.Println(m)
+
 		if err != nil {
 			s.log.Info("cannot decode JSON file", zap.Error(err))
 		}
 	}
 
-	fmt.Println(s.data)
 	return nil
 }
 
