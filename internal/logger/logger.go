@@ -1,44 +1,68 @@
 package logger
 
 import (
-	"net/http"
-
 	"go.uber.org/zap"
 )
 
-// Log будет доступен всему коду как синглтон.
-// Никакой код навыка, кроме функции InitLogger, не должен модифицировать эту переменную.
-// По умолчанию установлен no-op-логер, который не выводит никаких сообщений.
-var Log *zap.Logger = zap.NewNop()
+type Logger struct {
+	zap *zap.Logger
+}
 
 // Initialize инициализирует синглтон логера с необходимым уровнем логирования.
-func Initialize(level string) error {
+// func Initialize(level string) error {
+// 	// преобразуем текстовый уровень логирования в zap.AtomicLevel
+// 	lvl, err := zap.ParseAtomicLevel(level)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	// создаём новую конфигурацию логера
+// 	cfg := zap.NewProductionConfig()
+// 	// устанавливаем уровень
+// 	cfg.Level = lvl
+// 	// создаём логер на основе конфигурации
+// 	zl, err := cfg.Build()
+// 	if err != nil {
+// 		return err
+// 	}
+// 	// устанавливаем синглтон
+// 	Log = zl
+// 	return nil
+// }
+
+func NewLogger(level string) (*Logger, error) {
+
 	// преобразуем текстовый уровень логирования в zap.AtomicLevel
 	lvl, err := zap.ParseAtomicLevel(level)
 	if err != nil {
-		return err
+		return nil, err
 	}
+
 	// создаём новую конфигурацию логера
-	cfg := zap.NewProductionConfig()
+	config := zap.NewProductionConfig()
+
 	// устанавливаем уровень
-	cfg.Level = lvl
-	// создаём логер на основе конфигурации
-	zl, err := cfg.Build()
+	config.Level = lvl
+
+	// config.OutputPaths = []string{"stdout", "./logs/" + logFile}
+	logger, err := config.Build(zap.AddCaller())
 	if err != nil {
-		return err
+		return nil, err
 	}
-	// устанавливаем синглтон
-	Log = zl
-	return nil
+	return &Logger{zap: logger}, err
 }
 
-// RequestLogger — middleware-логер для входящих HTTP-запросов.
-func RequestLogger(h http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		Log.Info("got incoming HTTP request",
-			zap.String("method", r.Method),
-			zap.String("path", r.URL.Path),
-		)
-		h(w, r)
+func (l Logger) Debug(msg string, fields ...zap.Field) {
+	l.writer().Debug(msg, fields...)
+}
+
+func (l Logger) Info(msg string, fields ...zap.Field) {
+	l.writer().Info(msg, fields...)
+}
+
+func (l Logger) writer() *zap.Logger {
+	var noOpLogger = zap.NewNop()
+	if l.zap == nil {
+		return noOpLogger
 	}
+	return l.zap
 }

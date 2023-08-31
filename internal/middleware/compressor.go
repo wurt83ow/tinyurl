@@ -1,4 +1,4 @@
-package compressor
+package middleware
 
 import (
 	"net/http"
@@ -7,8 +7,8 @@ import (
 	"github.com/wurt83ow/tinyurl/cmd/shortener/compress"
 )
 
-func GzipMiddleware(h http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func GzipMiddleware(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// по умолчанию устанавливаем оригинальный http.ResponseWriter как тот,
 		// который будем передавать следующей функции
 		ow := w
@@ -42,5 +42,5 @@ func GzipMiddleware(h http.HandlerFunc) http.HandlerFunc {
 
 		// передаём управление хендлеру
 		h.ServeHTTP(ow, r)
-	}
+	})
 }

@@ -3,7 +3,6 @@ package storage
 import (
 	"errors"
 
-	"github.com/wurt83ow/tinyurl/internal/logger"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -26,7 +25,7 @@ type Keeper interface {
 func NewMemoryStorage(keeper Keeper, log Log) *MemoryStorage {
 	err := keeper.Load()
 	if err != nil {
-		logger.Log.Info("cannot decode JSON file", zap.Error(err))
+		log.Info("cannot decode JSON file", zap.Error(err))
 	}
 
 	return &MemoryStorage{

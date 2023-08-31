@@ -13,9 +13,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/wurt83ow/tinyurl/cmd/shortener/config"
 	"github.com/wurt83ow/tinyurl/cmd/shortener/storage"
-	"github.com/wurt83ow/tinyurl/internal/compressor"
 	"github.com/wurt83ow/tinyurl/internal/keeper"
 	"github.com/wurt83ow/tinyurl/internal/logger"
+	compressor "github.com/wurt83ow/tinyurl/internal/middleware"
 )
 
 func TestShortenJSON(t *testing.T) {
@@ -62,14 +62,12 @@ func testPostReq(t *testing.T, requestBody *strings.Reader, successBody string, 
 	option := config.NewOptions()
 	option.ParseFlags()
 
-	if err := logger.Initialize(option.LogLevel()); err != nil {
-		return
-	}
+	nLogger, _ := logger.NewLogger(option.LogLevel())
 
-	keeper := keeper.NewKeeper(option.FileStoragePath, logger.Log)
-	memoryStorage := storage.NewMemoryStorage(keeper, logger.Log)
+	keeper := keeper.NewKeeper(option.FileStoragePath, nLogger)
+	memoryStorage := storage.NewMemoryStorage(keeper, nLogger)
 
-	controller := NewBaseController(memoryStorage, option, logger.Log, logger.RequestLogger, compressor.GzipMiddleware)
+	controller := NewBaseController(memoryStorage, option, nLogger)
 
 	for _, tc := range testCases {
 		t.Run(tc.method, func(t *testing.T) {
@@ -117,13 +115,12 @@ func TestGetFullURL(t *testing.T) {
 	option := config.NewOptions()
 	option.ParseFlags()
 
-	if err := logger.Initialize(option.LogLevel()); err != nil {
-		return
-	}
-	keeper := keeper.NewKeeper(option.FileStoragePath, logger.Log)
-	memoryStorage := storage.NewMemoryStorage(keeper, logger.Log)
+	nLogger, _ := logger.NewLogger(option.LogLevel())
 
-	controller := NewBaseController(memoryStorage, option, logger.Log, logger.RequestLogger, compressor.GzipMiddleware)
+	keeper := keeper.NewKeeper(option.FileStoragePath, nLogger)
+	memoryStorage := storage.NewMemoryStorage(keeper, nLogger)
+
+	controller := NewBaseController(memoryStorage, option, nLogger)
 
 	//Поместим данные для дальнейшего их получения методом get
 	requestBody := strings.NewReader(url)
@@ -176,21 +173,19 @@ func testGzipCompression(t *testing.T, requestBody string, successBody string, i
 	option := config.NewOptions()
 	option.ParseFlags()
 
-	if err := logger.Initialize(option.LogLevel()); err != nil {
-		return
-	}
+	nLogger, _ := logger.NewLogger(option.LogLevel())
 
-	keeper := keeper.NewKeeper(option.FileStoragePath, logger.Log)
-	memoryStorage := storage.NewMemoryStorage(keeper, logger.Log)
+	keeper := keeper.NewKeeper(option.FileStoragePath, nLogger)
+	memoryStorage := storage.NewMemoryStorage(keeper, nLogger)
 
-	controller := NewBaseController(memoryStorage, option, logger.Log, logger.RequestLogger, compressor.GzipMiddleware)
+	controller := NewBaseController(memoryStorage, option, nLogger)
 
 	curentFunc := controller.shortenURL
 	if isJSONTest {
 		curentFunc = controller.shortenJSON
 	}
 
-	handler := http.HandlerFunc(compressor.GzipMiddleware(curentFunc))
+	handler := compressor.GzipMiddleware(http.HandlerFunc(curentFunc))
 
 	srv := httptest.NewServer(handler)
 	defer srv.Close()
