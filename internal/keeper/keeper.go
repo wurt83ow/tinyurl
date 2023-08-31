@@ -32,17 +32,17 @@ func NewKeeper(path func() string, log Log) *Keeper {
 	}
 }
 
-func (k *Keeper) Load() error {
-	dataFile := k.path()
+func (kp *Keeper) Load() error {
+	dataFile := kp.path()
 	if _, err := os.Stat(dataFile); err != nil {
-		k.log.Info("file not found", zap.Error(err))
+		kp.log.Info("file not found", zap.Error(err))
 		return nil
 	}
 
 	loadFrom, err := os.Open(dataFile)
 
 	if err != nil {
-		k.log.Info("Empty key/value store!", zap.Error(err))
+		kp.log.Info("Empty key/value store!", zap.Error(err))
 		return err
 	}
 	defer loadFrom.Close()
@@ -51,37 +51,37 @@ func (k *Keeper) Load() error {
 	for decoder.More() {
 		var m DataURL
 		err := decoder.Decode(&m)
-		k.data[m.ShortURL] = m.OriginalURL
+		kp.data[m.ShortURL] = m.OriginalURL
 
 		if err != nil {
-			k.log.Info("cannot decode JSON file", zap.Error(err))
+			kp.log.Info("cannot decode JSON file", zap.Error(err))
 		}
 	}
 
 	return nil
 }
 
-func (s *Keeper) Save() error {
+func (kp *Keeper) Save() error {
 
-	dataFile := s.path()
+	dataFile := kp.path()
 
 	if _, err := os.Stat(dataFile); err == nil {
 		err := os.Remove(dataFile)
 		if err != nil {
-			s.log.Info("Cannot remove file", zap.Error(err))
+			kp.log.Info("Cannot remove file", zap.Error(err))
 		}
 	}
 
 	saveTo, err := os.Create(dataFile)
 	if err != nil {
-		s.log.Info("Cannot create file", zap.Error(err))
+		kp.log.Info("Cannot create file", zap.Error(err))
 		return err
 	}
 	defer saveTo.Close()
 
 	var i int64 = 0
 
-	for k, v := range s.data {
+	for k, v := range kp.data {
 		i++
 		data := DataURL{
 			UUID: i, ShortURL: k,
@@ -89,7 +89,7 @@ func (s *Keeper) Save() error {
 		encoder := json.NewEncoder(saveTo)
 		err = encoder.Encode(data)
 		if err != nil {
-			s.log.Info("cannot encode JSON data", zap.Error(err))
+			kp.log.Info("cannot encode JSON data", zap.Error(err))
 			return err
 		}
 	}
