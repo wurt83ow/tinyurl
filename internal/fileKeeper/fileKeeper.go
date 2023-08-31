@@ -1,4 +1,4 @@
-package keeper
+package fileKeeper
 
 import (
 	"encoding/json"
@@ -19,31 +19,32 @@ type Log interface {
 }
 
 type Keeper struct {
-	data map[string]string
 	path func() string
 	log  Log
 }
 
 func NewKeeper(path func() string, log Log) *Keeper {
 	return &Keeper{
-		data: make(map[string]string),
+
 		path: path,
 		log:  log,
 	}
 }
 
-func (kp *Keeper) Load() error {
+func (kp *Keeper) Load() (map[string]string, error) {
 	dataFile := kp.path()
+	data := make(map[string]string)
+
 	if _, err := os.Stat(dataFile); err != nil {
 		kp.log.Info("file not found", zap.Error(err))
-		return nil
+		return data, err
 	}
 
 	loadFrom, err := os.Open(dataFile)
 
 	if err != nil {
 		kp.log.Info("Empty key/value store!", zap.Error(err))
-		return err
+		return data, err
 	}
 	defer loadFrom.Close()
 
@@ -51,14 +52,14 @@ func (kp *Keeper) Load() error {
 	for decoder.More() {
 		var m DataURL
 		err := decoder.Decode(&m)
-		kp.data[m.ShortURL] = m.OriginalURL
+		data[m.ShortURL] = m.OriginalURL
 
 		if err != nil {
 			kp.log.Info("cannot decode JSON file", zap.Error(err))
 		}
 	}
 
-	return nil
+	return data, nil
 }
 
 func (kp *Keeper) Save(data map[string]string) error {

@@ -9,7 +9,7 @@ import (
 	"github.com/wurt83ow/tinyurl/cmd/shortener/config"
 	"github.com/wurt83ow/tinyurl/cmd/shortener/storage"
 	"github.com/wurt83ow/tinyurl/internal/controllers"
-	"github.com/wurt83ow/tinyurl/internal/keeper"
+	"github.com/wurt83ow/tinyurl/internal/fileKeeper"
 	"github.com/wurt83ow/tinyurl/internal/logger"
 	"github.com/wurt83ow/tinyurl/internal/middleware"
 )
@@ -24,8 +24,8 @@ func Run() error {
 		return err
 	}
 
-	keeper := keeper.NewKeeper(option.FileStoragePath, nLogger)
-	memoryStorage := storage.NewMemoryStorage(keeper, nLogger)
+	fileKeeper := fileKeeper.NewKeeper(option.FileStoragePath, nLogger)
+	memoryStorage := storage.NewMemoryStorage(fileKeeper, nLogger)
 
 	controller := controllers.NewBaseController(memoryStorage, option, nLogger)
 	reqLog := middleware.NewReqLog(nLogger)

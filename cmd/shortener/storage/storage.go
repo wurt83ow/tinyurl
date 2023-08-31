@@ -18,18 +18,18 @@ type Log interface {
 }
 
 type Keeper interface {
-	Load() error
+	Load() (map[string]string, error)
 	Save(map[string]string) error
 }
 
 func NewMemoryStorage(keeper Keeper, log Log) *MemoryStorage {
-	err := keeper.Load()
+	data, err := keeper.Load()
 	if err != nil {
 		log.Info("cannot decode JSON file", zap.Error(err))
 	}
 
 	return &MemoryStorage{
-		data:   make(map[string]string),
+		data:   data,
 		keeper: keeper,
 		log:    log,
 	}
