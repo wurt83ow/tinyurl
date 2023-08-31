@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/wurt83ow/tinyurl/cmd/shortener/config"
 	"github.com/wurt83ow/tinyurl/cmd/shortener/storage"
-	"github.com/wurt83ow/tinyurl/internal/fileKeeper"
+	"github.com/wurt83ow/tinyurl/internal/filekeeper"
 	"github.com/wurt83ow/tinyurl/internal/logger"
 	compressor "github.com/wurt83ow/tinyurl/internal/middleware"
 )
@@ -64,7 +64,7 @@ func testPostReq(t *testing.T, requestBody *strings.Reader, successBody string, 
 
 	nLogger, _ := logger.NewLogger(option.LogLevel())
 
-	fileKeeper := fileKeeper.NewKeeper(option.FileStoragePath, nLogger)
+	fileKeeper := filekeeper.NewKeeper(option.FileStoragePath, nLogger)
 	memoryStorage := storage.NewMemoryStorage(fileKeeper, nLogger)
 
 	controller := NewBaseController(memoryStorage, option, nLogger)
@@ -117,7 +117,7 @@ func TestGetFullURL(t *testing.T) {
 
 	nLogger, _ := logger.NewLogger(option.LogLevel())
 
-	fileKeeper := fileKeeper.NewKeeper(option.FileStoragePath, nLogger)
+	fileKeeper := filekeeper.NewKeeper(option.FileStoragePath, nLogger)
 	memoryStorage := storage.NewMemoryStorage(fileKeeper, nLogger)
 
 	controller := NewBaseController(memoryStorage, option, nLogger)
@@ -175,7 +175,7 @@ func testGzipCompression(t *testing.T, requestBody string, successBody string, i
 
 	nLogger, _ := logger.NewLogger(option.LogLevel())
 
-	fileKeeper := fileKeeper.NewKeeper(option.FileStoragePath, nLogger)
+	fileKeeper := filekeeper.NewKeeper(option.FileStoragePath, nLogger)
 	memoryStorage := storage.NewMemoryStorage(fileKeeper, nLogger)
 
 	controller := NewBaseController(memoryStorage, option, nLogger)

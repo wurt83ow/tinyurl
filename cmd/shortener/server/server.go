@@ -9,7 +9,7 @@ import (
 	"github.com/wurt83ow/tinyurl/cmd/shortener/config"
 	"github.com/wurt83ow/tinyurl/cmd/shortener/storage"
 	"github.com/wurt83ow/tinyurl/internal/controllers"
-	"github.com/wurt83ow/tinyurl/internal/fileKeeper"
+	fileKeeper "github.com/wurt83ow/tinyurl/internal/filekeeper"
 	"github.com/wurt83ow/tinyurl/internal/logger"
 	"github.com/wurt83ow/tinyurl/internal/middleware"
 )

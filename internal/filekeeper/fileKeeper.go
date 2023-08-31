@@ -1,4 +1,4 @@
-package fileKeeper
+package filekeeper
 
 import (
 	"encoding/json"
