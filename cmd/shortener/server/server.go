@@ -10,6 +10,7 @@ import (
 	"github.com/wurt83ow/tinyurl/cmd/shortener/storage"
 	"github.com/wurt83ow/tinyurl/internal/compressor"
 	"github.com/wurt83ow/tinyurl/internal/controllers"
+	"github.com/wurt83ow/tinyurl/internal/keeper"
 	"github.com/wurt83ow/tinyurl/internal/logger"
 )
 
@@ -22,12 +23,8 @@ func Run() error {
 		return err
 	}
 
-	memoryStorage := storage.NewMemoryStorage(option.FileStoragePath, logger.Log)
-
-	err := memoryStorage.Load()
-	if err != nil {
-		logger.Log.Info("cannot decode JSON file", zap.Error(err))
-	}
+	keeper := keeper.NewKeeper(option.FileStoragePath, logger.Log)
+	memoryStorage := storage.NewMemoryStorage(keeper, logger.Log)
 
 	controller := controllers.NewBaseController(memoryStorage, option, logger.Log, logger.RequestLogger, compressor.GzipMiddleware)
 
