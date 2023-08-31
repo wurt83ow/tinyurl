@@ -61,7 +61,7 @@ func (kp *Keeper) Load() error {
 	return nil
 }
 
-func (kp *Keeper) Save() error {
+func (kp *Keeper) Save(data map[string]string) error {
 
 	dataFile := kp.path()
 
@@ -81,7 +81,7 @@ func (kp *Keeper) Save() error {
 
 	var i int64 = 0
 
-	for k, v := range kp.data {
+	for k, v := range data {
 		i++
 		data := DataURL{
 			UUID: i, ShortURL: k,

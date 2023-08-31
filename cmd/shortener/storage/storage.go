@@ -20,7 +20,7 @@ type Log interface {
 
 type Keeper interface {
 	Load() error
-	Save() error
+	Save(map[string]string) error
 }
 
 func NewMemoryStorage(keeper Keeper, log Log) *MemoryStorage {
@@ -38,7 +38,7 @@ func NewMemoryStorage(keeper Keeper, log Log) *MemoryStorage {
 
 func (s *MemoryStorage) Insert(k string, v string) error {
 	s.data[k] = v
-	err := s.keeper.Save()
+	err := s.keeper.Save(s.data)
 	if err != nil {
 		s.log.Info("cannot insert value to JSON file", zap.Error(err))
 	}
