@@ -16,6 +16,7 @@ import (
 type Storage interface {
 	Insert(k string, v string) error
 	Get(k string) (string, error)
+	GetBaseConnection() bool
 }
 
 type Options interface {
@@ -45,6 +46,7 @@ func (h *BaseController) Route() *chi.Mux {
 	r.Post("/api/shorten", h.shortenJSON)
 	r.Post("/", h.shortenURL)
 	r.Get("/{name}", h.getFullURL)
+	r.Get("/ping", h.getPing)
 	return r
 }
 
@@ -147,4 +149,16 @@ func (h *BaseController) getFullURL(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Location", url)
 	w.WriteHeader(http.StatusTemporaryRedirect) // 307
 	h.log.Info("temporary redirect status 307")
+}
+
+// GET
+func (h *BaseController) getPing(w http.ResponseWriter, r *http.Request) {
+
+	if !h.storage.GetBaseConnection() {
+		h.log.Info("got status internal server error")
+		w.WriteHeader(http.StatusInternalServerError) // 500
+		return
+	}
+	w.WriteHeader(http.StatusOK) // 200
+	h.log.Info("sending HTTP 200 response")
 }

@@ -20,6 +20,7 @@ type Log interface {
 type Keeper interface {
 	Load() (map[string]string, error)
 	Save(map[string]string) error
+	Ping() bool
 }
 
 func NewMemoryStorage(keeper Keeper, log Log) *MemoryStorage {
@@ -50,4 +51,8 @@ func (s *MemoryStorage) Get(k string) (string, error) {
 		return "", errors.New("value with such key doesn't exist")
 	}
 	return v, nil
+}
+
+func (s *MemoryStorage) GetBaseConnection() bool {
+	return s.keeper.Ping()
 }

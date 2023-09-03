@@ -18,20 +18,19 @@ type Log interface {
 	Info(string, ...zapcore.Field)
 }
 
-type Keeper struct {
+type FileKeeper struct {
 	path func() string
 	log  Log
 }
 
-func NewKeeper(path func() string, log Log) *Keeper {
-	return &Keeper{
-
+func NewFileKeeper(path func() string, log Log) *FileKeeper {
+	return &FileKeeper{
 		path: path,
 		log:  log,
 	}
 }
 
-func (kp *Keeper) Load() (map[string]string, error) {
+func (kp *FileKeeper) Load() (map[string]string, error) {
 	dataFile := kp.path()
 	data := make(map[string]string)
 
@@ -62,7 +61,7 @@ func (kp *Keeper) Load() (map[string]string, error) {
 	return data, nil
 }
 
-func (kp *Keeper) Save(data map[string]string) error {
+func (kp *FileKeeper) Save(data map[string]string) error {
 
 	dataFile := kp.path()
 
@@ -97,3 +96,5 @@ func (kp *Keeper) Save(data map[string]string) error {
 
 	return nil
 }
+
+func (kp *FileKeeper) Ping() bool { return true }

@@ -1,15 +1,20 @@
 package server
 
 import (
+	"context"
+	"fmt"
 	"net/http"
 
 	"go.uber.org/zap"
 
 	"github.com/go-chi/chi"
+	"github.com/jackc/pgx/v5/pgxpool"
+
 	"github.com/wurt83ow/tinyurl/cmd/shortener/config"
 	"github.com/wurt83ow/tinyurl/cmd/shortener/storage"
+	"github.com/wurt83ow/tinyurl/internal/bdkeeper"
 	"github.com/wurt83ow/tinyurl/internal/controllers"
-	fileKeeper "github.com/wurt83ow/tinyurl/internal/filekeeper"
+	"github.com/wurt83ow/tinyurl/internal/filekeeper"
 	"github.com/wurt83ow/tinyurl/internal/logger"
 	"github.com/wurt83ow/tinyurl/internal/middleware"
 )
@@ -24,7 +29,19 @@ func Run() error {
 		return err
 	}
 
-	fileKeeper := fileKeeper.NewKeeper(option.FileStoragePath, nLogger)
+	fileKeeper := filekeeper.NewFileKeeper(option.FileStoragePath, nLogger)
+
+	pool, err := pgxpool.New(context.Background(), option.DataBaseDSN())
+	if err != nil {
+		nLogger.Info("Unable to connection to database: %v", zap.Error(err))
+	}
+	defer pool.Close()
+	nLogger.Info("Connected!")
+
+	bdKeeper := bdkeeper.NewBDKeeper(pool, nLogger)
+
+	fmt.Println(bdKeeper.Ping())
+
 	memoryStorage := storage.NewMemoryStorage(fileKeeper, nLogger)
 
 	controller := controllers.NewBaseController(memoryStorage, option, nLogger)

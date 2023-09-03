@@ -10,6 +10,7 @@ type Options struct {
 	flagShortURLAdress  string
 	flagLogLevel        string
 	flagFileStoragePath string
+	flagDataBaseDSN     string
 }
 
 func NewOptions() *Options {
@@ -18,6 +19,7 @@ func NewOptions() *Options {
 		flagShortURLAdress:  "",
 		flagLogLevel:        "",
 		flagFileStoragePath: "",
+		flagDataBaseDSN:     "",
 	}
 }
 
@@ -29,6 +31,7 @@ func (o *Options) ParseFlags() {
 	regStringVar(&o.flagShortURLAdress, "b", "http://localhost:8080/", "server`s address for shor url")
 	regStringVar(&o.flagLogLevel, "l", "info", "log level")
 	regStringVar(&o.flagFileStoragePath, "f", "/tmp/short-url-db.json", "default file storage path")
+	regStringVar(&o.flagDataBaseDSN, "d", "", "")
 
 	// парсим переданные серверу аргументы в зарегистрированные переменные
 	flag.Parse()
@@ -49,6 +52,10 @@ func (o *Options) ParseFlags() {
 		o.flagFileStoragePath = envFileStoragePath
 	}
 
+	if envDataBaseDSN := os.Getenv("DATABASE_DSN"); envDataBaseDSN != "" {
+		o.flagDataBaseDSN = envDataBaseDSN
+	}
+
 }
 
 func (o *Options) RunAddr() string {
@@ -65,6 +72,10 @@ func (o *Options) LogLevel() string {
 
 func (o *Options) FileStoragePath() string {
 	return getStringFlag("f")
+}
+
+func (o *Options) DataBaseDSN() string {
+	return getStringFlag("d")
 }
 
 func regStringVar(p *string, name string, value string, usage string) {
