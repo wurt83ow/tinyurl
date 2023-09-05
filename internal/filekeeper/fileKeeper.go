@@ -4,15 +4,10 @@ import (
 	"encoding/json"
 	"os"
 
+	"github.com/wurt83ow/tinyurl/internal/models"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
-
-type DataURL struct {
-	UUID        int64  `json:"result"`
-	ShortURL    string `json:"short_url"`
-	OriginalURL string `json:"original_url"`
-}
 
 type Log interface {
 	Info(string, ...zapcore.Field)
@@ -49,7 +44,7 @@ func (kp *FileKeeper) Load() (map[string]string, error) {
 
 	decoder := json.NewDecoder(loadFrom)
 	for decoder.More() {
-		var m DataURL
+		var m models.DataURL
 		err := decoder.Decode(&m)
 		data[m.ShortURL] = m.OriginalURL
 
@@ -83,7 +78,7 @@ func (kp *FileKeeper) Save(data map[string]string) error {
 
 	for k, v := range data {
 		i++
-		data := DataURL{
+		data := models.DataURL{
 			UUID: i, ShortURL: k,
 			OriginalURL: v}
 		encoder := json.NewEncoder(saveTo)

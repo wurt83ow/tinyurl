@@ -3,12 +3,16 @@ package bdkeeper
 import (
 	"context"
 	"fmt"
+	"log"
+	"reflect"
 	"time"
 
+	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/wurt83ow/tinyurl/internal/models"
 )
 
 type Log interface {
@@ -26,6 +30,81 @@ func NewBDKeeper(pool *pgxpool.Pool, log Log) *BDKeeper {
 	}
 }
 
+func (bdk *BDKeeper) Load() (map[string]string, error) {
+
+	data := make(map[string]string)
+	conn, err := bdk.pool.Acquire(context.Background())
+	if err != nil {
+		bdk.log.Info("Unable to acquire a database connection: %v\n", zap.Error(err))
+
+		return data, err
+	}
+	defer conn.Release()
+
+	rows, err := conn.Query(context.Background(),
+		"SELECT * FROM dataurl")
+
+	if err != nil {
+		bdk.log.Info("error while getting data from bd: %v\n", zap.Error(err))
+
+		return data, err
+	}
+
+	for rows.Next() {
+		record := models.DataURL{}
+
+		s := reflect.ValueOf(&record).Elem()
+		numCols := s.NumField()
+		columns := make([]interface{}, numCols)
+		for i := 0; i < numCols; i++ {
+			field := s.Field(i)
+			columns[i] = field.Addr().Interface()
+		}
+
+		err := rows.Scan(columns...)
+		if err != nil {
+			log.Fatal(err)
+		}
+		data[record.ShortURL] = record.OriginalURL
+	}
+
+	return data, nil
+}
+
+func (bdk *BDKeeper) Save(data map[string]string) error {
+
+	conn, err := bdk.pool.Acquire(context.Background())
+	if err != nil {
+		bdk.log.Info("Unable to acquire a database connection: %v\n", zap.Error(err))
+
+		return err
+	}
+
+	defer conn.Release()
+
+	_, err = conn.Exec(context.Background(), "DELETE FROM dataurl")
+	if err != nil {
+		bdk.log.Info("Unable to DELETE: %v", zap.Error(err))
+		return err
+	}
+
+	var i int64 = 0
+	for k, v := range data {
+		i++
+		row := conn.QueryRow(context.Background(),
+			"INSERT INTO dataurl (correlation_id, short_url, original_url) VALUES ($1, $2, $3) RETURNING correlation_id",
+			i, k, v)
+		var id uint64
+		err = row.Scan(&id)
+		if err != nil {
+			bdk.log.Info("Unable to INSERT: %v", zap.Error(err))
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (bdk *BDKeeper) Ping() bool {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
@@ -33,6 +112,30 @@ func (bdk *BDKeeper) Ping() bool {
 		fmt.Println(err)
 		return false
 	}
-	fmt.Println("77777777777777777777777777777")
+
 	return true
+}
+func (bdk *BDKeeper) CreateTable() error {
+
+	const query = `
+	CREATE TABLE IF NOT EXISTS dataURL (
+	correlation_id SERIAL PRIMARY KEY,
+	short_url TEXT,
+	original_url TEXT
+	)`
+
+	conn, err := bdk.pool.Acquire(context.Background())
+	if err != nil {
+		bdk.log.Info("Unable to acquire a database connection: %v\n", zap.Error(err))
+
+		return err
+	}
+	defer conn.Release()
+
+	_, err = conn.Exec(context.Background(), query)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+	return nil
 }

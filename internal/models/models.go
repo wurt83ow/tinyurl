@@ -9,3 +9,9 @@ type Request struct {
 type Response struct {
 	Result string `json:"result"`
 }
+
+type DataURL struct {
+	UUID        int64  `db:"correlation_id" json:"result"`
+	ShortURL    string `db:"short_url" json:"short_url"`
+	OriginalURL string `db:"original_url" json:"original_url"`
+}
