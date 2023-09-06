@@ -19,6 +19,13 @@ type FileKeeper struct {
 }
 
 func NewFileKeeper(path func() string, log Log) *FileKeeper {
+
+	addr := path()
+	if addr == "" {
+		log.Info("file json path is empty")
+		return nil
+	}
+
 	return &FileKeeper{
 		path: path,
 		log:  log,
@@ -93,3 +100,5 @@ func (kp *FileKeeper) Save(data map[string]string) error {
 }
 
 func (kp *FileKeeper) Ping() bool { return true }
+
+func (kp *FileKeeper) Close() bool { return true }

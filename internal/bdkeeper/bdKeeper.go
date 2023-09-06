@@ -23,7 +23,26 @@ type BDKeeper struct {
 	log  Log
 }
 
-func NewBDKeeper(pool *pgxpool.Pool, log Log) *BDKeeper {
+func NewBDKeeper(dns func() string, log Log) *BDKeeper {
+
+	addr := dns()
+	if addr == "" {
+		log.Info("database dns is empty")
+		return nil
+	}
+
+	pool, err := pgxpool.New(context.Background(), dns())
+	if err != nil {
+		log.Info("Unable to connection to database: %v", zap.Error(err))
+	}
+
+	err = CreateTable(pool, log)
+	if err != nil {
+		log.Info("failed to create database table: %v", zap.Error(err))
+		return nil
+	}
+
+	log.Info("Connected!")
 	return &BDKeeper{
 		pool: pool,
 		log:  log,
@@ -115,7 +134,14 @@ func (bdk *BDKeeper) Ping() bool {
 
 	return true
 }
-func (bdk *BDKeeper) CreateTable() error {
+
+func (bdk *BDKeeper) Close() bool {
+	bdk.pool.Close()
+	fmt.Println("433434343434343443434343433333333")
+	return true
+}
+
+func CreateTable(pool *pgxpool.Pool, log Log) error {
 
 	const query = `
 	CREATE TABLE IF NOT EXISTS dataURL (
@@ -124,9 +150,9 @@ func (bdk *BDKeeper) CreateTable() error {
 	original_url TEXT
 	)`
 
-	conn, err := bdk.pool.Acquire(context.Background())
+	conn, err := pool.Acquire(context.Background())
 	if err != nil {
-		bdk.log.Info("Unable to acquire a database connection: %v\n", zap.Error(err))
+		log.Info("Unable to acquire a database connection: %v\n", zap.Error(err))
 
 		return err
 	}

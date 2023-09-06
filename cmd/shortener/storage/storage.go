@@ -21,12 +21,19 @@ type Keeper interface {
 	Load() (map[string]string, error)
 	Save(map[string]string) error
 	Ping() bool
+	Close() bool
 }
 
 func NewMemoryStorage(keeper Keeper, log Log) *MemoryStorage {
-	data, err := keeper.Load()
-	if err != nil {
-		log.Info("cannot decode JSON file", zap.Error(err))
+
+	data := make(map[string]string)
+
+	if keeper != nil {
+		var err error
+		data, err = keeper.Load()
+		if err != nil {
+			log.Info("cannot decode JSON file", zap.Error(err))
+		}
 	}
 
 	return &MemoryStorage{
@@ -38,11 +45,14 @@ func NewMemoryStorage(keeper Keeper, log Log) *MemoryStorage {
 
 func (s *MemoryStorage) Insert(k string, v string) error {
 	s.data[k] = v
-	err := s.keeper.Save(s.data)
+	if s.keeper != nil {
+		err := s.keeper.Save(s.data)
 
-	if err != nil {
-		s.log.Info("cannot insert value to JSON file", zap.Error(err))
+		if err != nil {
+			s.log.Info("cannot insert value to JSON file", zap.Error(err))
+		}
 	}
+
 	return nil
 }
 
@@ -55,5 +65,8 @@ func (s *MemoryStorage) Get(k string) (string, error) {
 }
 
 func (s *MemoryStorage) GetBaseConnection() bool {
+	if s.keeper == nil {
+		return false
+	}
 	return s.keeper.Ping()
 }

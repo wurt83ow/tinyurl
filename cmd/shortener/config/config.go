@@ -30,7 +30,8 @@ func (o *Options) ParseFlags() {
 	regStringVar(&o.flagRunAddr, "a", ":8080", "address and port to run server")
 	regStringVar(&o.flagShortURLAdress, "b", "http://localhost:8080/", "server`s address for shor url")
 	regStringVar(&o.flagLogLevel, "l", "info", "log level")
-	regStringVar(&o.flagFileStoragePath, "f", "/tmp/short-url-db.json", "default file storage path")
+	regStringVar(&o.flagFileStoragePath, "f", "", "")
+	// regStringVar(&o.flagFileStoragePath, "f", "/tmp/short-url-db.json", "default file storage path")
 	regStringVar(&o.flagDataBaseDSN, "d", "", "")
 
 	// парсим переданные серверу аргументы в зарегистрированные переменные
