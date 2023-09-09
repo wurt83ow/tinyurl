@@ -10,8 +10,10 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/wurt83ow/tinyurl/cmd/shortener/storage"
 	"github.com/wurt83ow/tinyurl/internal/models"
 )
 
@@ -49,9 +51,9 @@ func NewBDKeeper(dns func() string, log Log) *BDKeeper {
 	}
 }
 
-func (bdk *BDKeeper) Load() (map[string]string, error) {
+func (bdk *BDKeeper) Load() (storage.StorageURL, error) {
 
-	data := make(map[string]string)
+	data := make(storage.StorageURL)
 	conn, err := bdk.pool.Acquire(context.Background())
 	if err != nil {
 		bdk.log.Info("Unable to acquire a database connection: %v\n", zap.Error(err))
@@ -84,13 +86,13 @@ func (bdk *BDKeeper) Load() (map[string]string, error) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		data[record.ShortURL] = record.OriginalURL
+		data[record.ShortURL] = record
 	}
 
 	return data, nil
 }
 
-func (bdk *BDKeeper) Save(data map[string]string) error {
+func (bdk *BDKeeper) Save(data storage.StorageURL) error {
 
 	conn, err := bdk.pool.Acquire(context.Background())
 	if err != nil {
@@ -107,14 +109,20 @@ func (bdk *BDKeeper) Save(data map[string]string) error {
 		return err
 	}
 
-	var i int64 = 0
 	for k, v := range data {
-		i++
+		var id string
+		if v.UUID == "" {
+			neuuid := uuid.New()
+			id = neuuid.String()
+		} else {
+			id = v.UUID
+		}
+
 		row := conn.QueryRow(context.Background(),
 			"INSERT INTO dataurl (correlation_id, short_url, original_url) VALUES ($1, $2, $3) RETURNING correlation_id",
-			i, k, v)
-		var id uint64
-		err = row.Scan(&id)
+			id, k, v.OriginalURL)
+		var rowid uint64
+		err = row.Scan(&rowid)
 		if err != nil {
 			bdk.log.Info("Unable to INSERT: %v", zap.Error(err))
 			return err

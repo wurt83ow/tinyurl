@@ -4,6 +4,7 @@ go 1.20
 
 require (
 	github.com/go-chi/chi v1.5.4
+	github.com/google/uuid v1.3.1
 	github.com/jackc/pgx/v5 v5.4.3
 	github.com/stretchr/testify v1.8.4
 	go.uber.org/zap v1.25.0

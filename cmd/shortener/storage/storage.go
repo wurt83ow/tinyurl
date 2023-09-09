@@ -3,12 +3,15 @@ package storage
 import (
 	"errors"
 
+	"github.com/wurt83ow/tinyurl/internal/models"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
+type StorageURL = map[string]models.DataURL
+
 type MemoryStorage struct {
-	data   map[string]string
+	data   StorageURL
 	keeper Keeper
 	log    Log
 }
@@ -18,15 +21,15 @@ type Log interface {
 }
 
 type Keeper interface {
-	Load() (map[string]string, error)
-	Save(map[string]string) error
+	Load() (StorageURL, error)
+	Save(StorageURL) error
 	Ping() bool
 	Close() bool
 }
 
 func NewMemoryStorage(keeper Keeper, log Log) *MemoryStorage {
 
-	data := make(map[string]string)
+	data := make(StorageURL)
 
 	if keeper != nil {
 		var err error
@@ -43,7 +46,7 @@ func NewMemoryStorage(keeper Keeper, log Log) *MemoryStorage {
 	}
 }
 
-func (s *MemoryStorage) Insert(k string, v string) error {
+func (s *MemoryStorage) Insert(k string, v models.DataURL) error {
 	s.data[k] = v
 	if s.keeper != nil {
 		err := s.keeper.Save(s.data)
@@ -56,10 +59,10 @@ func (s *MemoryStorage) Insert(k string, v string) error {
 	return nil
 }
 
-func (s *MemoryStorage) Get(k string) (string, error) {
+func (s *MemoryStorage) Get(k string) (models.DataURL, error) {
 	v, exists := s.data[k]
 	if !exists {
-		return "", errors.New("value with such key doesn't exist")
+		return models.DataURL{}, errors.New("value with such key doesn't exist")
 	}
 	return v, nil
 }

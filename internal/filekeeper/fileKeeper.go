@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"os"
 
+	"github.com/google/uuid"
+	"github.com/wurt83ow/tinyurl/cmd/shortener/storage"
 	"github.com/wurt83ow/tinyurl/internal/models"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -32,9 +34,9 @@ func NewFileKeeper(path func() string, log Log) *FileKeeper {
 	}
 }
 
-func (kp *FileKeeper) Load() (map[string]string, error) {
+func (kp *FileKeeper) Load() (storage.StorageURL, error) {
 	dataFile := kp.path()
-	data := make(map[string]string)
+	data := make(storage.StorageURL)
 
 	if _, err := os.Stat(dataFile); err != nil {
 		kp.log.Info("file not found", zap.Error(err))
@@ -53,7 +55,7 @@ func (kp *FileKeeper) Load() (map[string]string, error) {
 	for decoder.More() {
 		var m models.DataURL
 		err := decoder.Decode(&m)
-		data[m.ShortURL] = m.OriginalURL
+		data[m.ShortURL] = m
 
 		if err != nil {
 			kp.log.Info("cannot decode JSON file", zap.Error(err))
@@ -63,7 +65,7 @@ func (kp *FileKeeper) Load() (map[string]string, error) {
 	return data, nil
 }
 
-func (kp *FileKeeper) Save(data map[string]string) error {
+func (kp *FileKeeper) Save(data storage.StorageURL) error {
 
 	dataFile := kp.path()
 
@@ -81,13 +83,18 @@ func (kp *FileKeeper) Save(data map[string]string) error {
 	}
 	defer saveTo.Close()
 
-	var i int64 = 0
-
 	for k, v := range data {
-		i++
+		var id string
+		if v.UUID == "" {
+			neuuid := uuid.New()
+			id = neuuid.String()
+		} else {
+			id = v.UUID
+		}
+
 		data := models.DataURL{
-			UUID: i, ShortURL: k,
-			OriginalURL: v}
+			UUID: id, ShortURL: k,
+			OriginalURL: v.OriginalURL}
 		encoder := json.NewEncoder(saveTo)
 		err = encoder.Encode(data)
 		if err != nil {

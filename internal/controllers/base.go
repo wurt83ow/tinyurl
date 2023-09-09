@@ -14,8 +14,8 @@ import (
 )
 
 type Storage interface {
-	Insert(k string, v string) error
-	Get(k string) (string, error)
+	Insert(k string, v models.DataURL) error
+	Get(k string) (models.DataURL, error)
 	GetBaseConnection() bool
 }
 
@@ -74,7 +74,7 @@ func (h *BaseController) shortenJSON(w http.ResponseWriter, r *http.Request) {
 	key, shurl := shorturl.Shorten(string(req.URL), shortURLAdress)
 
 	// save full url to storage with the key received earlier
-	err := h.storage.Insert(key, string(req.URL))
+	err := h.storage.Insert(key, models.DataURL{OriginalURL: string(req.URL)})
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -115,7 +115,7 @@ func (h *BaseController) shortenURL(w http.ResponseWriter, r *http.Request) {
 	key, shurl := shorturl.Shorten(string(body), shortURLAdress)
 
 	// save full url to storage with the key received earlier
-	err = h.storage.Insert(key, string(body))
+	err = h.storage.Insert(key, models.DataURL{OriginalURL: string(body)})
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -140,13 +140,13 @@ func (h *BaseController) getFullURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// get full url from storage
-	url, err := h.storage.Get(key)
-	if err != nil || len(url) == 0 {
+	data, err := h.storage.Get(key)
+	if err != nil || len(data.OriginalURL) == 0 {
 		// value not found for the passed key
 		w.WriteHeader(http.StatusBadRequest) // 400
 		return
 	}
-	w.Header().Set("Location", url)
+	w.Header().Set("Location", data.OriginalURL)
 	w.WriteHeader(http.StatusTemporaryRedirect) // 307
 	h.log.Info("temporary redirect status 307")
 }
