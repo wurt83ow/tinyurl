@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -71,7 +70,6 @@ func (h *BaseController) shortenBatch(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	fmt.Println(batch)
 
 	shortURLAdress := h.options.ShortURLAdress()
 
@@ -95,7 +93,6 @@ func (h *BaseController) shortenBatch(w http.ResponseWriter, r *http.Request) {
 		resp = append(resp, models.ResponseRecord{UUID: s.UUID, ShortURL: shurl})
 	}
 
-	fmt.Println(save)
 	if save {
 		h.storage.Save()
 	}

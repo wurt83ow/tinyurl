@@ -2,7 +2,6 @@ package filekeeper
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 
 	"github.com/google/uuid"
@@ -67,7 +66,7 @@ func (kp *FileKeeper) Load() (storage.StorageURL, error) {
 }
 
 func (kp *FileKeeper) Save(data storage.StorageURL) error {
-	fmt.Println("88888888888888888888888888888888888888888888888888")
+
 	dataFile := kp.path()
 
 	if _, err := os.Stat(dataFile); err == nil {

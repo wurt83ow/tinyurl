@@ -94,7 +94,6 @@ func (bdk *BDKeeper) Load() (storage.StorageURL, error) {
 
 func (bdk *BDKeeper) Save(data storage.StorageURL) error {
 
-	fmt.Println("7777777777777777777777777777777777777777777777777777777")
 	conn, err := bdk.pool.Acquire(context.Background())
 	if err != nil {
 		bdk.log.Info("Unable to acquire a database connection: %v\n", zap.Error(err))
