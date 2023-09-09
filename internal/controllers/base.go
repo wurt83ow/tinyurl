@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -14,8 +15,9 @@ import (
 )
 
 type Storage interface {
-	Insert(k string, v models.DataURL) error
+	Insert(k string, v models.DataURL, save bool) error
 	Get(k string) (models.DataURL, error)
+	Save() bool
 	GetBaseConnection() bool
 }
 
@@ -44,10 +46,72 @@ func (h *BaseController) Route() *chi.Mux {
 	r := chi.NewRouter()
 
 	r.Post("/api/shorten", h.shortenJSON)
+	r.Post("/api/shorten/batch", h.shortenBatch)
 	r.Post("/", h.shortenURL)
 	r.Get("/{name}", h.getFullURL)
 	r.Get("/ping", h.getPing)
 	return r
+}
+
+// POST JSON BATCH
+func (h *BaseController) shortenBatch(w http.ResponseWriter, r *http.Request) {
+	// десериализуем запрос в структуру модели
+	h.log.Info("decoding request")
+
+	batch := []models.RequestRecord{}
+	dec := json.NewDecoder(r.Body)
+	if err := dec.Decode(&batch); err != nil {
+		h.log.Info("cannot decode request JSON body", zap.Error(err))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if len(batch) == 0 {
+		h.log.Info("request JSON body is empty")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	fmt.Println(batch)
+
+	shortURLAdress := h.options.ShortURLAdress()
+
+	save := false
+	resp := []models.ResponseRecord{}
+	for i := range batch {
+
+		s := batch[i]
+		// get short url
+		key, shurl := shorturl.Shorten(s.OriginalURL, shortURLAdress)
+
+		// save full url to storage with the key received earlier
+		data := models.DataURL{UUID: s.UUID, ShortURL: shurl, OriginalURL: s.OriginalURL}
+		err := h.storage.Insert(key, data, false)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		save = true
+
+		resp = append(resp, models.ResponseRecord{UUID: s.UUID, ShortURL: shurl})
+	}
+
+	fmt.Println(save)
+	if save {
+		h.storage.Save()
+	}
+
+	// заполняем модель ответа
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+
+	// сериализуем ответ сервера
+	enc := json.NewEncoder(w)
+	if err := enc.Encode(resp); err != nil {
+		h.log.Info("error encoding response", zap.Error(err))
+		return
+	}
+	h.log.Info("sending HTTP 201 response")
 }
 
 // POST JSON
@@ -74,7 +138,7 @@ func (h *BaseController) shortenJSON(w http.ResponseWriter, r *http.Request) {
 	key, shurl := shorturl.Shorten(string(req.URL), shortURLAdress)
 
 	// save full url to storage with the key received earlier
-	err := h.storage.Insert(key, models.DataURL{OriginalURL: string(req.URL)})
+	err := h.storage.Insert(key, models.DataURL{OriginalURL: string(req.URL)}, true)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -115,7 +179,7 @@ func (h *BaseController) shortenURL(w http.ResponseWriter, r *http.Request) {
 	key, shurl := shorturl.Shorten(string(body), shortURLAdress)
 
 	// save full url to storage with the key received earlier
-	err = h.storage.Insert(key, models.DataURL{OriginalURL: string(body)})
+	err = h.storage.Insert(key, models.DataURL{OriginalURL: string(body)}, true)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return

@@ -46,14 +46,11 @@ func NewMemoryStorage(keeper Keeper, log Log) *MemoryStorage {
 	}
 }
 
-func (s *MemoryStorage) Insert(k string, v models.DataURL) error {
+func (s *MemoryStorage) Insert(k string, v models.DataURL, save bool) error {
 	s.data[k] = v
-	if s.keeper != nil {
-		err := s.keeper.Save(s.data)
 
-		if err != nil {
-			s.log.Info("cannot insert value to JSON file", zap.Error(err))
-		}
+	if save {
+		s.Save()
 	}
 
 	return nil
@@ -65,6 +62,21 @@ func (s *MemoryStorage) Get(k string) (models.DataURL, error) {
 		return models.DataURL{}, errors.New("value with such key doesn't exist")
 	}
 	return v, nil
+}
+
+func (s *MemoryStorage) Save() bool {
+	if s.keeper == nil {
+		return true
+	}
+
+	err := s.keeper.Save(s.data)
+
+	if err != nil {
+		s.log.Info("cannot insert value to JSON file", zap.Error(err))
+		return false
+	}
+
+	return true
 }
 
 func (s *MemoryStorage) GetBaseConnection() bool {

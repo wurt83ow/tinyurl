@@ -94,6 +94,7 @@ func (bdk *BDKeeper) Load() (storage.StorageURL, error) {
 
 func (bdk *BDKeeper) Save(data storage.StorageURL) error {
 
+	fmt.Println("7777777777777777777777777777777777777777777777777777777")
 	conn, err := bdk.pool.Acquire(context.Background())
 	if err != nil {
 		bdk.log.Info("Unable to acquire a database connection: %v\n", zap.Error(err))
@@ -121,7 +122,7 @@ func (bdk *BDKeeper) Save(data storage.StorageURL) error {
 		row := conn.QueryRow(context.Background(),
 			"INSERT INTO dataurl (correlation_id, short_url, original_url) VALUES ($1, $2, $3) RETURNING correlation_id",
 			id, k, v.OriginalURL)
-		var rowid uint64
+		var rowid string
 		err = row.Scan(&rowid)
 		if err != nil {
 			bdk.log.Info("Unable to INSERT: %v", zap.Error(err))
