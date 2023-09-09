@@ -36,7 +36,7 @@ func NewBDKeeper(dns func() string, log Log) *BDKeeper {
 		log.Info("Unable to connection to database: %v", zap.Error(err))
 	}
 
-	err = CreateTable(pool, log)
+	err = Bootstrap(pool, log)
 	if err != nil {
 		log.Info("failed to create database table: %v", zap.Error(err))
 		return nil
@@ -137,11 +137,10 @@ func (bdk *BDKeeper) Ping() bool {
 
 func (bdk *BDKeeper) Close() bool {
 	bdk.pool.Close()
-	fmt.Println("433434343434343443434343433333333")
 	return true
 }
 
-func CreateTable(pool *pgxpool.Pool, log Log) error {
+func Bootstrap(pool *pgxpool.Pool, log Log) error {
 
 	const query = `
 	CREATE TABLE IF NOT EXISTS dataURL (
