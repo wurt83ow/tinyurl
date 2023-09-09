@@ -152,7 +152,7 @@ func Bootstrap(pool *pgxpool.Pool, log Log) error {
 
 	const query = `
 	CREATE TABLE IF NOT EXISTS dataURL (
-	correlation_id SERIAL PRIMARY KEY,
+	correlation_id VARCHAR(50) PRIMARY KEY, 
 	short_url TEXT,
 	original_url TEXT
 	)`
