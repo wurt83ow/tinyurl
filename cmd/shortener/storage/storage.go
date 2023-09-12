@@ -8,6 +8,9 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+// ErrConflict указывает на конфликт данных в хранилище.
+var ErrConflict = errors.New("data conflict")
+
 type StorageURL = map[string]models.DataURL
 
 type MemoryStorage struct {
@@ -22,7 +25,8 @@ type Log interface {
 
 type Keeper interface {
 	Load() (StorageURL, error)
-	Save(StorageURL) error
+	Save(string, models.DataURL) (models.DataURL, error)
+	SaveBatch(StorageURL) error
 	Ping() bool
 	Close() bool
 }
@@ -35,7 +39,7 @@ func NewMemoryStorage(keeper Keeper, log Log) *MemoryStorage {
 		var err error
 		data, err = keeper.Load()
 		if err != nil {
-			log.Info("cannot decode JSON file", zap.Error(err))
+			log.Info("cannot decode JSON file: ", zap.Error(err))
 		}
 	}
 
@@ -46,14 +50,16 @@ func NewMemoryStorage(keeper Keeper, log Log) *MemoryStorage {
 	}
 }
 
-func (s *MemoryStorage) Insert(k string, v models.DataURL, save bool) error {
-	s.data[k] = v
+func (s *MemoryStorage) Insert(k string, v models.DataURL) (models.DataURL, error) {
 
-	if save {
-		s.Save()
+	nv, err := s.Save(k, v)
+	if err != nil {
+		return nv, err
 	}
 
-	return nil
+	s.data[k] = nv
+
+	return nv, nil
 }
 
 func (s *MemoryStorage) Get(k string) (models.DataURL, error) {
@@ -64,19 +70,35 @@ func (s *MemoryStorage) Get(k string) (models.DataURL, error) {
 	return v, nil
 }
 
-func (s *MemoryStorage) Save() bool {
+func (s *MemoryStorage) Save(k string, v models.DataURL) (models.DataURL, error) {
 	if s.keeper == nil {
-		return true
+		return v, nil
 	}
 
-	err := s.keeper.Save(s.data)
+	return s.keeper.Save(k, v)
+}
 
+func (s *MemoryStorage) InsertBatch(stg StorageURL) error {
+
+	for k, v := range stg {
+		s.data[k] = v
+	}
+
+	err := s.SaveBatch(stg)
 	if err != nil {
-		s.log.Info("cannot insert value to JSON file", zap.Error(err))
-		return false
+		return err
 	}
 
-	return true
+	return nil
+}
+
+func (s *MemoryStorage) SaveBatch(stg StorageURL) error {
+	if s.keeper == nil {
+		return nil
+	}
+
+	return s.keeper.SaveBatch(stg)
+
 }
 
 func (s *MemoryStorage) GetBaseConnection() bool {

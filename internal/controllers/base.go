@@ -8,15 +8,18 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/wurt83ow/tinyurl/cmd/shortener/shorturl"
+	"github.com/wurt83ow/tinyurl/cmd/shortener/storage"
 	"github.com/wurt83ow/tinyurl/internal/models"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
 type Storage interface {
-	Insert(k string, v models.DataURL, save bool) error
+	Insert(k string, v models.DataURL) (models.DataURL, error)
+	InsertBatch(storage.StorageURL) error
 	Get(k string) (models.DataURL, error)
-	Save() bool
+	Save(k string, v models.DataURL) (models.DataURL, error)
+	SaveBatch(storage.StorageURL) error
 	GetBaseConnection() bool
 }
 
@@ -60,7 +63,7 @@ func (h *BaseController) shortenBatch(w http.ResponseWriter, r *http.Request) {
 	batch := []models.RequestRecord{}
 	dec := json.NewDecoder(r.Body)
 	if err := dec.Decode(&batch); err != nil {
-		h.log.Info("cannot decode request JSON body", zap.Error(err))
+		h.log.Info("cannot decode request JSON body: ", zap.Error(err))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -72,8 +75,7 @@ func (h *BaseController) shortenBatch(w http.ResponseWriter, r *http.Request) {
 	}
 
 	shortURLAdress := h.options.ShortURLAdress()
-
-	save := false
+	dataURL := make(storage.StorageURL)
 	resp := []models.ResponseRecord{}
 	for i := range batch {
 
@@ -83,18 +85,15 @@ func (h *BaseController) shortenBatch(w http.ResponseWriter, r *http.Request) {
 
 		// save full url to storage with the key received earlier
 		data := models.DataURL{UUID: s.UUID, ShortURL: shurl, OriginalURL: s.OriginalURL}
-		err := h.storage.Insert(key, data, false)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-		save = true
-
+		dataURL[key] = data
 		resp = append(resp, models.ResponseRecord{UUID: s.UUID, ShortURL: shurl})
+
 	}
 
-	if save {
-		h.storage.Save()
+	err := h.storage.InsertBatch(dataURL)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
 
 	// заполняем модель ответа
@@ -105,7 +104,7 @@ func (h *BaseController) shortenBatch(w http.ResponseWriter, r *http.Request) {
 	// сериализуем ответ сервера
 	enc := json.NewEncoder(w)
 	if err := enc.Encode(resp); err != nil {
-		h.log.Info("error encoding response", zap.Error(err))
+		h.log.Info("error encoding response: ", zap.Error(err))
 		return
 	}
 	h.log.Info("sending HTTP 201 response")
@@ -118,7 +117,7 @@ func (h *BaseController) shortenJSON(w http.ResponseWriter, r *http.Request) {
 	var req models.Request
 	dec := json.NewDecoder(r.Body)
 	if err := dec.Decode(&req); err != nil {
-		h.log.Info("cannot decode request JSON body", zap.Error(err))
+		h.log.Info("cannot decode request JSON body: ", zap.Error(err))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -135,24 +134,34 @@ func (h *BaseController) shortenJSON(w http.ResponseWriter, r *http.Request) {
 	key, shurl := shorturl.Shorten(string(req.URL), shortURLAdress)
 
 	// save full url to storage with the key received earlier
-	err := h.storage.Insert(key, models.DataURL{OriginalURL: string(req.URL)}, true)
+	m, err := h.storage.Insert(key, models.DataURL{ShortURL: shurl, OriginalURL: string(req.URL)})
+	conflict := false
+
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
+		if err == storage.ErrConflict {
+			conflict = true
+		} else {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
 	}
 
 	// заполняем модель ответа
 	resp := models.Response{
-		Result: shurl,
+		Result: m.ShortURL,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
+	if conflict {
+		w.WriteHeader(http.StatusConflict)
+	} else {
+		w.WriteHeader(http.StatusCreated)
+	}
 
 	// сериализуем ответ сервера
 	enc := json.NewEncoder(w)
 	if err := enc.Encode(resp); err != nil {
-		h.log.Info("error encoding response", zap.Error(err))
+		h.log.Info("error encoding response: ", zap.Error(err))
 		return
 	}
 	h.log.Info("sending HTTP 201 response")
@@ -165,7 +174,7 @@ func (h *BaseController) shortenURL(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil || len(body) == 0 {
 		w.WriteHeader(http.StatusBadRequest)
-		h.log.Info("got bad request status 400", zap.String("method", r.Method))
+		h.log.Info("got bad request status 400: %v", zap.String("method", r.Method))
 		return
 	}
 	w.Header().Set("Content-Type", "text/plain")
@@ -176,16 +185,26 @@ func (h *BaseController) shortenURL(w http.ResponseWriter, r *http.Request) {
 	key, shurl := shorturl.Shorten(string(body), shortURLAdress)
 
 	// save full url to storage with the key received earlier
-	err = h.storage.Insert(key, models.DataURL{OriginalURL: string(body)}, true)
+	m, err := h.storage.Insert(key, models.DataURL{ShortURL: shurl, OriginalURL: string(body)})
+	conflict := false
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
+		if err == storage.ErrConflict {
+			conflict = true
+		} else {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
 	}
 	// respond to client
 	w.Header().Set("Content-Type", "text/plain")
-	// set code 201
-	w.WriteHeader(http.StatusCreated)
-	w.Write([]byte(shurl))
+
+	if conflict {
+		w.WriteHeader(http.StatusConflict) //code 409
+	} else {
+		w.WriteHeader(http.StatusCreated) //code 201
+	}
+
+	w.Write([]byte(m.ShortURL))
 	h.log.Info("sending HTTP 201 response")
 }
 
@@ -197,7 +216,7 @@ func (h *BaseController) getFullURL(w http.ResponseWriter, r *http.Request) {
 	if len(key) == 0 {
 		// passed empty key
 		w.WriteHeader(http.StatusBadRequest) // 400
-		h.log.Info("got bad request status 400", zap.String("method", r.Method))
+		h.log.Info("got bad request status 400: %v", zap.String("method", r.Method))
 		return
 	}
 	// get full url from storage

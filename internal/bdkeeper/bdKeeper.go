@@ -2,16 +2,20 @@ package bdkeeper
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"reflect"
+	"strings"
 	"time"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx/v5/pgconn"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/wurt83ow/tinyurl/cmd/shortener/storage"
 	"github.com/wurt83ow/tinyurl/internal/models"
@@ -21,7 +25,7 @@ type Log interface {
 	Info(string, ...zapcore.Field)
 }
 type BDKeeper struct {
-	pool *pgxpool.Pool
+	conn *sql.DB
 	log  Log
 }
 
@@ -33,43 +37,36 @@ func NewBDKeeper(dns func() string, log Log) *BDKeeper {
 		return nil
 	}
 
-	pool, err := pgxpool.New(context.Background(), dns())
+	conn, err := sql.Open("pgx", dns())
 	if err != nil {
-		log.Info("Unable to connection to database: %v", zap.Error(err))
+		log.Info("Unable to connection to database: ", zap.Error(err))
 	}
 
-	err = Bootstrap(pool, log)
+	ctx := context.Background()
+	err = Bootstrap(ctx, conn, log)
 	if err != nil {
-		log.Info("failed to create database table: %v", zap.Error(err))
+		log.Info("failed to create database table: ", zap.Error(err))
 		return nil
 	}
 
 	log.Info("Connected!")
 	return &BDKeeper{
-		pool: pool,
+		conn: conn,
 		log:  log,
 	}
 }
 
 func (bdk *BDKeeper) Load() (storage.StorageURL, error) {
-
+	ctx := context.Background()
 	data := make(storage.StorageURL)
-	conn, err := bdk.pool.Acquire(context.Background())
-	if err != nil {
-		bdk.log.Info("Unable to acquire a database connection: %v\n", zap.Error(err))
-
-		return data, err
-	}
-	defer conn.Release()
-
-	rows, err := conn.Query(context.Background(),
-		"SELECT * FROM dataurl")
+	// запрашиваем данные обо всех сообщениях пользователя, без самого текста
+	rows, err := bdk.conn.QueryContext(ctx, `SELECT * FROM dataurl`)
 
 	if err != nil {
-		bdk.log.Info("error while getting data from bd: %v\n", zap.Error(err))
-
-		return data, err
+		return nil, err
 	}
+	// не забываем закрыть курсор после завершения работы с данными
+	defer rows.Close()
 
 	for rows.Next() {
 		record := models.DataURL{}
@@ -92,51 +89,81 @@ func (bdk *BDKeeper) Load() (storage.StorageURL, error) {
 	return data, nil
 }
 
-func (bdk *BDKeeper) Save(data storage.StorageURL) error {
+func (bdk *BDKeeper) Save(key string, data models.DataURL) (models.DataURL, error) {
+	ctx := context.Background()
 
-	conn, err := bdk.pool.Acquire(context.Background())
-	if err != nil {
-		bdk.log.Info("Unable to acquire a database connection: %v\n", zap.Error(err))
-
-		return err
+	var id string
+	if data.UUID == "" {
+		neuuid := uuid.New()
+		id = neuuid.String()
+	} else {
+		id = data.UUID
 	}
 
-	defer conn.Release()
+	_, err := bdk.conn.ExecContext(ctx,
+		"INSERT INTO dataurl (correlation_id, short_url, original_url) VALUES ($1, $2, $3) RETURNING original_url",
+		id, key, data.OriginalURL)
 
-	_, err = conn.Exec(context.Background(), "DELETE FROM dataurl")
-	if err != nil {
-		bdk.log.Info("Unable to DELETE: %v", zap.Error(err))
-		return err
+	row := bdk.conn.QueryRowContext(ctx, `
+	SELECT
+		d.correlation_id,
+		d.short_url  ,
+		d.original_url 		 
+	FROM dataurl d	 
+	WHERE
+		d.original_url = $1
+`,
+		data.OriginalURL,
+	)
+
+	// считываем значения из записи БД в соответствующие поля структуры
+	var m models.DataURL
+	nerr := row.Scan(&m.UUID, &m.ShortURL, &m.OriginalURL)
+	if nerr != nil {
+		return data, nerr
 	}
 
-	for k, v := range data {
-		var id string
-		if v.UUID == "" {
-			neuuid := uuid.New()
-			id = neuuid.String()
-		} else {
-			id = v.UUID
-		}
+	if err != nil {
+		var e *pgconn.PgError
+		if errors.As(err, &e) && e.Code == pgerrcode.UniqueViolation {
+			bdk.log.Info("unique field violation on column: ", zap.Error(err))
 
-		row := conn.QueryRow(context.Background(),
-			"INSERT INTO dataurl (correlation_id, short_url, original_url) VALUES ($1, $2, $3) RETURNING correlation_id",
-			id, k, v.OriginalURL)
-		var rowid string
-		err = row.Scan(&rowid)
-		if err != nil {
-			bdk.log.Info("Unable to INSERT: %v", zap.Error(err))
-			return err
+			return m, storage.ErrConflict
 		}
+		return m, err
+	}
+
+	return m, nil
+}
+
+func (bdk *BDKeeper) SaveBatch(data storage.StorageURL) error {
+	ctx := context.Background()
+	// func BulkInsert(unsavedRows []*ExampleRowStruct) error {
+	valueStrings := make([]string, 0, len(data))
+	valueArgs := make([]interface{}, 0, len(data)*3)
+	i := 0
+	for _, post := range data {
+		valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d)", i*3+1, i*3+2, i*3+3))
+		valueArgs = append(valueArgs, post.UUID)
+		valueArgs = append(valueArgs, post.ShortURL)
+		valueArgs = append(valueArgs, post.OriginalURL)
+		i++
+	}
+	stmt := fmt.Sprintf("INSERT INTO dataurl (correlation_id, short_url, original_url) VALUES %s ON CONFLICT (original_url) DO NOTHING",
+		strings.Join(valueStrings, ","))
+	_, err := bdk.conn.ExecContext(ctx, stmt, valueArgs...)
+	if err != nil {
+		return err
 	}
 
 	return nil
+
 }
 
 func (bdk *BDKeeper) Ping() bool {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
-	if err := bdk.pool.Ping(ctx); err != nil {
-		fmt.Println(err)
+	if err := bdk.conn.PingContext(ctx); err != nil {
 		return false
 	}
 
@@ -144,31 +171,38 @@ func (bdk *BDKeeper) Ping() bool {
 }
 
 func (bdk *BDKeeper) Close() bool {
-	bdk.pool.Close()
+	bdk.conn.Close()
 	return true
 }
 
-func Bootstrap(pool *pgxpool.Pool, log Log) error {
+func Bootstrap(ctx context.Context, conn *sql.DB, log Log) error {
 
-	const query = `
-	CREATE TABLE IF NOT EXISTS dataURL (
+	// запускаем транзакцию
+	tx, err := conn.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	// в случае неуспешного коммита все изменения транзакции будут отменены
+	defer tx.Rollback()
+
+	// создаём таблицу сохранения url и необходимые индексы
+	_, err = tx.ExecContext(ctx, `
+	CREATE TABLE IF NOT EXISTS dataurl (
 	correlation_id VARCHAR(50) PRIMARY KEY, 
 	short_url TEXT,
-	original_url TEXT
-	)`
+	original_url TEXT 	 
+	)`)
 
-	conn, err := pool.Acquire(context.Background())
 	if err != nil {
-		log.Info("Unable to acquire a database connection: %v\n", zap.Error(err))
-
 		return err
 	}
-	defer conn.Release()
 
-	_, err = conn.Exec(context.Background(), query)
+	_, err = tx.ExecContext(ctx, `CREATE UNIQUE INDEX IF NOT EXISTS uniq_url ON dataurl (original_url)`)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
-	return nil
+	// коммитим транзакцию
+	return tx.Commit()
+
 }
