@@ -2,6 +2,7 @@ package filekeeper
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 
 	"github.com/google/uuid"
@@ -61,7 +62,7 @@ func (kp *FileKeeper) Load() (storage.StorageURL, error) {
 			kp.log.Info("cannot decode JSON file: ", zap.Error(err))
 		}
 	}
-
+	fmt.Println("5555555555555555555555555555555555555", data)
 	return data, nil
 }
 
@@ -76,7 +77,7 @@ func (kp *FileKeeper) Save(key string, data models.DataURL) (models.DataURL, err
 
 	if _, err = os.Stat(dataFile); err == nil {
 		//file exists. Open file
-		cfile, err = os.Open(dataFile)
+		cfile, err = os.OpenFile(dataFile, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
 		action = "open"
 	} else {
 		//file not exists. Create file
@@ -114,7 +115,7 @@ func (kp *FileKeeper) Save(key string, data models.DataURL) (models.DataURL, err
 	}
 
 	du := models.DataURL{
-		UUID: id, ShortURL: key,
+		UUID: id, ShortURL: data.ShortURL,
 		OriginalURL: data.OriginalURL}
 
 	encoder := json.NewEncoder(cfile)
@@ -138,7 +139,7 @@ func (kp *FileKeeper) SaveBatch(data storage.StorageURL) error {
 
 	if _, err = os.Stat(dataFile); err == nil {
 		//file exists. Open file
-		cfile, err = os.Open(dataFile)
+		cfile, err = os.OpenFile(dataFile, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
 		action = "open"
 	} else {
 		//file not exists. Create file

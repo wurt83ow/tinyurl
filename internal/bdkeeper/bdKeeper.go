@@ -65,6 +65,7 @@ func (bdk *BDKeeper) Load() (storage.StorageURL, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	// не забываем закрыть курсор после завершения работы с данными
 	defer rows.Close()
 
@@ -85,7 +86,10 @@ func (bdk *BDKeeper) Load() (storage.StorageURL, error) {
 		}
 		data[record.ShortURL] = record
 	}
-
+	if err = rows.Err(); err != nil {
+		return data, err
+	}
+	fmt.Println("333333333333333333333333333333333", data)
 	return data, nil
 }
 
@@ -102,7 +106,7 @@ func (bdk *BDKeeper) Save(key string, data models.DataURL) (models.DataURL, erro
 
 	_, err := bdk.conn.ExecContext(ctx,
 		"INSERT INTO dataurl (correlation_id, short_url, original_url) VALUES ($1, $2, $3) RETURNING original_url",
-		id, key, data.OriginalURL)
+		id, data.ShortURL, data.OriginalURL)
 
 	row := bdk.conn.QueryRowContext(ctx, `
 	SELECT
