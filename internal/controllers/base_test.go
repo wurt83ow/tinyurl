@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -63,7 +64,10 @@ func testPostReq(t *testing.T, requestBody *strings.Reader, successBody string, 
 	option := config.NewOptions()
 	option.ParseFlags()
 
-	nLogger, _ := logger.NewLogger(option.LogLevel())
+	nLogger, err := logger.NewLogger(option.LogLevel())
+	if err != nil {
+		log.Fatalf("Unable to setup logger: %s\n", err)
+	}
 
 	bdKeeper := bdkeeper.NewBDKeeper(option.DataBaseDSN, nLogger)
 	var keeper storage.Keeper = nil
@@ -127,7 +131,10 @@ func TestGetFullURL(t *testing.T) {
 	option := config.NewOptions()
 	option.ParseFlags()
 
-	nLogger, _ := logger.NewLogger(option.LogLevel())
+	nLogger, err := logger.NewLogger(option.LogLevel())
+	if err != nil {
+		log.Fatalf("Unable to setup logger: %s\n", err)
+	}
 
 	bdKeeper := bdkeeper.NewBDKeeper(option.DataBaseDSN, nLogger)
 	var keeper storage.Keeper = nil
@@ -196,7 +203,10 @@ func testGzipCompression(t *testing.T, requestBody string, successBody string, i
 	option := config.NewOptions()
 	option.ParseFlags()
 
-	nLogger, _ := logger.NewLogger(option.LogLevel())
+	nLogger, err := logger.NewLogger(option.LogLevel())
+	if err != nil {
+		log.Fatalf("Unable to setup logger: %s\n", err)
+	}
 
 	bdKeeper := bdkeeper.NewBDKeeper(option.DataBaseDSN, nLogger)
 	var keeper storage.Keeper = nil
