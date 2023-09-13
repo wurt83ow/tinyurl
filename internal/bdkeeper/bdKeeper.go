@@ -51,7 +51,7 @@ func NewBDKeeper(dns func() string, log Log) *BDKeeper {
 		log.Info("error getting driver: ", zap.Error(err))
 	}
 
-	m, err := migrate.NewWithDatabaseInstance("file://migrations", "postgres", driver)
+	m, err := migrate.NewWithDatabaseInstance("file:///migrations", "postgres", driver)
 	if err != nil {
 		log.Info("Error creating migration instance : ", zap.Error(err))
 	}
