@@ -56,7 +56,8 @@ func NewBDKeeper(dns func() string, log Log) *BDKeeper {
 	if err != nil {
 		log.Info("error getting getwd: ", zap.Error(err))
 	}
-	fmt.Println(dir)
+	log.Info("getting getwd : " + dir)
+	log.Info("path to migrations : " + fmt.Sprintf("file://%s/migrations", dir))
 
 	m, err := migrate.NewWithDatabaseInstance(
 		fmt.Sprintf("file://%s/migrations", dir),
