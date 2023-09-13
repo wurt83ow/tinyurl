@@ -13,6 +13,9 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/google/uuid"
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -42,10 +45,18 @@ func NewBDKeeper(dns func() string, log Log) *BDKeeper {
 		log.Info("Unable to connection to database: ", zap.Error(err))
 	}
 
-	ctx := context.Background()
-	err = Bootstrap(ctx, conn, log)
+	driver, err := postgres.WithInstance(conn, &postgres.Config{})
 	if err != nil {
-		log.Info("failed to create database table: ", zap.Error(err))
+		log.Info("error: ", zap.Error(err))
+	}
+
+	m, err := migrate.NewWithDatabaseInstance("file://migrations", "postgres", driver)
+	if err != nil {
+		log.Info("Error creating migration instance : ", zap.Error(err))
+	}
+	err = m.Up()
+	if err != nil {
+		log.Info("Error while performing migration: ", zap.Error(err))
 		return nil
 	}
 
