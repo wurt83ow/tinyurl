@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"reflect"
 	"strings"
 	"time"
@@ -51,7 +52,17 @@ func NewBDKeeper(dns func() string, log Log) *BDKeeper {
 		log.Info("error getting driver: ", zap.Error(err))
 	}
 
-	m, err := migrate.NewWithDatabaseInstance("file:///migrations", "postgres", driver)
+	dir, err := os.Getwd()
+	if err != nil {
+		log.Info("error getting getwd: ", zap.Error(err))
+	}
+	fmt.Println(dir)
+
+	m, err := migrate.NewWithDatabaseInstance(
+		fmt.Sprintf("file://%s/migrations", dir),
+		"postgres",
+		driver)
+
 	if err != nil {
 		log.Info("Error creating migration instance : ", zap.Error(err))
 	}
