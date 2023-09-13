@@ -2,7 +2,6 @@ package filekeeper
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 
 	"github.com/google/uuid"
@@ -62,7 +61,7 @@ func (kp *FileKeeper) Load() (storage.StorageURL, error) {
 			kp.log.Info("cannot decode JSON file: ", zap.Error(err))
 		}
 	}
-	fmt.Println("5555555555555555555555555555555555555", data)
+
 	return data, nil
 }
 

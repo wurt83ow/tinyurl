@@ -47,7 +47,8 @@ func NewBDKeeper(dns func() string, log Log) *BDKeeper {
 
 	driver, err := postgres.WithInstance(conn, &postgres.Config{})
 	if err != nil {
-		log.Info("error: ", zap.Error(err))
+
+		log.Info("error getting driver: ", zap.Error(err))
 	}
 
 	m, err := migrate.NewWithDatabaseInstance("file://migrations", "postgres", driver)
@@ -57,7 +58,6 @@ func NewBDKeeper(dns func() string, log Log) *BDKeeper {
 	err = m.Up()
 	if err != nil {
 		log.Info("Error while performing migration: ", zap.Error(err))
-		return nil
 	}
 
 	log.Info("Connected!")
@@ -100,7 +100,7 @@ func (bdk *BDKeeper) Load() (storage.StorageURL, error) {
 	if err = rows.Err(); err != nil {
 		return data, err
 	}
-	fmt.Println("333333333333333333333333333333333", data)
+
 	return data, nil
 }
 
@@ -188,36 +188,4 @@ func (bdk *BDKeeper) Ping() bool {
 func (bdk *BDKeeper) Close() bool {
 	bdk.conn.Close()
 	return true
-}
-
-func Bootstrap(ctx context.Context, conn *sql.DB, log Log) error {
-
-	// запускаем транзакцию
-	tx, err := conn.BeginTx(ctx, nil)
-	if err != nil {
-		return err
-	}
-
-	// в случае неуспешного коммита все изменения транзакции будут отменены
-	defer tx.Rollback()
-
-	// создаём таблицу сохранения url и необходимые индексы
-	_, err = tx.ExecContext(ctx, `
-	CREATE TABLE IF NOT EXISTS dataurl (
-	correlation_id VARCHAR(50) PRIMARY KEY, 
-	short_url TEXT,
-	original_url TEXT 	 
-	)`)
-
-	if err != nil {
-		return err
-	}
-
-	_, err = tx.ExecContext(ctx, `CREATE UNIQUE INDEX IF NOT EXISTS uniq_url ON dataurl (original_url)`)
-	if err != nil {
-		return err
-	}
-	// коммитим транзакцию
-	return tx.Commit()
-
 }

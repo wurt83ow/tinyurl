@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -227,7 +226,7 @@ func (h *BaseController) getFullURL(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest) // 400
 		return
 	}
-	fmt.Println("77777777777777777777733377777777777", data.OriginalURL)
+
 	w.Header().Set("Location", data.OriginalURL)
 	w.WriteHeader(http.StatusTemporaryRedirect) // 307
 	h.log.Info("temporary redirect status 307")
