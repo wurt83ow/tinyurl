@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"time"
@@ -56,11 +57,15 @@ func NewBDKeeper(dns func() string, log Log) *BDKeeper {
 	if err != nil {
 		log.Info("error getting getwd: ", zap.Error(err))
 	}
-	log.Info("getting getwd : " + dir)
-	log.Info("path to migrations : " + fmt.Sprintf("file://%s/migrations", dir))
+
+	// fix error test path
+	path := ""
+	if filepath.Base(dir) == "tinyurl" {
+		path = "cmd/shortener/"
+	}
 
 	m, err := migrate.NewWithDatabaseInstance(
-		fmt.Sprintf("file://%s/migrations", dir),
+		fmt.Sprintf("file://%s/%smigrations", dir, path),
 		"postgres",
 		driver)
 
