@@ -34,15 +34,15 @@ type BDKeeper struct {
 	log  Log
 }
 
-func NewBDKeeper(dns func() string, log Log) *BDKeeper {
+func NewBDKeeper(dsn func() string, log Log) *BDKeeper {
 
-	addr := dns()
+	addr := dsn()
 	if addr == "" {
-		log.Info("database dns is empty")
+		log.Info("database dsn is empty")
 		return nil
 	}
 
-	conn, err := sql.Open("pgx", dns())
+	conn, err := sql.Open("pgx", dsn())
 	if err != nil {
 		log.Info("Unable to connection to database: ", zap.Error(err))
 	}

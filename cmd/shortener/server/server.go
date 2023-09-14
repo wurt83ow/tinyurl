@@ -26,12 +26,11 @@ func Run() error {
 		return err
 	}
 
-	bdKeeper := bdkeeper.NewBDKeeper(option.DataBaseDSN, nLogger)
 	var keeper storage.Keeper = nil
-	if bdKeeper != nil {
-		keeper = bdKeeper
-	} else if fileKeeper := filekeeper.NewFileKeeper(option.FileStoragePath, nLogger); fileKeeper != nil {
-		keeper = fileKeeper
+	if option.DataBaseDSN() != "" {
+		keeper = bdkeeper.NewBDKeeper(option.DataBaseDSN, nLogger)
+	} else if option.FileStoragePath() != "" {
+		keeper = filekeeper.NewFileKeeper(option.FileStoragePath, nLogger)
 	}
 
 	if keeper != nil {
