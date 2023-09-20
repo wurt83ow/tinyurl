@@ -3,11 +3,9 @@ package middleware
 import (
 	"context"
 	"crypto/sha256"
-	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/golang-jwt/jwt"
 	"github.com/wurt83ow/tinyurl/cmd/shortener/config"
@@ -15,7 +13,7 @@ import (
 
 var jwtSigningKey []byte
 var defaultCookie http.Cookie
-var jwtSessionLength time.Duration
+
 var jwtSigningMethod = jwt.SigningMethodHS256
 
 func init() {
@@ -26,7 +24,7 @@ func init() {
 		Domain:   config.GetAsString("COOKIE_DOMAIN", "localhost"),
 		Secure:   config.GetAsBool("COOKIE_SECURE", true),
 	}
-	jwtSessionLength = time.Duration(config.GetAsInt("JWT_SESSION_LENGTH", 50))
+
 }
 
 // JWTProtectedMiddleware verifies a valid JWT exists in our
@@ -37,44 +35,50 @@ func JWTProtectedMiddleware(next http.Handler) http.Handler {
 
 		// Grab jwt-token cookie
 		jwtCookie, err := r.Cookie("jwt-token")
+		userID := ""
+		if err == nil {
+			userID, err = DecodeJWTToUser(jwtCookie.Value)
+			if err != nil {
+				userID = ""
+			}
 
-		if err != nil {
+			// w.WriteHeader(http.StatusUnauthorized)
+			// json.NewEncoder(w).Encode(struct {
+			// 	Message string `json:"message,omitempty"`
+			// }{
+			// 	Message: "Your session is not valid - please login",
+			// })
+
+			// return
+
+		} else {
 			log.Println("Error occurred reading cookie", err)
-			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(struct {
-				Message string `json:"message,omitempty"`
-			}{
-				Message: "Your session is not valid - please login",
-			})
-
-			return
 		}
 
-		log.Println("Got cookie value", jwtCookie.Value)
+		// log.Println("Got cookie value", jwtCookie.Value)
 
 		// Decode and validate JWT if there is one
-		email, err := DecodeJWTToUser(jwtCookie.Value)
 
-		if email == "" || err != nil {
-			log.Println("Error decoding token", err)
-			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(struct {
-				Message string `json:"message,omitempty"`
-			}{
-				Message: "Your session is not valid - please login",
-			})
-			return
-		}
+		// if userID == "" || err != nil {
+		// 	log.Println("Error decoding token", err)
+		// 	w.WriteHeader(http.StatusUnauthorized)
+		// 	json.NewEncoder(w).Encode(struct {
+		// 		Message string `json:"message,omitempty"`
+		// 	}{
+		// 		Message: "Your session is not valid - please login",
+		// 	})
+		// 	return
+		// }
 
-		// If it's good, update the expiry time
-		freshToken := CreateJWTTokenForUser(email)
+		// // If it's good, update the expiry time
+		// freshToken := CreateJWTTokenForUser(userID)
 
 		ctx := r.Context()
-		ctx = context.WithValue(ctx, "userID", email)
+		ctx = context.WithValue(ctx, "userID", userID)
 
-		// Set the new cookie and continue into the handler
-		w.Header().Add("Content-Type", "application/json")
-		http.SetCookie(w, AuthCookie(freshToken))
+		// //Set the new cookie and continue into the handler
+		// w.Header().Add("Content-Type", "application/json")
+		// http.SetCookie(w, AuthCookie(freshToken))
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
@@ -87,9 +91,7 @@ type CustomClaims struct {
 func CreateJWTTokenForUser(userid string) string {
 	claims := CustomClaims{
 		userid,
-		jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(time.Minute * jwtSessionLength).Unix(),
-		},
+		jwt.StandardClaims{},
 	}
 
 	// Encode to token string
@@ -135,15 +137,5 @@ func AuthCookie(token string) *http.Cookie {
 	d.Name = "jwt-token"
 	d.Value = token
 	d.Path = "/"
-	return &d
-}
-
-func ExpiredAuthCookie() *http.Cookie {
-	d := defaultCookie
-	d.Name = "jwt-token"
-	d.Value = ""
-	d.Path = "/"
-	d.MaxAge = -1
-	d.Expires = time.Date(1983, 7, 26, 20, 34, 58, 651387237, time.UTC)
 	return &d
 }

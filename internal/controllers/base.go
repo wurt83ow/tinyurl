@@ -25,7 +25,7 @@ type Storage interface {
 	InsertBatch(storage.StorageURL) error
 	Get(k string) (models.DataURL, error)
 	GetUser(k string) (models.DataUser, error)
-	GetUserURLs(user_id string) []models.ResponseUserURLs
+	GetUserURLs(userID string) []models.ResponseUserURLs
 	Save(k string, v models.DataURL) (models.DataURL, error)
 	SaveUser(k string, v models.DataUser) (models.DataUser, error)
 	SaveBatch(storage.StorageURL) error
@@ -362,7 +362,6 @@ func (h *BaseController) getUserURLs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println("dddddddddddddaaaatttaaaaaaaaaaaa", data)
 	w.Header().Set("Content-Type", "application/json")
 
 	// serialize the server response
