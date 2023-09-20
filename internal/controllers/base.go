@@ -113,7 +113,7 @@ func (h *BaseController) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// fill in the response model
-	w.Header().Set("Content-Type", "application/json")
+	// w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 
 	h.log.Info("sending HTTP 201 response")
