@@ -13,7 +13,6 @@ import (
 	"github.com/wurt83ow/tinyurl/internal/controllers"
 	"github.com/wurt83ow/tinyurl/internal/filekeeper"
 	"github.com/wurt83ow/tinyurl/internal/logger"
-	"github.com/wurt83ow/tinyurl/internal/middleware"
 )
 
 func Run() error {
@@ -40,11 +39,12 @@ func Run() error {
 	memoryStorage := storage.NewMemoryStorage(keeper, nLogger)
 
 	controller := controllers.NewBaseController(memoryStorage, option, nLogger)
-	reqLog := middleware.NewReqLog(nLogger)
+	// reqLog := middleware.NewReqLog(nLogger)
 
 	r := chi.NewRouter()
-	r.Use(reqLog.RequestLogger)
-	r.Use(middleware.GzipMiddleware)
+	//!!! r.Use(reqLog.RequestLogger)
+	//!!! r.Use(middleware.GzipMiddleware)
+	// r.Use(middleware.JWTProtectedMiddleware)
 	r.Mount("/", controller.Route())
 
 	flagRunAddr := option.RunAddr()

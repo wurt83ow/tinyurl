@@ -85,10 +85,11 @@ func NewBDKeeper(dsn func() string, log Log) *BDKeeper {
 }
 
 func (bdk *BDKeeper) Load() (storage.StorageURL, error) {
+
 	ctx := context.Background()
 	data := make(storage.StorageURL)
 	// запрашиваем данные обо всех сообщениях пользователя, без самого текста
-	rows, err := bdk.conn.QueryContext(ctx, `SELECT * FROM dataurl`)
+	rows, err := bdk.conn.QueryContext(ctx, `SELECT correlation_id, short_url, original_url, user_id FROM dataurl`)
 
 	if err != nil {
 		return nil, err
@@ -121,6 +122,47 @@ func (bdk *BDKeeper) Load() (storage.StorageURL, error) {
 	return data, nil
 }
 
+// LoadUsers implements storage.Keeper.
+func (bdk *BDKeeper) LoadUsers() (storage.StorageUser, error) {
+
+	ctx := context.Background()
+	data := make(storage.StorageUser)
+
+	// запрашиваем данные обо всех сообщениях пользователя, без самого текста
+	rows, err := bdk.conn.QueryContext(ctx, `SELECT id, name, email, hash FROM users`)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// не забываем закрыть курсор после завершения работы с данными
+	defer rows.Close()
+
+	for rows.Next() {
+		record := models.DataUser{}
+
+		s := reflect.ValueOf(&record).Elem()
+		numCols := s.NumField()
+		columns := make([]interface{}, numCols)
+		for i := 0; i < numCols; i++ {
+			field := s.Field(i)
+			columns[i] = field.Addr().Interface()
+		}
+
+		err := rows.Scan(columns...)
+		if err != nil {
+			log.Fatal(err)
+		}
+		data[record.Email] = record
+	}
+	if err = rows.Err(); err != nil {
+
+		return data, err
+	}
+
+	return data, nil
+}
+
 func (bdk *BDKeeper) Save(key string, data models.DataURL) (models.DataURL, error) {
 	ctx := context.Background()
 
@@ -133,14 +175,15 @@ func (bdk *BDKeeper) Save(key string, data models.DataURL) (models.DataURL, erro
 	}
 
 	_, err := bdk.conn.ExecContext(ctx,
-		"INSERT INTO dataurl (correlation_id, short_url, original_url) VALUES ($1, $2, $3) RETURNING original_url",
-		id, data.ShortURL, data.OriginalURL)
+		"INSERT INTO dataurl (correlation_id, short_url, original_url, user_id) VALUES ($1, $2, $3, $4) RETURNING original_url",
+		id, data.ShortURL, data.OriginalURL, data.UserID)
 
 	row := bdk.conn.QueryRowContext(ctx, `
 	SELECT
 		d.correlation_id,
 		d.short_url  ,
-		d.original_url 		 
+		d.original_url,
+		d.user_id		 
 	FROM dataurl d	 
 	WHERE
 		d.original_url = $1
@@ -150,7 +193,55 @@ func (bdk *BDKeeper) Save(key string, data models.DataURL) (models.DataURL, erro
 
 	// считываем значения из записи БД в соответствующие поля структуры
 	var m models.DataURL
-	nerr := row.Scan(&m.UUID, &m.ShortURL, &m.OriginalURL)
+	nerr := row.Scan(&m.UUID, &m.ShortURL, &m.OriginalURL, &m.UserID)
+	if nerr != nil {
+		return data, nerr
+	}
+
+	if err != nil {
+		var e *pgconn.PgError
+		if errors.As(err, &e) && e.Code == pgerrcode.UniqueViolation {
+			bdk.log.Info("unique field violation on column: ", zap.Error(err))
+
+			return m, storage.ErrConflict
+		}
+		return m, err
+	}
+
+	return m, nil
+}
+
+func (bdk *BDKeeper) SaveUser(key string, data models.DataUser) (models.DataUser, error) {
+	ctx := context.Background()
+
+	var id string
+	if data.UUID == "" {
+		neuuid := uuid.New()
+		id = neuuid.String()
+	} else {
+		id = data.UUID
+	}
+
+	_, err := bdk.conn.ExecContext(ctx,
+		"INSERT INTO users (id, email, hash, name) VALUES ($1, $2, $3, $4) RETURNING id",
+		id, data.Email, data.Hash, data.Name)
+
+	row := bdk.conn.QueryRowContext(ctx, `
+	SELECT
+		u.id,
+		u.email,
+		u.hash,
+		u.name  	 
+	FROM users u	 
+	WHERE
+		u.email = $1 AND u.hash = $2
+`,
+		data.Email, data.Hash,
+	)
+
+	// считываем значения из записи БД в соответствующие поля структуры
+	var m models.DataUser
+	nerr := row.Scan(&m.UUID, &m.Email, &m.Hash, &m.Name)
 	if nerr != nil {
 		return data, nerr
 	}
