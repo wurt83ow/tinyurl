@@ -143,6 +143,7 @@ func (h *BaseController) Login(w http.ResponseWriter, r *http.Request) {
 		freshToken := middleware.CreateJWTTokenForUser(user.UUID)
 		http.SetCookie(w, middleware.AuthCookie(freshToken))
 
+		w.Header().Set("Authorization", freshToken)
 		err := json.NewEncoder(w).Encode(models.ResponseBody{
 			Response: "success",
 		})
@@ -223,6 +224,8 @@ func (h *BaseController) shortenBatch(w http.ResponseWriter, r *http.Request) {
 
 // POST JSON
 func (h *BaseController) shortenJSON(w http.ResponseWriter, r *http.Request) {
+
+	fmt.Println("3333333333333333333333333333333333333shortenJSON_userID")
 	// deserialize the request into the model structure
 	h.log.Info("decoding request")
 
@@ -299,7 +302,7 @@ func (h *BaseController) shortenURL(w http.ResponseWriter, r *http.Request) {
 	key, shurl := shorturl.Shorten(string(body), shortURLAdress)
 
 	userID, _ := r.Context().Value(keyUserID).(string)
-
+	fmt.Println("555555555555555555555555555555555555555555shortenURL_userID", userID)
 	// save full url to storage with the key received earlier
 	m, err := h.storage.Insert(key, models.DataURL{ShortURL: shurl, OriginalURL: string(body), UserID: userID})
 	conflict := false
@@ -361,7 +364,7 @@ func (h *BaseController) getUserURLs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println("userID777777777777", userID)
+	fmt.Println("getUserURLs_userID", userID)
 	data := h.storage.GetUserURLs(userID)
 	if len(data) == 0 {
 		// value not found for the passed key

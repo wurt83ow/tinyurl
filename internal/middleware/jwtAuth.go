@@ -42,6 +42,7 @@ func JWTProtectedMiddleware(storage Storage) func(next http.Handler) http.Handle
 			fmt.Println("8888888888888888888888888888888888888888888")
 			// Grab jwt-token cookie
 			jwtCookie, err := r.Cookie("jwt-token")
+
 			userID := ""
 			if err == nil {
 				userID, err = DecodeJWTToUser(jwtCookie.Value)
@@ -62,6 +63,20 @@ func JWTProtectedMiddleware(storage Storage) func(next http.Handler) http.Handle
 			} else {
 				log.Println("Error occurred reading cookie", err)
 			}
+
+			if userID == "" {
+				jwtCookie := r.Header.Get("Authorization")
+
+				if jwtCookie != "" {
+					userID, err = DecodeJWTToUser(jwtCookie)
+					if err != nil {
+						userID = ""
+						log.Println("Error occurred creating a cookie", err)
+					}
+				}
+
+			}
+
 			if userID == "" {
 
 				// save full url to storage with the key received earlier
@@ -72,6 +87,7 @@ func JWTProtectedMiddleware(storage Storage) func(next http.Handler) http.Handle
 
 				freshToken := CreateJWTTokenForUser(userID)
 				http.SetCookie(w, AuthCookie(freshToken))
+				w.Header().Set("Authorization", freshToken)
 				if err != nil {
 					log.Println("Error occurred user create", err)
 				}
