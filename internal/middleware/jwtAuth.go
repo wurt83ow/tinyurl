@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -38,7 +39,7 @@ func init() {
 func JWTProtectedMiddleware(storage Storage) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
-
+			fmt.Println("8888888888888888888888888888888888888888888")
 			// Grab jwt-token cookie
 			jwtCookie, err := r.Cookie("jwt-token")
 			userID := ""

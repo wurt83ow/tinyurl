@@ -2,6 +2,7 @@ package compress
 
 import (
 	"compress/gzip"
+	"fmt"
 	"io"
 	"net/http"
 )
@@ -29,6 +30,7 @@ func (c *compressWriter) Write(p []byte) (int, error) {
 }
 
 func (c *compressWriter) WriteHeader(statusCode int) {
+	fmt.Println("77777777777777777777777777777777777777777sssssssssssssssssssssssssssssssss")
 	if statusCode < 300 || statusCode == 409 {
 		c.w.Header().Set("Content-Encoding", "gzip")
 	}

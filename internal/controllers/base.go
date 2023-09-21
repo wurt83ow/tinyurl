@@ -361,6 +361,7 @@ func (h *BaseController) getUserURLs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	fmt.Println("userID777777777777", userID)
 	data := h.storage.GetUserURLs(userID)
 	if len(data) == 0 {
 		// value not found for the passed key
@@ -368,7 +369,9 @@ func (h *BaseController) getUserURLs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	fmt.Println("Данные777777777777", data)
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK) //code 200
 
 	// serialize the server response
 	enc := json.NewEncoder(w)
