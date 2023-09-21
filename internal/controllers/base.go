@@ -19,7 +19,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-var keyUserID middleware.Key = "userID"
+var keyUserID models.Key = "userID"
 
 type Storage interface {
 	Insert(k string, v models.DataURL) (models.DataURL, error)
@@ -63,7 +63,7 @@ func (h *BaseController) Route() *chi.Mux {
 	r.Get("/ping", h.getPing)
 	// /api/user/urls
 	r.Group(func(r chi.Router) {
-		r.Use(middleware.JWTProtectedMiddleware)
+		r.Use(middleware.JWTProtectedMiddleware(h.storage))
 		r.Post("/", h.shortenURL)
 		r.Post("/api/shorten", h.shortenJSON)
 		r.Post("/api/shorten/batch", h.shortenBatch)

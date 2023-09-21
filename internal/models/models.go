@@ -1,5 +1,7 @@
 package models
 
+type Key string
+
 // Request описывает запрос пользователя.
 type Request struct {
 	URL string `json:"url"`
