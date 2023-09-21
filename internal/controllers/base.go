@@ -19,6 +19,8 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+var keyUserID middleware.Key = "userID"
+
 type Storage interface {
 	Insert(k string, v models.DataURL) (models.DataURL, error)
 	InsertUser(k string, v models.DataUser) (models.DataUser, error)
@@ -184,12 +186,15 @@ func (h *BaseController) shortenBatch(w http.ResponseWriter, r *http.Request) {
 	shortURLAdress := h.options.ShortURLAdress()
 	dataURL := make(storage.StorageURL)
 	resp := []models.ResponseRecord{}
+
+	userID, _ := r.Context().Value(keyUserID).(string)
+
 	for i := range batch {
 
 		s := batch[i]
 		// get short url
 		key, shurl := shorturl.Shorten(s.OriginalURL, shortURLAdress)
-		userID, _ := r.Context().Value("userID").(string)
+
 		// save full url to storage with the key received earlier
 		data := models.DataURL{UUID: s.UUID, ShortURL: shurl, OriginalURL: s.OriginalURL, UserID: userID}
 		dataURL[key] = data
@@ -198,6 +203,7 @@ func (h *BaseController) shortenBatch(w http.ResponseWriter, r *http.Request) {
 
 	err := h.storage.InsertBatch(dataURL)
 	if err != nil {
+
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -239,7 +245,7 @@ func (h *BaseController) shortenJSON(w http.ResponseWriter, r *http.Request) {
 
 	// get short url
 	key, shurl := shorturl.Shorten(string(req.URL), shortURLAdress)
-	userID, _ := r.Context().Value("userID").(string)
+	userID, _ := r.Context().Value(keyUserID).(string)
 
 	// save full url to storage with the key received earlier
 	m, err := h.storage.Insert(key, models.DataURL{ShortURL: shurl, OriginalURL: string(req.URL), UserID: userID})
@@ -292,7 +298,7 @@ func (h *BaseController) shortenURL(w http.ResponseWriter, r *http.Request) {
 	// get short url
 	key, shurl := shorturl.Shorten(string(body), shortURLAdress)
 
-	userID, _ := r.Context().Value("userID").(string)
+	userID, _ := r.Context().Value(keyUserID).(string)
 
 	// save full url to storage with the key received earlier
 	m, err := h.storage.Insert(key, models.DataURL{ShortURL: shurl, OriginalURL: string(body), UserID: userID})
@@ -349,7 +355,7 @@ func (h *BaseController) getFullURL(w http.ResponseWriter, r *http.Request) {
 // GET
 func (h *BaseController) getUserURLs(w http.ResponseWriter, r *http.Request) {
 
-	userID, ok := r.Context().Value("userID").(string)
+	userID, ok := r.Context().Value(keyUserID).(string)
 	if !ok {
 		w.WriteHeader(http.StatusUnauthorized) //401
 		return

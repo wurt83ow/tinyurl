@@ -16,6 +16,8 @@ var defaultCookie http.Cookie
 
 var jwtSigningMethod = jwt.SigningMethodHS256
 
+type Key string
+
 func init() {
 	jwtSigningKey = []byte(config.GetAsString("JWT_SIGNING_KEY", "test_key"))
 	defaultCookie = http.Cookie{
@@ -40,6 +42,7 @@ func JWTProtectedMiddleware(next http.Handler) http.Handler {
 			userID, err = DecodeJWTToUser(jwtCookie.Value)
 			if err != nil {
 				userID = ""
+				log.Println("Error occurred creating a cookie", err)
 			}
 
 			// w.WriteHeader(http.StatusUnauthorized)
@@ -73,8 +76,9 @@ func JWTProtectedMiddleware(next http.Handler) http.Handler {
 		// // If it's good, update the expiry time
 		// freshToken := CreateJWTTokenForUser(userID)
 
+		var keyUserID Key = "userID"
 		ctx := r.Context()
-		ctx = context.WithValue(ctx, "userID", userID)
+		ctx = context.WithValue(ctx, keyUserID, userID)
 
 		// //Set the new cookie and continue into the handler
 		// w.Header().Add("Content-Type", "application/json")

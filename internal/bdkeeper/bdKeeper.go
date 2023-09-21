@@ -211,6 +211,20 @@ func (bdk *BDKeeper) Save(key string, data models.DataURL) (models.DataURL, erro
 	return m, nil
 }
 
+// func (bdk *BDKeeper) CreateDefaultUser() (string, error) {
+// 	ctx := context.Background()
+
+// 	id := "00000000-0000-0000-0000-000000000000"
+// 	_, err := bdk.conn.ExecContext(ctx,
+// 		"INSERT INTO users (id, email, hash, name) VALUES ($1, $2, $3, $4) RETURNING id",
+// 		id, "default", "default", "default")
+
+// 	if err != nil {
+// 		return "", err
+// 	}
+// 	return id, nil
+// }
+
 func (bdk *BDKeeper) SaveUser(key string, data models.DataUser) (models.DataUser, error) {
 	ctx := context.Background()
 
@@ -263,19 +277,21 @@ func (bdk *BDKeeper) SaveBatch(data storage.StorageURL) error {
 	ctx := context.Background()
 	// func BulkInsert(unsavedRows []*ExampleRowStruct) error {
 	valueStrings := make([]string, 0, len(data))
-	valueArgs := make([]interface{}, 0, len(data)*3)
+	valueArgs := make([]interface{}, 0, len(data)*4)
 	i := 0
 	for _, post := range data {
-		valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d)", i*3+1, i*3+2, i*3+3))
+		valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d, $%d)", i*4+1, i*4+2, i*4+3, i*4+4))
 		valueArgs = append(valueArgs, post.UUID)
 		valueArgs = append(valueArgs, post.ShortURL)
 		valueArgs = append(valueArgs, post.OriginalURL)
+		valueArgs = append(valueArgs, post.UserID)
 		i++
 	}
-	stmt := fmt.Sprintf("INSERT INTO dataurl (correlation_id, short_url, original_url) VALUES %s ON CONFLICT (original_url) DO NOTHING",
+	stmt := fmt.Sprintf("INSERT INTO dataurl (correlation_id, short_url, original_url, user_id) VALUES %s ON CONFLICT (original_url) DO NOTHING",
 		strings.Join(valueStrings, ","))
 	_, err := bdk.conn.ExecContext(ctx, stmt, valueArgs...)
 	if err != nil {
+		fmt.Println("978798789sd7f9s87df8s7df9d8s7f9s8f", err)
 		return err
 	}
 
