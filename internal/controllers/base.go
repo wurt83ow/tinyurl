@@ -3,7 +3,6 @@ package controllers
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/google/uuid"
+	authz "github.com/wurt83ow/tinyurl/cmd/shortener/authorization"
 	"github.com/wurt83ow/tinyurl/cmd/shortener/shorturl"
 	"github.com/wurt83ow/tinyurl/cmd/shortener/storage"
 	"github.com/wurt83ow/tinyurl/internal/middleware"
@@ -90,7 +90,7 @@ func (h *BaseController) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	Hash := middleware.GetHash(regReq.Email, regReq.Password)
+	Hash := authz.GetHash(regReq.Email, regReq.Password)
 
 	// save full url to storage with the key received earlier
 	dataUser := models.DataUser{UUID: uuid.New().String(), Email: regReq.Email, Hash: Hash, Name: regReq.Name}
@@ -107,7 +107,7 @@ func (h *BaseController) Register(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if conflict {
-		fmt.Println("coooooooooooooooonflict!")
+		//!!!
 	}
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -139,9 +139,9 @@ func (h *BaseController) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if bytes.Equal(user.Hash, middleware.GetHash(rb.Email, rb.Password)) {
-		freshToken := middleware.CreateJWTTokenForUser(user.UUID)
-		http.SetCookie(w, middleware.AuthCookie(freshToken))
+	if bytes.Equal(user.Hash, authz.GetHash(rb.Email, rb.Password)) {
+		freshToken := authz.CreateJWTTokenForUser(user.UUID)
+		http.SetCookie(w, authz.AuthCookie(freshToken))
 
 		w.Header().Set("Authorization", freshToken)
 		err := json.NewEncoder(w).Encode(models.ResponseBody{
@@ -225,7 +225,6 @@ func (h *BaseController) shortenBatch(w http.ResponseWriter, r *http.Request) {
 // POST JSON
 func (h *BaseController) shortenJSON(w http.ResponseWriter, r *http.Request) {
 
-	fmt.Println("3333333333333333333333333333333333333shortenJSON_userID")
 	// deserialize the request into the model structure
 	h.log.Info("decoding request")
 
@@ -302,7 +301,7 @@ func (h *BaseController) shortenURL(w http.ResponseWriter, r *http.Request) {
 	key, shurl := shorturl.Shorten(string(body), shortURLAdress)
 
 	userID, _ := r.Context().Value(keyUserID).(string)
-	fmt.Println("555555555555555555555555555555555555555555shortenURL_userID", userID)
+
 	// save full url to storage with the key received earlier
 	m, err := h.storage.Insert(key, models.DataURL{ShortURL: shurl, OriginalURL: string(body), UserID: userID})
 	conflict := false
@@ -364,7 +363,6 @@ func (h *BaseController) getUserURLs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println("getUserURLs_userID", userID)
 	data := h.storage.GetUserURLs(userID)
 	if len(data) == 0 {
 		// value not found for the passed key
@@ -372,7 +370,6 @@ func (h *BaseController) getUserURLs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println("Данные777777777777", data)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK) //code 200
 

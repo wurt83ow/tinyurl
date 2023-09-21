@@ -211,20 +211,6 @@ func (bdk *BDKeeper) Save(key string, data models.DataURL) (models.DataURL, erro
 	return m, nil
 }
 
-// func (bdk *BDKeeper) CreateDefaultUser() (string, error) {
-// 	ctx := context.Background()
-
-// 	id := "00000000-0000-0000-0000-000000000000"
-// 	_, err := bdk.conn.ExecContext(ctx,
-// 		"INSERT INTO users (id, email, hash, name) VALUES ($1, $2, $3, $4) RETURNING id",
-// 		id, "default", "default", "default")
-
-// 	if err != nil {
-// 		return "", err
-// 	}
-// 	return id, nil
-// }
-
 func (bdk *BDKeeper) SaveUser(key string, data models.DataUser) (models.DataUser, error) {
 	ctx := context.Background()
 
@@ -275,7 +261,7 @@ func (bdk *BDKeeper) SaveUser(key string, data models.DataUser) (models.DataUser
 
 func (bdk *BDKeeper) SaveBatch(data storage.StorageURL) error {
 	ctx := context.Background()
-	// func BulkInsert(unsavedRows []*ExampleRowStruct) error {
+
 	valueStrings := make([]string, 0, len(data))
 	valueArgs := make([]interface{}, 0, len(data)*4)
 	i := 0
@@ -291,7 +277,7 @@ func (bdk *BDKeeper) SaveBatch(data storage.StorageURL) error {
 		strings.Join(valueStrings, ","))
 	_, err := bdk.conn.ExecContext(ctx, stmt, valueArgs...)
 	if err != nil {
-		fmt.Println("978798789sd7f9s87df8s7df9d8s7f9s8f", err)
+
 		return err
 	}
 
