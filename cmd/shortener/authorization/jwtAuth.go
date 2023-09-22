@@ -28,7 +28,6 @@ func init() {
 		Domain:   config.GetAsString("COOKIE_DOMAIN", "localhost"),
 		Secure:   config.GetAsBool("COOKIE_SECURE", true),
 	}
-
 }
 
 func CreateJWTTokenForUser(userid string) string {
@@ -67,11 +66,11 @@ func DecodeJWTToUser(token string) (string, error) {
 func GetHash(email string, password string) []byte {
 	src := []byte(email + password)
 
-	// создаём новый hash.Hash, вычисляющий контрольную сумму SHA-256
+	// create a new hash.Hash that calculates the SHA-256 checksum
 	h := sha256.New()
-	// передаём байты для хеширования
+	// transfer bytes for hashing
 	h.Write(src)
-	// вычисляем хеш
+	// calculate the hash
 	return h.Sum(nil)
 
 }

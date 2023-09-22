@@ -23,8 +23,8 @@ type ResponseRecord struct {
 }
 
 type ResponseUserURLs struct {
-	ShortURL    string `json:"short_url"`
-	OriginalURL string `json:"original_url"`
+	ShortURL    string `db:"short_url" json:"short_url"`
+	OriginalURL string `db:"original_url" json:"original_url"`
 }
 
 type DataURL struct {

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
-	"log"
 	"net/http"
 	"strings"
 
@@ -22,13 +21,13 @@ import (
 var keyUserID models.Key = "userID"
 
 type Storage interface {
-	Insert(k string, v models.DataURL) (models.DataURL, error)
+	InsertURL(k string, v models.DataURL) (models.DataURL, error)
 	InsertUser(k string, v models.DataUser) (models.DataUser, error)
 	InsertBatch(storage.StorageURL) error
-	Get(k string) (models.DataURL, error)
+	GetURL(k string) (models.DataURL, error)
 	GetUser(k string) (models.DataUser, error)
 	GetUserURLs(userID string) []models.ResponseUserURLs
-	Save(k string, v models.DataURL) (models.DataURL, error)
+	SaveURL(k string, v models.DataURL) (models.DataURL, error)
 	SaveUser(k string, v models.DataUser) (models.DataUser, error)
 	SaveBatch(storage.StorageURL) error
 	GetBaseConnection() bool
@@ -61,9 +60,11 @@ func (h *BaseController) Route() *chi.Mux {
 	r.Post("/login", h.Login)
 	r.Get("/{name}", h.getFullURL)
 	r.Get("/ping", h.getPing)
-	// /api/user/urls
+
+	// group where the middleware authorization is needed
 	r.Group(func(r chi.Router) {
-		r.Use(middleware.JWTProtectedMiddleware(h.storage))
+		r.Use(middleware.JWTAuthzMiddleware(h.storage, h.log))
+
 		r.Post("/", h.shortenURL)
 		r.Post("/api/shorten", h.shortenJSON)
 		r.Post("/api/shorten/batch", h.shortenBatch)
@@ -85,53 +86,39 @@ func (h *BaseController) Register(w http.ResponseWriter, r *http.Request) {
 
 	_, err := h.storage.GetUser(regReq.Email)
 	if err == nil {
-		//!!! the user is already registered
+		h.log.Info("the user is already registered: ", zap.Error(err))
 		w.WriteHeader(http.StatusBadRequest) // 400
 		return
 	}
 
 	Hash := authz.GetHash(regReq.Email, regReq.Password)
 
-	// save full url to storage with the key received earlier
+	// save the user to the storage
 	dataUser := models.DataUser{UUID: uuid.New().String(), Email: regReq.Email, Hash: Hash, Name: regReq.Name}
 
 	_, err = h.storage.InsertUser(regReq.Email, dataUser)
-	conflict := false
-	if err != nil {
 
+	if err != nil {
 		if err == storage.ErrConflict {
-			conflict = true
+			w.WriteHeader(http.StatusConflict) //code 409
 		} else {
-			w.WriteHeader(http.StatusBadRequest)
+			w.WriteHeader(http.StatusBadRequest) // code 400
 			return
 		}
 	}
-	if conflict {
-		//!!!
-	}
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
 
-	// fill in the response model
-	// w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-
 	h.log.Info("sending HTTP 201 response")
 
 }
 
 func (h *BaseController) Login(w http.ResponseWriter, r *http.Request) {
 
-	log.Println("POST", r)
-
 	var rb models.RequestBody
 	if err := json.NewDecoder(r.Body).Decode(&rb); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	log.Println("We received an inbound value of", rb.Email, rb.Password)
 
 	user, err := h.storage.GetUser(rb.Email)
 	if err != nil {
@@ -204,7 +191,6 @@ func (h *BaseController) shortenBatch(w http.ResponseWriter, r *http.Request) {
 
 	err := h.storage.InsertBatch(dataURL)
 	if err != nil {
-
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -250,7 +236,7 @@ func (h *BaseController) shortenJSON(w http.ResponseWriter, r *http.Request) {
 	userID, _ := r.Context().Value(keyUserID).(string)
 
 	// save full url to storage with the key received earlier
-	m, err := h.storage.Insert(key, models.DataURL{ShortURL: shurl, OriginalURL: string(req.URL), UserID: userID})
+	m, err := h.storage.InsertURL(key, models.DataURL{ShortURL: shurl, OriginalURL: string(req.URL), UserID: userID})
 	conflict := false
 
 	if err != nil {
@@ -303,7 +289,7 @@ func (h *BaseController) shortenURL(w http.ResponseWriter, r *http.Request) {
 	userID, _ := r.Context().Value(keyUserID).(string)
 
 	// save full url to storage with the key received earlier
-	m, err := h.storage.Insert(key, models.DataURL{ShortURL: shurl, OriginalURL: string(body), UserID: userID})
+	m, err := h.storage.InsertURL(key, models.DataURL{ShortURL: shurl, OriginalURL: string(body), UserID: userID})
 	conflict := false
 	if err != nil {
 		if err == storage.ErrConflict {
@@ -342,7 +328,7 @@ func (h *BaseController) getFullURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// get full url from storage
-	data, err := h.storage.Get(key)
+	data, err := h.storage.GetURL(key)
 	if err != nil || len(data.OriginalURL) == 0 {
 		// value not found for the passed key
 		w.WriteHeader(http.StatusBadRequest) // 400
