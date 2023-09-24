@@ -89,7 +89,7 @@ func (bdk *BDKeeper) Load() (storage.StorageURL, error) {
 	ctx := context.Background()
 	data := make(storage.StorageURL)
 	// запрашиваем данные обо всех сообщениях пользователя, без самого текста
-	rows, err := bdk.conn.QueryContext(ctx, `SELECT correlation_id, short_url, original_url, user_id FROM dataurl`)
+	rows, err := bdk.conn.QueryContext(ctx, `SELECT correlation_id, short_url, original_url, user_id, is_deleted FROM dataurl`)
 
 	if err != nil {
 		return nil, err
@@ -163,6 +163,39 @@ func (bdk *BDKeeper) LoadUsers() (storage.StorageUser, error) {
 	return data, nil
 }
 
+func (bdk *BDKeeper) UpdateBatch(data ...models.DeleteURL) error {
+	ctx := context.Background()
+
+	valueStrings := make([]string, 0, len(data))
+	valueArgs := make([]interface{}, 0, len(data)*2)
+	i := 0
+
+	for _, urls := range data {
+
+		for _, k := range urls.ShortURLs {
+			valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d)", i*2+1, i*2+2))
+			valueArgs = append(valueArgs, k)
+			valueArgs = append(valueArgs, urls.UserID)
+			i++
+		}
+	}
+	stmt := fmt.Sprintf(
+		`WITH _data (short_url, user_id) 
+		AS (VALUES %s)
+		UPDATE dataurl AS d
+		SET is_deleted = TRUE
+		FROM _data
+		WHERE d.short_url LIKE '%%' || _data.short_url || '%%'
+			AND d.user_id = _data.user_id`,
+		strings.Join(valueStrings, ","))
+	_, err := bdk.conn.ExecContext(ctx, stmt, valueArgs...)
+
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (bdk *BDKeeper) Save(key string, data models.DataURL) (models.DataURL, error) {
 	ctx := context.Background()
 
@@ -175,15 +208,16 @@ func (bdk *BDKeeper) Save(key string, data models.DataURL) (models.DataURL, erro
 	}
 
 	_, err := bdk.conn.ExecContext(ctx,
-		"INSERT INTO dataurl (correlation_id, short_url, original_url, user_id) VALUES ($1, $2, $3, $4) RETURNING original_url",
-		id, data.ShortURL, data.OriginalURL, data.UserID)
+		"INSERT INTO dataurl (correlation_id, short_url, original_url, user_id, is_deleted) VALUES ($1, $2, $3, $4, $5) RETURNING original_url",
+		id, data.ShortURL, data.OriginalURL, data.UserID, data.DeletedFlag)
 
 	row := bdk.conn.QueryRowContext(ctx, `
 	SELECT
 		d.correlation_id,
 		d.short_url  ,
 		d.original_url,
-		d.user_id		 
+		d.user_id,
+		d.is_deleted	 
 	FROM dataurl d	 
 	WHERE
 		d.original_url = $1
@@ -193,8 +227,9 @@ func (bdk *BDKeeper) Save(key string, data models.DataURL) (models.DataURL, erro
 
 	// считываем значения из записи БД в соответствующие поля структуры
 	var m models.DataURL
-	nerr := row.Scan(&m.UUID, &m.ShortURL, &m.OriginalURL, &m.UserID)
+	nerr := row.Scan(&m.UUID, &m.ShortURL, &m.OriginalURL, &m.UserID, &m.DeletedFlag)
 	if nerr != nil {
+		bdk.log.Info("row scan error: ", zap.Error(err))
 		return data, nerr
 	}
 
@@ -263,17 +298,18 @@ func (bdk *BDKeeper) SaveBatch(data storage.StorageURL) error {
 	ctx := context.Background()
 
 	valueStrings := make([]string, 0, len(data))
-	valueArgs := make([]interface{}, 0, len(data)*4)
+	valueArgs := make([]interface{}, 0, len(data)*5)
 	i := 0
 	for _, post := range data {
-		valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d, $%d)", i*4+1, i*4+2, i*4+3, i*4+4))
+		valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d, $%d, $%d)", i*5+1, i*5+2, i*5+3, i*5+4, i*5+5))
 		valueArgs = append(valueArgs, post.UUID)
 		valueArgs = append(valueArgs, post.ShortURL)
 		valueArgs = append(valueArgs, post.OriginalURL)
 		valueArgs = append(valueArgs, post.UserID)
+		valueArgs = append(valueArgs, post.DeletedFlag)
 		i++
 	}
-	stmt := fmt.Sprintf("INSERT INTO dataurl (correlation_id, short_url, original_url, user_id) VALUES %s ON CONFLICT (original_url) DO NOTHING",
+	stmt := fmt.Sprintf("INSERT INTO dataurl (correlation_id, short_url, original_url, user_id, is_deleted) VALUES %s ON CONFLICT (original_url) DO NOTHING",
 		strings.Join(valueStrings, ","))
 	_, err := bdk.conn.ExecContext(ctx, stmt, valueArgs...)
 	if err != nil {

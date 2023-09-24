@@ -31,6 +31,7 @@ type Keeper interface {
 	Save(string, models.DataURL) (models.DataURL, error)
 	SaveUser(string, models.DataUser) (models.DataUser, error)
 	SaveBatch(StorageURL) error
+	UpdateBatch(...models.DeleteURL) error
 	Ping() bool
 	Close() bool
 }
@@ -130,6 +131,20 @@ func (s *MemoryStorage) SaveURL(k string, v models.DataURL) (models.DataURL, err
 	}
 
 	return s.keeper.Save(k, v)
+}
+
+func (s *MemoryStorage) SaveURLs(delUrls ...models.DeleteURL) error {
+
+	if s.keeper == nil {
+		return nil
+	}
+	err := s.keeper.UpdateBatch(delUrls...)
+	if err != nil {
+		return err
+	}
+
+	return nil
+
 }
 
 func (s *MemoryStorage) SaveUser(k string, v models.DataUser) (models.DataUser, error) {

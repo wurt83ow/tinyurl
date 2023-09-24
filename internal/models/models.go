@@ -32,6 +32,7 @@ type DataURL struct {
 	ShortURL    string `db:"short_url" json:"short_url"`
 	OriginalURL string `db:"original_url" json:"original_url"`
 	UserID      string `db:"user_id" json:"user_id"`
+	DeletedFlag bool   `db:"is_deleted" json:"is_deleted"`
 }
 
 type DataUser struct {
@@ -53,4 +54,9 @@ type RegisterRequest struct {
 	Email    string `json:"email"`
 	Name     string `json:"name"`
 	Password string `json:"password"`
+}
+
+type DeleteURL struct {
+	UserID    string   `db:"user_id" json:"user_id"`
+	ShortURLs []string `db:"short_url" json:"short_url"`
 }

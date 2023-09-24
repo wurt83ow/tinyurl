@@ -3,9 +3,11 @@ package controllers
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/google/uuid"
@@ -28,6 +30,7 @@ type Storage interface {
 	GetUser(k string) (models.DataUser, error)
 	GetUserURLs(userID string) []models.ResponseUserURLs
 	SaveURL(k string, v models.DataURL) (models.DataURL, error)
+	SaveURLs(delUrls ...models.DeleteURL) error
 	SaveUser(k string, v models.DataUser) (models.DataUser, error)
 	SaveBatch(storage.StorageURL) error
 	GetBaseConnection() bool
@@ -47,11 +50,21 @@ type BaseController struct {
 	storage Storage
 	options Options
 	log     Log
+
+	delChan chan models.DeleteURL
 }
 
 func NewBaseController(storage Storage, options Options, log Log) *BaseController {
+	instance := &BaseController{
+		storage: storage,
+		options: options,
+		log:     log,
+		delChan: make(chan models.DeleteURL, 1024), // установим каналу буфер в 1024 сообщения
+	}
 
-	return &BaseController{storage: storage, options: options, log: log}
+	go instance.flushURLs()
+
+	return instance
 }
 
 func (h *BaseController) Route() *chi.Mux {
@@ -69,9 +82,65 @@ func (h *BaseController) Route() *chi.Mux {
 		r.Post("/api/shorten", h.shortenJSON)
 		r.Post("/api/shorten/batch", h.shortenBatch)
 		r.Get("/api/user/urls", h.getUserURLs)
+		r.Delete("/api/user/urls", h.deleteUserURLs)
 	})
 
 	return r
+}
+
+// flushURLs постоянно сохраняет несколько сообщений в хранилище с определённым интервалом
+func (h *BaseController) flushURLs() {
+	// будем сохранять сообщения, накопленные за последние 10 секунд
+	ticker := time.NewTicker(10 * time.Second)
+
+	var delUrls []models.DeleteURL
+
+	for {
+		select {
+		case msg := <-h.delChan:
+			// добавим сообщение в слайс для последующего сохранения
+			delUrls = append(delUrls, msg)
+		case <-ticker.C:
+			// подождём, пока придёт хотя бы одно сообщение
+			if len(delUrls) == 0 {
+				continue
+			}
+			fmt.Println("888888888888888888888888888", delUrls)
+			// сохраним все пришедшие сообщения одновременно
+			err := h.storage.SaveURLs(delUrls...)
+			if err != nil {
+				h.log.Info("cannot save delUrls", zap.Error(err))
+				// не будем стирать сообщения, попробуем отправить их чуть позже
+				continue
+			}
+			// сотрём успешно отосланные сообщения
+			delUrls = nil
+		}
+	}
+}
+
+func (h *BaseController) deleteUserURLs(w http.ResponseWriter, r *http.Request) {
+
+	ids := make([]string, 0)
+	dec := json.NewDecoder(r.Body)
+	if err := dec.Decode(&ids); err != nil {
+		h.log.Info("cannot decode request JSON body: ", zap.Error(err))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	for _, d := range ids {
+		fmt.Println("77777777777777777777", d)
+	}
+
+	userID, ok := r.Context().Value(keyUserID).(string)
+	if !ok {
+		w.WriteHeader(http.StatusUnauthorized) //401
+		return
+	}
+	h.delChan <- models.DeleteURL{UserID: userID, ShortURLs: ids}
+
+	w.WriteHeader(http.StatusAccepted)
+
 }
 
 func (h *BaseController) Register(w http.ResponseWriter, r *http.Request) {

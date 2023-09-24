@@ -20,6 +20,11 @@ type FileKeeper struct {
 	log  Log
 }
 
+// UpdateBatch implements storage.Keeper.
+func (*FileKeeper) UpdateBatch(...models.DeleteURL) error {
+	panic("unimplemented")
+}
+
 func NewFileKeeper(path func() string, log Log) *FileKeeper {
 
 	addr := path()
