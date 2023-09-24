@@ -403,6 +403,10 @@ func (h *BaseController) getFullURL(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest) // 400
 		return
 	}
+	if data.DeletedFlag {
+		w.WriteHeader(http.StatusGone)
+		return
+	}
 
 	w.Header().Set("Location", data.OriginalURL)
 	w.WriteHeader(http.StatusTemporaryRedirect) // 307
