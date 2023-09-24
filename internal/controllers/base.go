@@ -91,8 +91,8 @@ func (h *BaseController) Route() *chi.Mux {
 // flushURLs постоянно сохраняет несколько сообщений в хранилище с определённым интервалом
 func (h *BaseController) flushURLs() {
 	// будем сохранять сообщения, накопленные за последние 10 секунд
-	ticker := time.NewTicker(10 * time.Second)
-
+	//!!! ticker := time.NewTicker(10 * time.Second)
+	ticker := time.NewTicker(time.Millisecond)
 	var delUrls []models.DeleteURL
 
 	for {
