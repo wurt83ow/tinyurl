@@ -134,7 +134,7 @@ func (bdk *BDKeeper) LoadUsers() (storage.StorageUser, error) {
 	ctx := context.Background()
 
 	// get data from bd
-	rows, err := bdk.conn.QueryContext(ctx, `SELECT * users`)
+	rows, err := bdk.conn.QueryContext(ctx, `SELECT * FROM users`)
 
 	if err != nil {
 		return nil, err

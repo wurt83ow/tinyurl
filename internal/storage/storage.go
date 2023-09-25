@@ -49,12 +49,12 @@ func NewMemoryStorage(keeper Keeper, log Log) *MemoryStorage {
 		var err error
 		data, err = keeper.Load()
 		if err != nil {
-			log.Info("cannot decode JSON file: ", zap.Error(err))
+			log.Info("cannot load url data: ", zap.Error(err))
 		}
 
 		users, err = keeper.LoadUsers()
 		if err != nil {
-			log.Info("cannot decode JSON file: ", zap.Error(err))
+			log.Info("cannot load user data: ", zap.Error(err))
 		}
 	}
 
