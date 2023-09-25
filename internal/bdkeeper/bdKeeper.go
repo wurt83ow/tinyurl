@@ -86,7 +86,6 @@ func NewBDKeeper(dsn func() string, log Log) *BDKeeper {
 func (bdk *BDKeeper) Load() (storage.StorageURL, error) {
 
 	ctx := context.Background()
-	data := make(storage.StorageURL)
 
 	// get data from bd
 	rows, err := bdk.conn.QueryContext(ctx, `SELECT * FROM dataurl`)
