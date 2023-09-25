@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-// shortURLAdress := config.ShortURLAdress()
+// shortURLAdress := configs.ShortURLAdress()
 func TestShorten(t *testing.T) {
 	tests := []struct { // добавляем слайс тестов
 		name           string

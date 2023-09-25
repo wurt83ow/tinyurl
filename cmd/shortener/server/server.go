@@ -3,22 +3,20 @@ package server
 import (
 	"net/http"
 
-	"go.uber.org/zap"
-
 	"github.com/go-chi/chi"
-
-	"github.com/wurt83ow/tinyurl/cmd/shortener/config"
+	"github.com/wurt83ow/tinyurl/cmd/shortener/configs"
 	"github.com/wurt83ow/tinyurl/cmd/shortener/storage"
 	"github.com/wurt83ow/tinyurl/internal/bdkeeper"
 	"github.com/wurt83ow/tinyurl/internal/controllers"
 	"github.com/wurt83ow/tinyurl/internal/filekeeper"
 	"github.com/wurt83ow/tinyurl/internal/logger"
 	"github.com/wurt83ow/tinyurl/internal/middleware"
+	"go.uber.org/zap"
 )
 
 func Run() error {
 
-	option := config.NewOptions()
+	option := configs.NewOptions()
 	option.ParseFlags()
 
 	nLogger, err := logger.NewLogger(option.LogLevel())

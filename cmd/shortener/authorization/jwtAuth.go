@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	"github.com/golang-jwt/jwt"
-	"github.com/wurt83ow/tinyurl/cmd/shortener/config"
+	"github.com/wurt83ow/tinyurl/cmd/shortener/configs"
 )
 
 var jwtSigningKey []byte
@@ -21,12 +21,12 @@ type CustomClaims struct {
 }
 
 func init() {
-	jwtSigningKey = []byte(config.GetAsString("JWT_SIGNING_KEY", "test_key"))
+	jwtSigningKey = []byte(configs.GetAsString("JWT_SIGNING_KEY", "test_key"))
 	defaultCookie = http.Cookie{
 		// HttpOnly: true,
 		// SameSite: http.SameSiteLaxMode,
-		// Domain:   config.GetAsString("COOKIE_DOMAIN", "localhost"),
-		// Secure:   config.GetAsBool("COOKIE_SECURE", true),
+		// Domain:   configs.GetAsString("COOKIE_DOMAIN", "localhost"),
+		// Secure:   configs.GetAsBool("COOKIE_SECURE", true),
 	}
 }
 

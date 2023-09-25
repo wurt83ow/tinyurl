@@ -1,4 +1,4 @@
-package config
+package configs
 
 import (
 	"flag"
@@ -16,13 +16,7 @@ type Options struct {
 }
 
 func NewOptions() *Options {
-	return &Options{
-		flagRunAddr:         "",
-		flagShortURLAdress:  "",
-		flagLogLevel:        "",
-		flagFileStoragePath: "",
-		flagDataBaseDSN:     "",
-	}
+	return &Options{"", "", "", "", ""}
 }
 
 // parseFlags обрабатывает аргументы командной строки
