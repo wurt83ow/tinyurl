@@ -12,9 +12,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/wurt83ow/tinyurl/cmd/shortener/configs"
+
 	"github.com/wurt83ow/tinyurl/cmd/shortener/storage"
 	"github.com/wurt83ow/tinyurl/internal/bdkeeper"
+	"github.com/wurt83ow/tinyurl/internal/config"
 	"github.com/wurt83ow/tinyurl/internal/filekeeper"
 	"github.com/wurt83ow/tinyurl/internal/logger"
 	compressor "github.com/wurt83ow/tinyurl/internal/middleware"
@@ -61,7 +62,7 @@ func testPostReq(t *testing.T, requestBody *strings.Reader, successBody string, 
 		{method: http.MethodDelete, expectedCode: http.StatusBadRequest, expectedBody: "", requestBody: defaultBody},
 	}
 
-	option := configs.NewOptions()
+	option := config.NewOptions()
 	option.ParseFlags()
 
 	nLogger, err := logger.NewLogger(option.LogLevel())
@@ -128,7 +129,7 @@ func TestGetFullURL(t *testing.T) {
 		{method: http.MethodDelete, path: defaultPath, expectedCode: http.StatusBadRequest},
 	}
 
-	option := configs.NewOptions()
+	option := config.NewOptions()
 	option.ParseFlags()
 
 	nLogger, err := logger.NewLogger(option.LogLevel())
@@ -200,7 +201,7 @@ func TestGzipTestShortenURL(t *testing.T) {
 
 func testGzipCompression(t *testing.T, requestBody string, successBody string, isJSONTest bool) {
 
-	option := configs.NewOptions()
+	option := config.NewOptions()
 	option.ParseFlags()
 
 	nLogger, err := logger.NewLogger(option.LogLevel())

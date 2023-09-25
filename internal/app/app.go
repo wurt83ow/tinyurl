@@ -1,12 +1,13 @@
-package server
+package app
 
 import (
 	"net/http"
 
 	"github.com/go-chi/chi"
-	"github.com/wurt83ow/tinyurl/cmd/shortener/configs"
+
 	"github.com/wurt83ow/tinyurl/cmd/shortener/storage"
 	"github.com/wurt83ow/tinyurl/internal/bdkeeper"
+	"github.com/wurt83ow/tinyurl/internal/config"
 	"github.com/wurt83ow/tinyurl/internal/controllers"
 	"github.com/wurt83ow/tinyurl/internal/filekeeper"
 	"github.com/wurt83ow/tinyurl/internal/logger"
@@ -16,7 +17,7 @@ import (
 
 func Run() error {
 
-	option := configs.NewOptions()
+	option := config.NewOptions()
 	option.ParseFlags()
 
 	nLogger, err := logger.NewLogger(option.LogLevel())

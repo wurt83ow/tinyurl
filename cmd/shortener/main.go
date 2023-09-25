@@ -1,11 +1,9 @@
 package main
 
-import (
-	"github.com/wurt83ow/tinyurl/cmd/shortener/server"
-)
+import "github.com/wurt83ow/tinyurl/internal/app"
 
 func main() {
-	if err := server.Run(); err != nil {
+	if err := app.Run(); err != nil {
 		panic(err)
 	}
 }
