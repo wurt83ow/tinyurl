@@ -1,6 +1,6 @@
 package main
 
-import "github.com/wurt83ow/tinyurl/internal/app"
+import 
 
 func main() {
 	if err := app.Run(); err != nil {
