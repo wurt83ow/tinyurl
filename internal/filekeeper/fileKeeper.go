@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/google/uuid"
-
 	"github.com/wurt83ow/tinyurl/internal/models"
 	"github.com/wurt83ow/tinyurl/internal/storage"
 	"go.uber.org/zap"

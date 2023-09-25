@@ -13,9 +13,6 @@ import (
 	"strings"
 	"time"
 
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
-
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
@@ -23,9 +20,10 @@ import (
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
 	_ "github.com/jackc/pgx/v5/stdlib"
-
 	"github.com/wurt83ow/tinyurl/internal/models"
 	"github.com/wurt83ow/tinyurl/internal/storage"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 type Log interface {
