@@ -88,7 +88,7 @@ func (bdk *BDKeeper) Load() (storage.StorageURL, error) {
 	ctx := context.Background()
 
 	// get data from bd
-	rows, err := bdk.conn.QueryContext(ctx, `SELECT * FROM dataurl`)
+	rows, err := bdk.conn.QueryContext(ctx, `SELECT correlation_id, short_url, original_url, user_id, is_deleted FROM dataurl`)
 
 	if err != nil {
 		return nil, err
@@ -134,7 +134,7 @@ func (bdk *BDKeeper) LoadUsers() (storage.StorageUser, error) {
 	ctx := context.Background()
 
 	// get data from bd
-	rows, err := bdk.conn.QueryContext(ctx, `SELECT * FROM users`)
+	rows, err := bdk.conn.QueryContext(ctx, `SELECT id, name, email, hash FROM users`)
 
 	if err != nil {
 		return nil, err
