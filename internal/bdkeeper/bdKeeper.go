@@ -298,7 +298,6 @@ func (bdk *BDKeeper) SaveUser(key string, data models.DataUser) (models.DataUser
 	var m models.DataUser
 	nerr := row.Scan(&m.UUID, &m.Email, &m.Hash, &m.Name)
 	if nerr != nil {
-		fmt.Println("7777777777777777777777777777777777", data)
 		return data, nerr
 	}
 

@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -25,14 +24,7 @@ func JWTAuthzMiddleware(storage Storage, log Log) func(next http.Handler) http.H
 
 			jwtCookie, err := r.Cookie("jwt-token")
 			// jwtCookie, err := r.Cookie("Authorization")
-			fmt.Println("1111111111111111111111111111", r.Cookies())
-			// Loop over header names
-			for name, values := range r.Header {
-				// Loop over all values for the name.
-				for _, value := range values {
-					fmt.Println("222222222222222222222222222", name, value)
-				}
-			}
+
 			userID := ""
 			if err == nil {
 				userID, err = authz.DecodeJWTToUser(jwtCookie.Value)
@@ -47,10 +39,10 @@ func JWTAuthzMiddleware(storage Storage, log Log) func(next http.Handler) http.H
 
 			if userID == "" {
 				jwtCookie := r.Header.Get("Authorization")
-				fmt.Println("JWTAuthzMiddleware header.Authorization", jwtCookie)
+
 				if jwtCookie != "" {
 					userID, err = authz.DecodeJWTToUser(jwtCookie)
-					fmt.Println("JWTAuthzMiddleware header.Authorization.userID", userID, err)
+
 					if err != nil {
 						userID = ""
 						log.Info("Error occurred creating a cookie", zap.Error(err))
@@ -74,13 +66,11 @@ func JWTAuthzMiddleware(storage Storage, log Log) func(next http.Handler) http.H
 				http.SetCookie(w, authz.AuthCookie("jwt-token", freshToken))
 				http.SetCookie(w, authz.AuthCookie("Authorization", freshToken))
 				w.Header().Set("Authorization", freshToken)
-				fmt.Println("func JWTAuthzMiddleware set cookie", freshToken)
 			}
 
 			var keyUserID models.Key = "userID"
 			ctx := r.Context()
 			ctx = context.WithValue(ctx, keyUserID, userID)
-			fmt.Println("func JWTAuthzMiddleware.keyUserID", userID)
 
 			next.ServeHTTP(w, r.WithContext(ctx))
 		}

@@ -2,7 +2,6 @@ package storage
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 	"sync"
 
@@ -171,24 +170,17 @@ func (s *MemoryStorage) DeleteURLs(delUrls ...models.DeleteURL) error {
 	s.mx.RLock()
 	defer s.mx.RUnlock()
 
-	fmt.Println("77777777777777777777", s.data)
 	for _, urls := range delUrls {
-		fmt.Println("55555555555555555", urls.ShortURLs)
 		for _, k := range urls.ShortURLs {
-			fmt.Println("44444444444444444444444", k)
-
 			cs := s.data[k]
-			fmt.Println("133333333333333333333333", cs.UserID, urls.UserID)
+
 			if cs.UserID == urls.UserID && strings.Contains(cs.ShortURL, k) {
 				s.data[k] = models.DataURL{UUID: cs.UUID, ShortURL: cs.ShortURL,
 					OriginalURL: cs.OriginalURL, UserID: cs.UserID, DeletedFlag: true}
-				fmt.Println("133333333333333333333333", cs.ShortURL)
 			}
 		}
 	}
-
 	return nil
-
 }
 
 func (s *MemoryStorage) SaveUser(k string, v models.DataUser) (models.DataUser, error) {

@@ -3,7 +3,6 @@ package controllers
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -108,7 +107,6 @@ func (h *BaseController) flushURLs() {
 			if len(delUrls) == 0 {
 				continue
 			}
-			fmt.Println("888888888888888888888888888", delUrls)
 			// сохраним все пришедшие сообщения одновременно
 			err := h.storage.DeleteURLs(delUrls...)
 			if err != nil {
@@ -132,12 +130,9 @@ func (h *BaseController) deleteUserURLs(w http.ResponseWriter, r *http.Request) 
 
 		return
 	}
-	for _, d := range ids {
-		fmt.Println("deleteUserURLs ids content", d)
-	}
 
 	userID, ok := r.Context().Value(keyUserID).(string)
-	fmt.Println("func deleteUserURLs.userID", userID)
+
 	if !ok {
 		w.WriteHeader(http.StatusUnauthorized) //401
 		return
@@ -365,7 +360,7 @@ func (h *BaseController) shortenURL(w http.ResponseWriter, r *http.Request) {
 
 	// save full url to storage with the key received earlier
 	m, err := h.storage.InsertURL(key, models.DataURL{ShortURL: shurl, OriginalURL: string(body), UserID: userID})
-	fmt.Println("ttttttttttttttttttttttttttttttttttttttttttttuserID", userID, shurl)
+
 	conflict := false
 	if err != nil {
 		if err == storage.ErrConflict {
@@ -407,7 +402,7 @@ func (h *BaseController) getFullURL(w http.ResponseWriter, r *http.Request) {
 	// get full url from storage
 	data, err := h.storage.GetURL(key)
 	if err != nil || len(data.OriginalURL) == 0 {
-		fmt.Println("111111", key)
+
 		// value not found for the passed key
 		w.WriteHeader(http.StatusBadRequest) // 400
 		return
