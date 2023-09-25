@@ -21,9 +21,7 @@ func JWTAuthzMiddleware(storage Storage, log Log) func(next http.Handler) http.H
 		fn := func(w http.ResponseWriter, r *http.Request) {
 
 			// Grab jwt-token cookie
-
 			jwtCookie, err := r.Cookie("jwt-token")
-			// jwtCookie, err := r.Cookie("Authorization")
 
 			userID := ""
 			if err == nil {
@@ -64,17 +62,15 @@ func JWTAuthzMiddleware(storage Storage, log Log) func(next http.Handler) http.H
 
 				freshToken := authz.CreateJWTTokenForUser(userID)
 				http.SetCookie(w, authz.AuthCookie("jwt-token", freshToken))
-				http.SetCookie(w, authz.AuthCookie("Authorization", freshToken))
+				// http.SetCookie(w, authz.AuthCookie("Authorization", freshToken))
 				w.Header().Set("Authorization", freshToken)
 			}
 
 			var keyUserID models.Key = "userID"
 			ctx := r.Context()
 			ctx = context.WithValue(ctx, keyUserID, userID)
-
 			next.ServeHTTP(w, r.WithContext(ctx))
 		}
-
 		return http.HandlerFunc(fn)
 	}
 }
