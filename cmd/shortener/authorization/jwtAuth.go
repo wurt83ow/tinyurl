@@ -23,10 +23,10 @@ type CustomClaims struct {
 func init() {
 	jwtSigningKey = []byte(config.GetAsString("JWT_SIGNING_KEY", "test_key"))
 	defaultCookie = http.Cookie{
-		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
-		Domain:   config.GetAsString("COOKIE_DOMAIN", "localhost"),
-		Secure:   config.GetAsBool("COOKIE_SECURE", true),
+		// HttpOnly: true,
+		// SameSite: http.SameSiteLaxMode,
+		// Domain:   config.GetAsString("COOKIE_DOMAIN", "localhost"),
+		// Secure:   config.GetAsBool("COOKIE_SECURE", true),
 	}
 }
 
@@ -74,9 +74,9 @@ func GetHash(email string, password string) []byte {
 	return h.Sum(nil)
 
 }
-func AuthCookie(token string) *http.Cookie {
+func AuthCookie(name string, token string) *http.Cookie {
 	d := defaultCookie
-	d.Name = "jwt-token"
+	d.Name = name
 	d.Value = token
 	d.Path = "/"
 	return &d

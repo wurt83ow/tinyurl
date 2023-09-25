@@ -2,6 +2,9 @@ package storage
 
 import (
 	"errors"
+	"fmt"
+	"strings"
+	"sync"
 
 	"github.com/wurt83ow/tinyurl/internal/models"
 	"go.uber.org/zap"
@@ -15,6 +18,8 @@ type StorageURL = map[string]models.DataURL
 type StorageUser = map[string]models.DataUser
 
 type MemoryStorage struct {
+	mx     sync.RWMutex
+	umx    sync.RWMutex
 	data   StorageURL
 	users  StorageUser
 	keeper Keeper
@@ -69,6 +74,10 @@ func (s *MemoryStorage) InsertURL(k string,
 	if err != nil {
 		return nv, err
 	}
+
+	s.mx.Lock()
+	defer s.mx.Unlock()
+
 	s.data[k] = nv
 
 	return nv, nil
@@ -81,6 +90,10 @@ func (s *MemoryStorage) InsertUser(k string,
 	if err != nil {
 		return nv, err
 	}
+
+	s.umx.Lock()
+	defer s.umx.Unlock()
+
 	s.users[k] = nv
 
 	return nv, nil
@@ -99,7 +112,12 @@ func (s *MemoryStorage) InsertBatch(stg StorageURL) error {
 }
 
 func (s *MemoryStorage) GetURL(k string) (models.DataURL, error) {
+
+	s.mx.RLock()
+	defer s.mx.RUnlock()
+
 	v, exists := s.data[k]
+
 	if !exists {
 		return models.DataURL{}, errors.New("value with such key doesn't exist")
 	}
@@ -107,6 +125,10 @@ func (s *MemoryStorage) GetURL(k string) (models.DataURL, error) {
 }
 
 func (s *MemoryStorage) GetUser(k string) (models.DataUser, error) {
+
+	s.umx.RLock()
+	defer s.umx.RUnlock()
+
 	v, exists := s.users[k]
 	if !exists {
 		return models.DataUser{}, errors.New("value with such key doesn't exist")
@@ -116,6 +138,9 @@ func (s *MemoryStorage) GetUser(k string) (models.DataUser, error) {
 
 func (s *MemoryStorage) GetUserURLs(userID string) []models.ResponseUserURLs {
 	var data []models.ResponseUserURLs
+
+	s.mx.RLock()
+	defer s.mx.RUnlock()
 	for _, url := range s.data {
 		if url.UserID == userID {
 			data = append(data, models.ResponseUserURLs{
@@ -133,7 +158,7 @@ func (s *MemoryStorage) SaveURL(k string, v models.DataURL) (models.DataURL, err
 	return s.keeper.Save(k, v)
 }
 
-func (s *MemoryStorage) SaveURLs(delUrls ...models.DeleteURL) error {
+func (s *MemoryStorage) DeleteURLs(delUrls ...models.DeleteURL) error {
 
 	if s.keeper == nil {
 		return nil
@@ -141,6 +166,25 @@ func (s *MemoryStorage) SaveURLs(delUrls ...models.DeleteURL) error {
 	err := s.keeper.UpdateBatch(delUrls...)
 	if err != nil {
 		return err
+	}
+
+	s.mx.RLock()
+	defer s.mx.RUnlock()
+
+	fmt.Println("77777777777777777777", s.data)
+	for _, urls := range delUrls {
+		fmt.Println("55555555555555555", urls.ShortURLs)
+		for _, k := range urls.ShortURLs {
+			fmt.Println("44444444444444444444444", k)
+
+			cs := s.data[k]
+			fmt.Println("133333333333333333333333", cs.UserID, urls.UserID)
+			if cs.UserID == urls.UserID && strings.Contains(cs.ShortURL, k) {
+				s.data[k] = models.DataURL{UUID: cs.UUID, ShortURL: cs.ShortURL,
+					OriginalURL: cs.OriginalURL, UserID: cs.UserID, DeletedFlag: true}
+				fmt.Println("133333333333333333333333", cs.ShortURL)
+			}
+		}
 	}
 
 	return nil

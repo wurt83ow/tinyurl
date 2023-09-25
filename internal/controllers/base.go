@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-chi/chi"
@@ -30,7 +31,7 @@ type Storage interface {
 	GetUser(k string) (models.DataUser, error)
 	GetUserURLs(userID string) []models.ResponseUserURLs
 	SaveURL(k string, v models.DataURL) (models.DataURL, error)
-	SaveURLs(delUrls ...models.DeleteURL) error
+	DeleteURLs(delUrls ...models.DeleteURL) error
 	SaveUser(k string, v models.DataUser) (models.DataUser, error)
 	SaveBatch(storage.StorageURL) error
 	GetBaseConnection() bool
@@ -91,15 +92,17 @@ func (h *BaseController) Route() *chi.Mux {
 // flushURLs постоянно сохраняет несколько сообщений в хранилище с определённым интервалом
 func (h *BaseController) flushURLs() {
 	// будем сохранять сообщения, накопленные за последние 10 секунд
-	//!!! ticker := time.NewTicker(10 * time.Second)
-	ticker := time.NewTicker(time.Millisecond)
+	ticker := time.NewTicker(1 * time.Second)
+	// ticker := time.NewTicker(time.Millisecond)
 	var delUrls []models.DeleteURL
-
+	var mu sync.Mutex
 	for {
 		select {
 		case msg := <-h.delChan:
 			// добавим сообщение в слайс для последующего сохранения
+			mu.Lock()
 			delUrls = append(delUrls, msg)
+			mu.Unlock()
 		case <-ticker.C:
 			// подождём, пока придёт хотя бы одно сообщение
 			if len(delUrls) == 0 {
@@ -107,7 +110,7 @@ func (h *BaseController) flushURLs() {
 			}
 			fmt.Println("888888888888888888888888888", delUrls)
 			// сохраним все пришедшие сообщения одновременно
-			err := h.storage.SaveURLs(delUrls...)
+			err := h.storage.DeleteURLs(delUrls...)
 			if err != nil {
 				h.log.Info("cannot save delUrls", zap.Error(err))
 				// не будем стирать сообщения, попробуем отправить их чуть позже
@@ -126,13 +129,15 @@ func (h *BaseController) deleteUserURLs(w http.ResponseWriter, r *http.Request) 
 	if err := dec.Decode(&ids); err != nil {
 		h.log.Info("cannot decode request JSON body: ", zap.Error(err))
 		w.WriteHeader(http.StatusBadRequest)
+
 		return
 	}
 	for _, d := range ids {
-		fmt.Println("77777777777777777777", d)
+		fmt.Println("deleteUserURLs ids content", d)
 	}
 
 	userID, ok := r.Context().Value(keyUserID).(string)
+	fmt.Println("func deleteUserURLs.userID", userID)
 	if !ok {
 		w.WriteHeader(http.StatusUnauthorized) //401
 		return
@@ -197,7 +202,8 @@ func (h *BaseController) Login(w http.ResponseWriter, r *http.Request) {
 
 	if bytes.Equal(user.Hash, authz.GetHash(rb.Email, rb.Password)) {
 		freshToken := authz.CreateJWTTokenForUser(user.UUID)
-		http.SetCookie(w, authz.AuthCookie(freshToken))
+		http.SetCookie(w, authz.AuthCookie("jwt-token", freshToken))
+		http.SetCookie(w, authz.AuthCookie("Authorization", freshToken))
 
 		w.Header().Set("Authorization", freshToken)
 		err := json.NewEncoder(w).Encode(models.ResponseBody{
@@ -359,6 +365,7 @@ func (h *BaseController) shortenURL(w http.ResponseWriter, r *http.Request) {
 
 	// save full url to storage with the key received earlier
 	m, err := h.storage.InsertURL(key, models.DataURL{ShortURL: shurl, OriginalURL: string(body), UserID: userID})
+	fmt.Println("ttttttttttttttttttttttttttttttttttttttttttttuserID", userID, shurl)
 	conflict := false
 	if err != nil {
 		if err == storage.ErrConflict {
@@ -396,15 +403,17 @@ func (h *BaseController) getFullURL(w http.ResponseWriter, r *http.Request) {
 		h.log.Info("got bad request status 400: %v", zap.String("method", r.Method))
 		return
 	}
+
 	// get full url from storage
 	data, err := h.storage.GetURL(key)
 	if err != nil || len(data.OriginalURL) == 0 {
+		fmt.Println("111111", key)
 		// value not found for the passed key
 		w.WriteHeader(http.StatusBadRequest) // 400
 		return
 	}
 	if data.DeletedFlag {
-		w.WriteHeader(http.StatusGone)
+		w.WriteHeader(http.StatusGone) // 410
 		return
 	}
 

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -113,7 +114,15 @@ func (bdk *BDKeeper) Load() (storage.StorageURL, error) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		data[record.ShortURL] = record
+
+		u, err := url.Parse(record.ShortURL)
+		if err != nil {
+			panic(err)
+		}
+
+		key := u.Path
+		key = strings.Replace(key, "/", "", -1)
+		data[key] = record
 	}
 	if err = rows.Err(); err != nil {
 		return data, err
@@ -171,7 +180,6 @@ func (bdk *BDKeeper) UpdateBatch(data ...models.DeleteURL) error {
 	i := 0
 
 	for _, urls := range data {
-
 		for _, k := range urls.ShortURLs {
 			valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d)", i*2+1, i*2+2))
 			valueArgs = append(valueArgs, k)
@@ -229,6 +237,7 @@ func (bdk *BDKeeper) Save(key string, data models.DataURL) (models.DataURL, erro
 	var m models.DataURL
 	nerr := row.Scan(&m.UUID, &m.ShortURL, &m.OriginalURL, &m.UserID, &m.DeletedFlag)
 	if nerr != nil {
+
 		bdk.log.Info("row scan error: ", zap.Error(err))
 		return data, nerr
 	}
@@ -261,7 +270,14 @@ func (bdk *BDKeeper) SaveUser(key string, data models.DataUser) (models.DataUser
 		"INSERT INTO users (id, email, hash, name) VALUES ($1, $2, $3, $4) RETURNING id",
 		id, data.Email, data.Hash, data.Name)
 
-	row := bdk.conn.QueryRowContext(ctx, `
+	q := ""
+	he := false
+
+	if data.Hash != nil {
+		q = "AND u.hash = $2"
+		he = true
+	}
+	stmt := fmt.Sprintf(`
 	SELECT
 		u.id,
 		u.email,
@@ -269,15 +285,20 @@ func (bdk *BDKeeper) SaveUser(key string, data models.DataUser) (models.DataUser
 		u.name  	 
 	FROM users u	 
 	WHERE
-		u.email = $1 AND u.hash = $2
-`,
-		data.Email, data.Hash,
-	)
+		u.email = $1 %s`, q)
+
+	var row *sql.Row
+	if he {
+		row = bdk.conn.QueryRowContext(ctx, stmt, data.Email, data.Hash)
+	} else {
+		row = bdk.conn.QueryRowContext(ctx, stmt, data.Email)
+	}
 
 	// считываем значения из записи БД в соответствующие поля структуры
 	var m models.DataUser
 	nerr := row.Scan(&m.UUID, &m.Email, &m.Hash, &m.Name)
 	if nerr != nil {
+		fmt.Println("7777777777777777777777777777777777", data)
 		return data, nerr
 	}
 
