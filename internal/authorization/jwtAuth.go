@@ -74,6 +74,7 @@ func GetHash(email string, password string) []byte {
 	return h.Sum(nil)
 
 }
+
 func AuthCookie(name string, token string) *http.Cookie {
 	d := defaultCookie
 	d.Name = name

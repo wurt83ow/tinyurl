@@ -29,13 +29,13 @@ import (
 type Log interface {
 	Info(string, ...zapcore.Field)
 }
+
 type BDKeeper struct {
 	conn *sql.DB
 	log  Log
 }
 
 func NewBDKeeper(dsn func() string, log Log) *BDKeeper {
-
 	addr := dsn()
 	if addr == "" {
 		log.Info("database dsn is empty")
@@ -49,7 +49,6 @@ func NewBDKeeper(dsn func() string, log Log) *BDKeeper {
 
 	driver, err := postgres.WithInstance(conn, &postgres.Config{})
 	if err != nil {
-
 		log.Info("error getting driver: ", zap.Error(err))
 	}
 
@@ -60,7 +59,7 @@ func NewBDKeeper(dsn func() string, log Log) *BDKeeper {
 
 	// fix error test path
 	path := ""
-	if filepath.Base(dir) == "app" {
+	if filepath.Base(dir) == "shortener" {
 		path = "../../"
 	}
 
@@ -89,7 +88,7 @@ func (bdk *BDKeeper) Load() (storage.StorageURL, error) {
 	ctx := context.Background()
 	data := make(storage.StorageURL)
 	// запрашиваем данные обо всех сообщениях пользователя, без самого текста
-	rows, err := bdk.conn.QueryContext(ctx, `SELECT correlation_id, short_url, original_url, user_id, is_deleted FROM dataurl`)
+	rows, err := bdk.conn.QueryContext(ctx, `SELECT * FROM dataurl`)
 
 	if err != nil {
 		return nil, err
@@ -213,9 +212,15 @@ func (bdk *BDKeeper) Save(key string, data models.DataURL) (models.DataURL, erro
 	} else {
 		id = data.UUID
 	}
-
-	_, err := bdk.conn.ExecContext(ctx,
-		"INSERT INTO dataurl (correlation_id, short_url, original_url, user_id, is_deleted) VALUES ($1, $2, $3, $4, $5) RETURNING original_url",
+	_, err := bdk.conn.ExecContext(ctx, `
+		"INSERT INTO dataurl (
+			correlation_id,
+			short_url,
+			original_url,
+			user_id,
+			is_deleted)
+		VALUES ($1, $2, $3, $4, $5) 
+		RETURNING original_url`,
 		id, data.ShortURL, data.OriginalURL, data.UserID, data.DeletedFlag)
 
 	row := bdk.conn.QueryRowContext(ctx, `
@@ -227,8 +232,7 @@ func (bdk *BDKeeper) Save(key string, data models.DataURL) (models.DataURL, erro
 		d.is_deleted	 
 	FROM dataurl d	 
 	WHERE
-		d.original_url = $1
-`,
+		d.original_url = $1`,
 		data.OriginalURL,
 	)
 
@@ -236,7 +240,6 @@ func (bdk *BDKeeper) Save(key string, data models.DataURL) (models.DataURL, erro
 	var m models.DataURL
 	nerr := row.Scan(&m.UUID, &m.ShortURL, &m.OriginalURL, &m.UserID, &m.DeletedFlag)
 	if nerr != nil {
-
 		bdk.log.Info("row scan error: ", zap.Error(err))
 		return data, nerr
 	}
@@ -250,7 +253,6 @@ func (bdk *BDKeeper) Save(key string, data models.DataURL) (models.DataURL, erro
 		}
 		return m, err
 	}
-
 	return m, nil
 }
 
@@ -266,7 +268,12 @@ func (bdk *BDKeeper) SaveUser(key string, data models.DataUser) (models.DataUser
 	}
 
 	_, err := bdk.conn.ExecContext(ctx,
-		"INSERT INTO users (id, email, hash, name) VALUES ($1, $2, $3, $4) RETURNING id",
+		`INSERT INTO users (
+			id,
+			email,
+			hash,
+			name)
+		VALUES ($1, $2, $3, $4) RETURNING id`,
 		id, data.Email, data.Hash, data.Name)
 
 	q := ""
@@ -329,16 +336,20 @@ func (bdk *BDKeeper) SaveBatch(data storage.StorageURL) error {
 		valueArgs = append(valueArgs, post.DeletedFlag)
 		i++
 	}
-	stmt := fmt.Sprintf("INSERT INTO dataurl (correlation_id, short_url, original_url, user_id, is_deleted) VALUES %s ON CONFLICT (original_url) DO NOTHING",
+	stmt := fmt.Sprintf(
+		`INSERT INTO dataurl (
+			correlation_id,
+			short_url,
+			original_url,
+			user_id,
+			is_deleted)
+		VALUES %s ON CONFLICT (original_url) DO NOTHING`,
 		strings.Join(valueStrings, ","))
 	_, err := bdk.conn.ExecContext(ctx, stmt, valueArgs...)
 	if err != nil {
-
 		return err
 	}
-
 	return nil
-
 }
 
 func (bdk *BDKeeper) Ping() bool {
@@ -347,7 +358,6 @@ func (bdk *BDKeeper) Ping() bool {
 	if err := bdk.conn.PingContext(ctx); err != nil {
 		return false
 	}
-
 	return true
 }
 
