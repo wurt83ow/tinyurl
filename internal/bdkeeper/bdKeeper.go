@@ -208,8 +208,8 @@ func (bdk *BDKeeper) Save(key string, data models.DataURL) (models.DataURL, erro
 	} else {
 		id = data.UUID
 	}
-	_, err := bdk.conn.ExecContext(ctx, `
-		"INSERT INTO dataurl (
+	_, err := bdk.conn.ExecContext(ctx,
+		`INSERT INTO dataurl (
 			correlation_id,
 			short_url,
 			original_url,
@@ -335,11 +335,11 @@ func (bdk *BDKeeper) SaveBatch(data storage.StorageURL) error {
 	}
 	stmt := fmt.Sprintf(
 		`INSERT INTO dataurl (
-			correlation_id,
-			short_url,
-			original_url,
-			user_id,
-			is_deleted)
+		correlation_id,
+		short_url,
+		original_url,
+		user_id,
+		is_deleted)
 		VALUES %s ON CONFLICT (original_url) DO NOTHING`,
 		strings.Join(valueStrings, ","))
 	_, err := bdk.conn.ExecContext(ctx, stmt, valueArgs...)
