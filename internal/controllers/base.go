@@ -59,7 +59,7 @@ func NewBaseController(storage Storage, options Options, log Log) *BaseControlle
 		storage: storage,
 		options: options,
 		log:     log,
-		delChan: make(chan models.DeleteURL, 1024), // установим каналу буфер в 1024 сообщения
+		delChan: make(chan models.DeleteURL, 1024), // set the channel buffer to 1024 messages
 	}
 
 	go instance.flushURLs()
@@ -91,8 +91,8 @@ func (h *BaseController) Route() *chi.Mux {
 // flushURLs постоянно сохраняет несколько сообщений в хранилище с определённым интервалом
 func (h *BaseController) flushURLs() {
 	// будем сохранять сообщения, накопленные за последние 10 секунд
-	ticker := time.NewTicker(1 * time.Second)
-	// ticker := time.NewTicker(time.Millisecond)
+	ticker := time.NewTicker(10 * time.Second)
+
 	var delUrls []models.DeleteURL
 	var mu sync.Mutex
 	for {

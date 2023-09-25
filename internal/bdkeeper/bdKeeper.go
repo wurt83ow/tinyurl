@@ -86,17 +86,17 @@ func NewBDKeeper(dsn func() string, log Log) *BDKeeper {
 func (bdk *BDKeeper) Load() (storage.StorageURL, error) {
 
 	ctx := context.Background()
-	data := make(storage.StorageURL)
-	// запрашиваем данные обо всех сообщениях пользователя, без самого текста
+
+	// get data from bd
 	rows, err := bdk.conn.QueryContext(ctx, `SELECT * FROM dataurl`)
 
 	if err != nil {
 		return nil, err
 	}
 
-	// не забываем закрыть курсор после завершения работы с данными
 	defer rows.Close()
 
+	data := make(storage.StorageURL)
 	for rows.Next() {
 		record := models.DataURL{}
 
@@ -125,7 +125,6 @@ func (bdk *BDKeeper) Load() (storage.StorageURL, error) {
 	if err = rows.Err(); err != nil {
 		return data, err
 	}
-
 	return data, nil
 }
 
@@ -133,18 +132,17 @@ func (bdk *BDKeeper) Load() (storage.StorageURL, error) {
 func (bdk *BDKeeper) LoadUsers() (storage.StorageUser, error) {
 
 	ctx := context.Background()
-	data := make(storage.StorageUser)
 
-	// запрашиваем данные обо всех сообщениях пользователя, без самого текста
-	rows, err := bdk.conn.QueryContext(ctx, `SELECT id, name, email, hash FROM users`)
+	// get data from bd
+	rows, err := bdk.conn.QueryContext(ctx, `SELECT * users`)
 
 	if err != nil {
 		return nil, err
 	}
 
-	// не забываем закрыть курсор после завершения работы с данными
 	defer rows.Close()
 
+	data := make(storage.StorageUser)
 	for rows.Next() {
 		record := models.DataUser{}
 
@@ -163,10 +161,8 @@ func (bdk *BDKeeper) LoadUsers() (storage.StorageUser, error) {
 		data[record.Email] = record
 	}
 	if err = rows.Err(); err != nil {
-
 		return data, err
 	}
-
 	return data, nil
 }
 
@@ -236,7 +232,7 @@ func (bdk *BDKeeper) Save(key string, data models.DataURL) (models.DataURL, erro
 		data.OriginalURL,
 	)
 
-	// считываем значения из записи БД в соответствующие поля структуры
+	// read the values from the database record into the corresponding fields of the structure
 	var m models.DataURL
 	nerr := row.Scan(&m.UUID, &m.ShortURL, &m.OriginalURL, &m.UserID, &m.DeletedFlag)
 	if nerr != nil {
@@ -300,7 +296,7 @@ func (bdk *BDKeeper) SaveUser(key string, data models.DataUser) (models.DataUser
 		row = bdk.conn.QueryRowContext(ctx, stmt, data.Email)
 	}
 
-	// считываем значения из записи БД в соответствующие поля структуры
+	// read the values from the database record into the corresponding fields of the structure
 	var m models.DataUser
 	nerr := row.Scan(&m.UUID, &m.Email, &m.Hash, &m.Name)
 	if nerr != nil {
@@ -328,7 +324,8 @@ func (bdk *BDKeeper) SaveBatch(data storage.StorageURL) error {
 	i := 0
 	for _, post := range data {
 
-		valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d, $%d, $%d)", i*5+1, i*5+2, i*5+3, i*5+4, i*5+5))
+		valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d, $%d, $%d)",
+			i*5+1, i*5+2, i*5+3, i*5+4, i*5+5))
 		valueArgs = append(valueArgs, post.UUID)
 		valueArgs = append(valueArgs, post.ShortURL)
 		valueArgs = append(valueArgs, post.OriginalURL)

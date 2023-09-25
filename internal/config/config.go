@@ -19,8 +19,8 @@ func NewOptions() *Options {
 	return &Options{"", "", "", "", ""}
 }
 
-// parseFlags обрабатывает аргументы командной строки
-// и сохраняет их значения в соответствующих переменных
+// parseFlags handles command line arguments
+// and stores their values in the corresponding variables
 func (o *Options) ParseFlags() {
 
 	regStringVar(&o.flagRunAddr, "a", ":8080", "address and port to run server")
@@ -30,7 +30,7 @@ func (o *Options) ParseFlags() {
 	// regStringVar(&o.flagFileStoragePath, "f", "/tmp/short-url-db.json", "default file storage path")
 	regStringVar(&o.flagDataBaseDSN, "d", "", "")
 
-	// парсим переданные серверу аргументы в зарегистрированные переменные
+	// parse the arguments passed to the server into registered variables
 	flag.Parse()
 
 	if envRunAddr := os.Getenv("SERVER_ADDRESS"); envRunAddr != "" {

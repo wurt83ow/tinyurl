@@ -22,23 +22,23 @@ import (
 
 func TestShortenJSON(t *testing.T) {
 
-	// описываем передаваемое тело
+	// describe the body being transmitted
 	requestBody := strings.NewReader(`{         
         "url": "https://practicum.yandex.ru/"
     }`)
 
-	// описываем ожидаемое тело ответа при успешном запросе
+	// describe the expected response body for a successful request
 	successBody := `{"result":"http://localhost:8080/nOykhckC3Od"}`
 
 	testPostReq(t, requestBody, successBody, true)
 }
 
 func TestShortenURL(t *testing.T) {
-	// описываем передаваемое тело
+	// describe the body being transmitted
 	url := "https://practicum.yandex.ru/"
 	requestBody := strings.NewReader(url)
 
-	// описываем ожидаемое тело ответа при успешном запросе
+	// describe the expected response body for a successful request
 	successBody := "http://localhost:8080/nOykhckC3Od"
 
 	testPostReq(t, requestBody, successBody, false)
@@ -48,7 +48,7 @@ func testPostReq(t *testing.T, requestBody *strings.Reader, successBody string, 
 
 	defaultBody := strings.NewReader("")
 
-	// описываем набор данных: метод запроса, ожидаемый код ответа, ожидаемое тело
+	// describe the data set: request method, expected response code, expected body
 	testCases := []struct {
 		method       string
 		expectedCode int
@@ -91,7 +91,7 @@ func testPostReq(t *testing.T, requestBody *strings.Reader, successBody string, 
 			r := httptest.NewRequest(tc.method, "/", tc.requestBody)
 			w := httptest.NewRecorder()
 
-			// вызовем хендлер как обычную функцию, без запуска самого сервера
+			// call the handler as a regular function, without starting the server itself
 			if isJSONTest {
 				controller.shortenJSON(w, r)
 			} else {
@@ -99,7 +99,7 @@ func testPostReq(t *testing.T, requestBody *strings.Reader, successBody string, 
 			}
 
 			assert.Equal(t, tc.expectedCode, w.Code, "Код ответа не совпадает с ожидаемым")
-			// проверим корректность полученного тела ответа, если мы его ожидаем
+			// check the correctness of the received response body if we expect it
 			if tc.expectedBody != "" {
 				assert.Equal(t, tc.expectedBody, strings.TrimSpace(w.Body.String()), "Тело ответа не совпадает с ожидаемым")
 			}
@@ -109,13 +109,13 @@ func testPostReq(t *testing.T, requestBody *strings.Reader, successBody string, 
 }
 
 func TestGetFullURL(t *testing.T) {
-	// описываем передаваемое тело
+	// describe the body being transmitted
 	url := "https://practicum.yandex.ru/"
 
 	defaultPath := "/"
 	path := "/nOykhckC3Od"
 
-	// описываем набор данных: метод запроса, ожидаемый код ответа, ожидаемое тело
+	// describe the data set: request method, expected response code, expected body
 	testCases := []struct {
 		method       string
 		path         string
@@ -152,12 +152,12 @@ func TestGetFullURL(t *testing.T) {
 
 	controller := NewBaseController(memoryStorage, option, nLogger)
 
-	//Поместим данные для дальнейшего их получения методом get
+	// place the data for further retrieval using the get method
 	requestBody := strings.NewReader(url)
 	r := httptest.NewRequest(http.MethodPost, "/", requestBody)
 	w := httptest.NewRecorder()
 
-	// вызовем хендлер как обычную функцию, без запуска самого сервера
+	// call the handler as a regular function, without starting the server itself
 	controller.shortenURL(w, r)
 
 	for _, tc := range testCases {
@@ -177,22 +177,22 @@ func TestGetFullURL(t *testing.T) {
 
 func TestGzipShortenJSON(t *testing.T) {
 
-	// описываем передаваемое тело
+	// describe the body being transmitted
 	requestBody := `{         
         "url": "https://practicum.yandex.ru/"
     }`
 
-	// описываем ожидаемое тело ответа при успешном запросе
+	// describe the expected response body for a successful request
 	successBody := `{"result":"http://localhost:8080/nOykhckC3Od"}`
 
 	testGzipCompression(t, requestBody, successBody, true)
 }
 
 func TestGzipTestShortenURL(t *testing.T) {
-	// описываем передаваемое тело
+	// describe the body being transmitted
 	requestBody := "https://practicum.yandex.ru/"
 
-	// описываем ожидаемое тело ответа при успешном запросе
+	// describe the expected response body for a successful request
 	successBody := "http://localhost:8080/nOykhckC3Od"
 
 	testGzipCompression(t, requestBody, successBody, false)
