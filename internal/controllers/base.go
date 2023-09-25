@@ -13,9 +13,9 @@ import (
 	"github.com/google/uuid"
 	authz "github.com/wurt83ow/tinyurl/cmd/shortener/authorization"
 	"github.com/wurt83ow/tinyurl/cmd/shortener/shorturl"
-	"github.com/wurt83ow/tinyurl/cmd/shortener/storage"
 	"github.com/wurt83ow/tinyurl/internal/middleware"
 	"github.com/wurt83ow/tinyurl/internal/models"
+	"github.com/wurt83ow/tinyurl/internal/storage"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )

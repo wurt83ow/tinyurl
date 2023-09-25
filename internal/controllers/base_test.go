@@ -13,12 +13,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/wurt83ow/tinyurl/cmd/shortener/storage"
 	"github.com/wurt83ow/tinyurl/internal/bdkeeper"
 	"github.com/wurt83ow/tinyurl/internal/config"
 	"github.com/wurt83ow/tinyurl/internal/filekeeper"
 	"github.com/wurt83ow/tinyurl/internal/logger"
 	compressor "github.com/wurt83ow/tinyurl/internal/middleware"
+	"github.com/wurt83ow/tinyurl/internal/storage"
 )
 
 func TestShortenJSON(t *testing.T) {

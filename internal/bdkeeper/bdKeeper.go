@@ -23,8 +23,9 @@ import (
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
 	_ "github.com/jackc/pgx/v5/stdlib"
-	"github.com/wurt83ow/tinyurl/cmd/shortener/storage"
+
 	"github.com/wurt83ow/tinyurl/internal/models"
+	"github.com/wurt83ow/tinyurl/internal/storage"
 )
 
 type Log interface {
