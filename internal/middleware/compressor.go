@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/wurt83ow/tinyurl/cmd/shortener/compress"
+	"github.com/wurt83ow/tinyurl/internal/compress"
 )
 
 func GzipMiddleware(h http.Handler) http.Handler {

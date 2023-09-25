@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
-	authz "github.com/wurt83ow/tinyurl/cmd/shortener/authorization"
+	authz "github.com/wurt83ow/tinyurl/internal/authorization"
 	"github.com/wurt83ow/tinyurl/internal/models"
 	"go.uber.org/zap"
 )

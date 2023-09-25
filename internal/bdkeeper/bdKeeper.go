@@ -62,12 +62,12 @@ func NewBDKeeper(dsn func() string, log Log) *BDKeeper {
 
 	// fix error test path
 	path := ""
-	if filepath.Base(dir) == "tinyurl" {
-		path = "cmd/shortener/"
+	if filepath.Base(dir) == "app" {
+		path = "../../"
 	}
 
 	m, err := migrate.NewWithDatabaseInstance(
-		fmt.Sprintf("file://%s/%smigrations", dir, path),
+		fmt.Sprintf("file://%smigrations", path),
 		"postgres",
 		driver)
 
