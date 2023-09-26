@@ -12,17 +12,23 @@ type Response struct {
 	Result string `json:"result"`
 }
 
-type RequestURL struct {
-	UUID        string `json:"correlation_id"`
-	OriginalURL string `json:"original_url"`
-}
+// type DataURLite struct {
+// 	UUID        string `json:"correlation_id"`
+// 	OriginalURL string `json:"original_url"`
+// }
 
-type ResponseURL struct {
-	UUID     string `json:"correlation_id"`
-	ShortURL string `json:"short_url"`
-}
+// type DataURLite struct {
+// 	UUID     string `json:"correlation_id"`
+// 	ShortURL string `json:"short_url"`
+// }
 
-type ResponseUserURL struct {
+// type DataURLite struct {
+// 	ShortURL    string `db:"short_url" json:"short_url"`
+// 	OriginalURL string `db:"original_url" json:"original_url"`
+// }
+
+type DataURLite struct {
+	UUID        string `db:"correlation_id" json:"correlation_id"`
 	ShortURL    string `db:"short_url" json:"short_url"`
 	OriginalURL string `db:"original_url" json:"original_url"`
 }
