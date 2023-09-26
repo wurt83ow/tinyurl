@@ -9,7 +9,6 @@ type Logger struct {
 }
 
 func NewLogger(level string) (*Logger, error) {
-
 	// convert the text logging level to zap.AtomicLevel
 	lvl, err := zap.ParseAtomicLevel(level)
 	if err != nil {
@@ -18,15 +17,15 @@ func NewLogger(level string) (*Logger, error) {
 
 	// create a new logger configuration
 	config := zap.NewProductionConfig()
-
 	// set the level
 	config.Level = lvl
-
 	// config.OutputPaths = []string{"stdout", "./logs/" + logFile}
 	logger, err := config.Build(zap.AddCaller())
+
 	if err != nil {
 		return nil, err
 	}
+
 	return &Logger{zap: logger}, err
 }
 
@@ -43,5 +42,6 @@ func (l Logger) writer() *zap.Logger {
 	if l.zap == nil {
 		return noOpLogger
 	}
+
 	return l.zap
 }

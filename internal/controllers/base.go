@@ -200,10 +200,12 @@ func (h *BaseController) Login(w http.ResponseWriter, r *http.Request) {
 		err := json.NewEncoder(w).Encode(models.ResponseUser{
 			Response: "success",
 		})
+
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
+
 		return
 	}
 
@@ -291,7 +293,6 @@ func (h *BaseController) shortenJSON(w http.ResponseWriter, r *http.Request) {
 	if req.URL == "" {
 		h.log.Info("request JSON body is empty")
 		w.WriteHeader(http.StatusBadRequest)
-
 		return
 	}
 

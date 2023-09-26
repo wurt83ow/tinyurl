@@ -83,7 +83,6 @@ func (s *MemoryStorage) InsertURL(k string,
 
 func (s *MemoryStorage) InsertUser(k string,
 	v models.DataUser) (models.DataUser, error) {
-
 	nv, err := s.SaveUser(k, v)
 	if err != nil {
 		return nv, err
@@ -199,7 +198,6 @@ func (s *MemoryStorage) SaveBatch(stg StorageURL) error {
 	}
 
 	return s.keeper.SaveBatch(stg)
-
 }
 
 func (s *MemoryStorage) GetBaseConnection() bool {

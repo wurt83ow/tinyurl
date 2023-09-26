@@ -26,7 +26,6 @@ func (*FileKeeper) UpdateBatch(...models.DeleteURL) error {
 }
 
 func NewFileKeeper(path func() string, log Log) *FileKeeper {
-
 	addr := path()
 	if addr == "" {
 		log.Info("file json path is empty")
@@ -102,7 +101,6 @@ func (kp *FileKeeper) LoadUsers() (storage.StorageUser, error) {
 }
 
 func (kp *FileKeeper) Save(key string, data models.DataURL) (models.DataURL, error) {
-
 	dataFile := kp.path()
 	var (
 		action string
@@ -164,7 +162,6 @@ func (kp *FileKeeper) Save(key string, data models.DataURL) (models.DataURL, err
 }
 
 func (kp *FileKeeper) SaveUser(key string, data models.DataUser) (models.DataUser, error) {
-
 	dataFile := kp.path()
 	var (
 		action string
@@ -226,7 +223,6 @@ func (kp *FileKeeper) SaveUser(key string, data models.DataUser) (models.DataUse
 }
 
 func (kp *FileKeeper) SaveBatch(data storage.StorageURL) error {
-
 	dataFile := kp.path()
 	var (
 		action string
@@ -251,7 +247,6 @@ func (kp *FileKeeper) SaveBatch(data storage.StorageURL) error {
 	defer cfile.Close()
 
 	for k, v := range data {
-
 		var id string
 		if v.UUID == "" {
 			neuuid := uuid.New()

@@ -42,6 +42,7 @@ func CreateJWTTokenForUser(userid string) string {
 		log.Println("Error occurred generating JWT", err)
 		return ""
 	}
+
 	return tokenString
 }
 
@@ -60,6 +61,7 @@ func DecodeJWTToUser(token string) (string, error) {
 	if decClaims, ok := decodeToken.Claims.(*CustomClaims); ok && decodeToken.Valid {
 		return decClaims.Email, nil
 	}
+
 	return "", err
 }
 
@@ -71,8 +73,8 @@ func GetHash(email string, password string) []byte {
 	// transfer bytes for hashing
 	h.Write(src)
 	// calculate the hash
-	return h.Sum(nil)
 
+	return h.Sum(nil)
 }
 
 func AuthCookie(name string, token string) *http.Cookie {
@@ -80,5 +82,6 @@ func AuthCookie(name string, token string) *http.Cookie {
 	d.Name = name
 	d.Value = token
 	d.Path = "/"
+
 	return &d
 }

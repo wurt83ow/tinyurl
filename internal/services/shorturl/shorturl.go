@@ -18,6 +18,7 @@ func strHash(n uint64) string {
 		s = s + alphabet[n%62:(n%62)+1]
 		n = n / 62
 	}
+
 	return s
 }
 
@@ -29,6 +30,7 @@ func strToUint64(str string) uint64 {
 	hexstr := hex.EncodeToString(h.Sum(nil))
 
 	bi.SetString(hexstr, 16)
+
 	return bi.Uint64()
 }
 

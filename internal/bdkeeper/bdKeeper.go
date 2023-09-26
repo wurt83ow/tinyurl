@@ -80,6 +80,7 @@ func NewBDKeeper(dsn func() string, log Log) *BDKeeper {
 	}
 
 	log.Info("Connected!")
+
 	return &BDKeeper{
 		conn: conn,
 		log:  log,
@@ -87,7 +88,6 @@ func NewBDKeeper(dsn func() string, log Log) *BDKeeper {
 }
 
 func (bdk *BDKeeper) Load() (storage.StorageURL, error) {
-
 	ctx := context.Background()
 
 	// get data from bd
@@ -125,15 +125,16 @@ func (bdk *BDKeeper) Load() (storage.StorageURL, error) {
 		key = strings.Replace(key, "/", "", -1)
 		data[key] = record
 	}
+
 	if err = rows.Err(); err != nil {
 		return data, err
 	}
+
 	return data, nil
 }
 
 // LoadUsers implements storage.Keeper.
 func (bdk *BDKeeper) LoadUsers() (storage.StorageUser, error) {
-
 	ctx := context.Background()
 
 	// get data from bd
@@ -163,9 +164,11 @@ func (bdk *BDKeeper) LoadUsers() (storage.StorageUser, error) {
 		}
 		data[record.Email] = record
 	}
+
 	if err = rows.Err(); err != nil {
 		return data, err
 	}
+
 	return data, nil
 }
 
@@ -198,6 +201,7 @@ func (bdk *BDKeeper) UpdateBatch(data ...models.DeleteURL) error {
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -252,6 +256,7 @@ func (bdk *BDKeeper) Save(key string, data models.DataURL) (models.DataURL, erro
 		}
 		return m, err
 	}
+
 	return m, nil
 }
 
@@ -346,22 +351,27 @@ func (bdk *BDKeeper) SaveBatch(data storage.StorageURL) error {
 		VALUES %s ON CONFLICT (original_url) DO NOTHING`,
 		strings.Join(valueStrings, ","))
 	_, err := bdk.conn.ExecContext(ctx, stmt, valueArgs...)
+
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
 func (bdk *BDKeeper) Ping() bool {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
+
 	if err := bdk.conn.PingContext(ctx); err != nil {
 		return false
 	}
+
 	return true
 }
 
 func (bdk *BDKeeper) Close() bool {
 	bdk.conn.Close()
+
 	return true
 }

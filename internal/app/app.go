@@ -15,7 +15,6 @@ import (
 )
 
 func Run() error {
-
 	option := config.NewOptions()
 	option.ParseFlags()
 

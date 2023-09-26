@@ -71,6 +71,7 @@ func JWTAuthzMiddleware(storage Storage, log Log) func(next http.Handler) http.H
 			ctx = context.WithValue(ctx, keyUserID, userID)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		}
+
 		return http.HandlerFunc(fn)
 	}
 }

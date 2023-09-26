@@ -22,7 +22,6 @@ func NewOptions() *Options {
 // parseFlags handles command line arguments
 // and stores their values in the corresponding variables
 func (o *Options) ParseFlags() {
-
 	regStringVar(&o.flagRunAddr, "a", ":8080", "address and port to run server")
 	regStringVar(&o.flagShortURLAdress, "b", "http://localhost:8080/", "server`s address for shor url")
 	regStringVar(&o.flagLogLevel, "l", "info", "log level")
@@ -52,7 +51,6 @@ func (o *Options) ParseFlags() {
 	if envDataBaseDSN := os.Getenv("DATABASE_DSN"); envDataBaseDSN != "" {
 		o.flagDataBaseDSN = envDataBaseDSN
 	}
-
 }
 
 func (o *Options) RunAddr() string {
@@ -100,6 +98,7 @@ func GetAsBool(name string, defaultValue bool) bool {
 	if val, err := strconv.ParseBool(valStr); err == nil {
 		return val
 	}
+
 	return defaultValue
 }
 
@@ -109,6 +108,7 @@ func GetAsInt(name string, defaultValue int) int {
 	if value, err := strconv.Atoi(valueStr); err == nil {
 		return value
 	}
+
 	return defaultValue
 }
 
@@ -119,5 +119,6 @@ func GetAsSlice(name string, defaultValue []string, sep string) []string {
 	if valStr == "" {
 		return defaultValue
 	}
+
 	return strings.Split(valStr, sep)
 }
