@@ -88,9 +88,9 @@ func (h *BaseController) Route() *chi.Mux {
 	return r
 }
 
-// flushURLs постоянно сохраняет несколько сообщений в хранилище с определённым интервалом
+// flushURLs continuously saves multiple messages to storage at a certain interval
 func (h *BaseController) flushURLs() {
-	// будем сохранять сообщения, накопленные за последние 10 секунд
+	// save messages accumulated over the last 10 seconds
 	ticker := time.NewTicker(10 * time.Second)
 
 	var delUrls []models.DeleteURL
@@ -98,23 +98,23 @@ func (h *BaseController) flushURLs() {
 	for {
 		select {
 		case msg := <-h.delChan:
-			// добавим сообщение в слайс для последующего сохранения
+			// add a message to the slice for later saving
 			mu.Lock()
 			delUrls = append(delUrls, msg)
 			mu.Unlock()
 		case <-ticker.C:
-			// подождём, пока придёт хотя бы одно сообщение
+			// wait until at least one message arrives
 			if len(delUrls) == 0 {
 				continue
 			}
-			// сохраним все пришедшие сообщения одновременно
+			// save all incoming messages at once
 			err := h.storage.DeleteURLs(delUrls...)
 			if err != nil {
 				h.log.Info("cannot save delUrls", zap.Error(err))
-				// не будем стирать сообщения, попробуем отправить их чуть позже
+				// not delete messages, we'll try to send them a little later
 				continue
 			}
-			// сотрём успешно отосланные сообщения
+			// erase successfully sent messages
 			delUrls = nil
 		}
 	}
