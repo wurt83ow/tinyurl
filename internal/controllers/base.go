@@ -121,7 +121,6 @@ func (h *BaseController) flushURLs() {
 }
 
 func (h *BaseController) deleteUserURLs(w http.ResponseWriter, r *http.Request) {
-
 	ids := make([]string, 0)
 	dec := json.NewDecoder(r.Body)
 	if err := dec.Decode(&ids); err != nil {
@@ -137,14 +136,13 @@ func (h *BaseController) deleteUserURLs(w http.ResponseWriter, r *http.Request) 
 		w.WriteHeader(http.StatusUnauthorized) //401
 		return
 	}
+
 	h.delChan <- models.DeleteURL{UserID: userID, ShortURLs: ids}
 
 	w.WriteHeader(http.StatusAccepted)
-
 }
 
 func (h *BaseController) Register(w http.ResponseWriter, r *http.Request) {
-
 	regReq := models.RequestUser{}
 	dec := json.NewDecoder(r.Body)
 	if err := dec.Decode(&regReq); err != nil {
@@ -178,11 +176,9 @@ func (h *BaseController) Register(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 	h.log.Info("sending HTTP 201 response")
-
 }
 
 func (h *BaseController) Login(w http.ResponseWriter, r *http.Request) {
-
 	var rb models.RequestUser
 	if err := json.NewDecoder(r.Body).Decode(&rb); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -208,13 +204,13 @@ func (h *BaseController) Login(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-
 		return
 	}
 
 	err = json.NewEncoder(w).Encode(models.ResponseUser{
 		Response: "incorrect email/password",
 	})
+
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -224,7 +220,7 @@ func (h *BaseController) Login(w http.ResponseWriter, r *http.Request) {
 
 // POST JSON BATCH
 func (h *BaseController) shortenBatch(w http.ResponseWriter, r *http.Request) {
-	// десериализуем запрос в структуру модели
+	// deserialize the request into the model structure
 	h.log.Info("decoding request")
 
 	batch := []models.DataURLite{}
@@ -275,12 +271,12 @@ func (h *BaseController) shortenBatch(w http.ResponseWriter, r *http.Request) {
 		h.log.Info("error encoding response: ", zap.Error(err))
 		return
 	}
+
 	h.log.Info("sending HTTP 201 response")
 }
 
 // POST JSON
 func (h *BaseController) shortenJSON(w http.ResponseWriter, r *http.Request) {
-
 	// deserialize the request into the model structure
 	h.log.Info("decoding request")
 
@@ -336,12 +332,12 @@ func (h *BaseController) shortenJSON(w http.ResponseWriter, r *http.Request) {
 		h.log.Info("error encoding response: ", zap.Error(err))
 		return
 	}
+
 	h.log.Info("sending HTTP 201 response")
 }
 
 // POST
 func (h *BaseController) shortenURL(w http.ResponseWriter, r *http.Request) {
-
 	// set the correct header for the data type
 	body, err := io.ReadAll(r.Body)
 	if err != nil || len(body) == 0 {
@@ -349,11 +345,10 @@ func (h *BaseController) shortenURL(w http.ResponseWriter, r *http.Request) {
 		h.log.Info("got bad request status 400: %v", zap.String("method", r.Method))
 		return
 	}
+
 	w.Header().Set("Content-Type", "text/plain")
 
 	shortURLAdress := h.options.ShortURLAdress()
-
-	// get short url
 	key, shurl := shorturl.Shorten(string(body), shortURLAdress)
 
 	userID, _ := r.Context().Value(keyUserID).(string)
@@ -370,9 +365,9 @@ func (h *BaseController) shortenURL(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+
 	// respond to client
 	w.Header().Set("Content-Type", "text/plain")
-
 	if conflict {
 		w.WriteHeader(http.StatusConflict) //code 409
 	} else {
@@ -384,12 +379,12 @@ func (h *BaseController) shortenURL(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+
 	h.log.Info("sending HTTP 201 response")
 }
 
 // GET
 func (h *BaseController) getFullURL(w http.ResponseWriter, r *http.Request) {
-
 	key := r.URL.Path
 	key = strings.Replace(key, "/", "", -1)
 	if len(key) == 0 {
@@ -402,11 +397,11 @@ func (h *BaseController) getFullURL(w http.ResponseWriter, r *http.Request) {
 	// get full url from storage
 	data, err := h.storage.GetURL(key)
 	if err != nil || len(data.OriginalURL) == 0 {
-
 		// value not found for the passed key
 		w.WriteHeader(http.StatusBadRequest) // 400
 		return
 	}
+
 	if data.DeletedFlag {
 		w.WriteHeader(http.StatusGone) // 410
 		return
@@ -419,7 +414,6 @@ func (h *BaseController) getFullURL(w http.ResponseWriter, r *http.Request) {
 
 // GET
 func (h *BaseController) getUserURLs(w http.ResponseWriter, r *http.Request) {
-
 	userID, ok := r.Context().Value(keyUserID).(string)
 	if !ok {
 		w.WriteHeader(http.StatusUnauthorized) //401
@@ -446,12 +440,12 @@ func (h *BaseController) getUserURLs(w http.ResponseWriter, r *http.Request) {
 
 // GET
 func (h *BaseController) getPing(w http.ResponseWriter, r *http.Request) {
-
 	if !h.storage.GetBaseConnection() {
 		h.log.Info("got status internal server error")
 		w.WriteHeader(http.StatusInternalServerError) // 500
 		return
 	}
+
 	w.WriteHeader(http.StatusOK) // 200
 	h.log.Info("sending HTTP 200 response")
 }
