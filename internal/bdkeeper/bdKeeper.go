@@ -283,14 +283,13 @@ func (bdk *BDKeeper) SaveUser(key string, data models.DataUser) (models.DataUser
 	var (
 		cond string
 		hash []byte
-		// tryhash bool
 	)
-	hash = nil
+
 	if data.Hash != nil {
 		cond = "AND u.hash = $2"
 		hash = data.Hash
-		// tryhash = true
 	}
+
 	stmt := fmt.Sprintf(`
 	SELECT
 		u.id,
@@ -300,13 +299,7 @@ func (bdk *BDKeeper) SaveUser(key string, data models.DataUser) (models.DataUser
 	FROM users u	 
 	WHERE
 		u.email = $1 %s`, cond)
-
-	// var row *sql.Row
-	// if tryhash {
 	row := bdk.conn.QueryRowContext(ctx, stmt, data.Email, hash)
-	// } else {
-	// 	row = bdk.conn.QueryRowContext(ctx, stmt, data.Email)
-	// }
 
 	// read the values from the database record into the corresponding fields of the structure
 	var m models.DataUser
