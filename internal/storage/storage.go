@@ -135,14 +135,14 @@ func (s *MemoryStorage) GetUser(k string) (models.DataUser, error) {
 	return v, nil
 }
 
-func (s *MemoryStorage) GetUserURLs(userID string) []models.ResponseUserURLs {
-	var data []models.ResponseUserURLs
+func (s *MemoryStorage) GetUserURLs(userID string) []models.ResponseUserURL {
+	var data []models.ResponseUserURL
 
 	s.mx.RLock()
 	defer s.mx.RUnlock()
 	for _, url := range s.data {
 		if url.UserID == userID {
-			data = append(data, models.ResponseUserURLs{
+			data = append(data, models.ResponseUserURL{
 				OriginalURL: url.OriginalURL, ShortURL: url.ShortURL})
 		}
 	}

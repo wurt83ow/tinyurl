@@ -12,17 +12,17 @@ type Response struct {
 	Result string `json:"result"`
 }
 
-type RequestRecord struct {
+type RequestURL struct {
 	UUID        string `json:"correlation_id"`
 	OriginalURL string `json:"original_url"`
 }
 
-type ResponseRecord struct {
+type ResponseURL struct {
 	UUID     string `json:"correlation_id"`
 	ShortURL string `json:"short_url"`
 }
 
-type ResponseUserURLs struct {
+type ResponseUserURL struct {
 	ShortURL    string `db:"short_url" json:"short_url"`
 	OriginalURL string `db:"original_url" json:"original_url"`
 }
@@ -42,11 +42,11 @@ type DataUser struct {
 	Hash  []byte `db:"hash"`
 }
 
-type RequestBody struct {
+type RequestUser struct {
 	Email    string `json:"email,omitempty"`
 	Password string `json:"password,omitempty"`
 }
-type ResponseBody struct {
+type ResponseUser struct {
 	Response string `json:"response,omitempty"`
 }
 

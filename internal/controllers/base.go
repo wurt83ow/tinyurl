@@ -28,7 +28,7 @@ type Storage interface {
 	InsertBatch(storage.StorageURL) error
 	GetURL(k string) (models.DataURL, error)
 	GetUser(k string) (models.DataUser, error)
-	GetUserURLs(userID string) []models.ResponseUserURLs
+	GetUserURLs(userID string) []models.ResponseUserURL
 	SaveURL(k string, v models.DataURL) (models.DataURL, error)
 	DeleteURLs(delUrls ...models.DeleteURL) error
 	SaveUser(k string, v models.DataUser) (models.DataUser, error)
@@ -183,7 +183,7 @@ func (h *BaseController) Register(w http.ResponseWriter, r *http.Request) {
 
 func (h *BaseController) Login(w http.ResponseWriter, r *http.Request) {
 
-	var rb models.RequestBody
+	var rb models.RequestUser
 	if err := json.NewDecoder(r.Body).Decode(&rb); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -201,7 +201,7 @@ func (h *BaseController) Login(w http.ResponseWriter, r *http.Request) {
 		http.SetCookie(w, authz.AuthCookie("Authorization", freshToken))
 
 		w.Header().Set("Authorization", freshToken)
-		err := json.NewEncoder(w).Encode(models.ResponseBody{
+		err := json.NewEncoder(w).Encode(models.ResponseUser{
 			Response: "success",
 		})
 		if err != nil {
@@ -212,7 +212,7 @@ func (h *BaseController) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = json.NewEncoder(w).Encode(models.ResponseBody{
+	err = json.NewEncoder(w).Encode(models.ResponseUser{
 		Response: "incorrect email/password",
 	})
 	if err != nil {
@@ -227,7 +227,7 @@ func (h *BaseController) shortenBatch(w http.ResponseWriter, r *http.Request) {
 	// десериализуем запрос в структуру модели
 	h.log.Info("decoding request")
 
-	batch := []models.RequestRecord{}
+	batch := []models.RequestURL{}
 	dec := json.NewDecoder(r.Body)
 	if err := dec.Decode(&batch); err != nil {
 		h.log.Info("cannot decode request JSON body: ", zap.Error(err))
@@ -243,7 +243,7 @@ func (h *BaseController) shortenBatch(w http.ResponseWriter, r *http.Request) {
 
 	shortURLAdress := h.options.ShortURLAdress()
 	dataURL := make(storage.StorageURL)
-	resp := []models.ResponseRecord{}
+	resp := []models.ResponseURL{}
 
 	userID, _ := r.Context().Value(keyUserID).(string)
 
@@ -256,7 +256,7 @@ func (h *BaseController) shortenBatch(w http.ResponseWriter, r *http.Request) {
 		// save full url to storage with the key received earlier
 		data := models.DataURL{UUID: s.UUID, ShortURL: shurl, OriginalURL: s.OriginalURL, UserID: userID}
 		dataURL[key] = data
-		resp = append(resp, models.ResponseRecord{UUID: s.UUID, ShortURL: shurl})
+		resp = append(resp, models.ResponseURL{UUID: s.UUID, ShortURL: shurl})
 	}
 
 	err := h.storage.InsertBatch(dataURL)

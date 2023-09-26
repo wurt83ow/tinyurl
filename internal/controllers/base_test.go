@@ -23,28 +23,28 @@ import (
 func TestShortenJSON(t *testing.T) {
 
 	// describe the body being transmitted
-	requestBody := strings.NewReader(`{         
+	RequestUser := strings.NewReader(`{         
         "url": "https://practicum.yandex.ru/"
     }`)
 
 	// describe the expected response body for a successful request
 	successBody := `{"result":"http://localhost:8080/nOykhckC3Od"}`
 
-	testPostReq(t, requestBody, successBody, true)
+	testPostReq(t, RequestUser, successBody, true)
 }
 
 func TestShortenURL(t *testing.T) {
 	// describe the body being transmitted
 	url := "https://practicum.yandex.ru/"
-	requestBody := strings.NewReader(url)
+	RequestUser := strings.NewReader(url)
 
 	// describe the expected response body for a successful request
 	successBody := "http://localhost:8080/nOykhckC3Od"
 
-	testPostReq(t, requestBody, successBody, false)
+	testPostReq(t, RequestUser, successBody, false)
 }
 
-func testPostReq(t *testing.T, requestBody *strings.Reader, successBody string, isJSONTest bool) {
+func testPostReq(t *testing.T, RequestUser *strings.Reader, successBody string, isJSONTest bool) {
 
 	defaultBody := strings.NewReader("")
 
@@ -53,12 +53,12 @@ func testPostReq(t *testing.T, requestBody *strings.Reader, successBody string, 
 		method       string
 		expectedCode int
 		expectedBody string
-		requestBody  *strings.Reader
+		RequestUser  *strings.Reader
 	}{
-		{method: http.MethodPost, expectedCode: http.StatusCreated, expectedBody: successBody, requestBody: requestBody},
-		{method: http.MethodGet, expectedCode: http.StatusBadRequest, expectedBody: "", requestBody: defaultBody},
-		{method: http.MethodPut, expectedCode: http.StatusBadRequest, expectedBody: "", requestBody: defaultBody},
-		{method: http.MethodDelete, expectedCode: http.StatusBadRequest, expectedBody: "", requestBody: defaultBody},
+		{method: http.MethodPost, expectedCode: http.StatusCreated, expectedBody: successBody, RequestUser: RequestUser},
+		{method: http.MethodGet, expectedCode: http.StatusBadRequest, expectedBody: "", RequestUser: defaultBody},
+		{method: http.MethodPut, expectedCode: http.StatusBadRequest, expectedBody: "", RequestUser: defaultBody},
+		{method: http.MethodDelete, expectedCode: http.StatusBadRequest, expectedBody: "", RequestUser: defaultBody},
 	}
 
 	option := config.NewOptions()
@@ -88,7 +88,7 @@ func testPostReq(t *testing.T, requestBody *strings.Reader, successBody string, 
 	for _, tc := range testCases {
 		t.Run(tc.method, func(t *testing.T) {
 
-			r := httptest.NewRequest(tc.method, "/", tc.requestBody)
+			r := httptest.NewRequest(tc.method, "/", tc.RequestUser)
 			w := httptest.NewRecorder()
 
 			// call the handler as a regular function, without starting the server itself
@@ -153,8 +153,8 @@ func TestGetFullURL(t *testing.T) {
 	controller := NewBaseController(memoryStorage, option, nLogger)
 
 	// place the data for further retrieval using the get method
-	requestBody := strings.NewReader(url)
-	r := httptest.NewRequest(http.MethodPost, "/", requestBody)
+	RequestUser := strings.NewReader(url)
+	r := httptest.NewRequest(http.MethodPost, "/", RequestUser)
 	w := httptest.NewRecorder()
 
 	// call the handler as a regular function, without starting the server itself
@@ -178,27 +178,27 @@ func TestGetFullURL(t *testing.T) {
 func TestGzipShortenJSON(t *testing.T) {
 
 	// describe the body being transmitted
-	requestBody := `{         
+	RequestUser := `{         
         "url": "https://practicum.yandex.ru/"
     }`
 
 	// describe the expected response body for a successful request
 	successBody := `{"result":"http://localhost:8080/nOykhckC3Od"}`
 
-	testGzipCompression(t, requestBody, successBody, true)
+	testGzipCompression(t, RequestUser, successBody, true)
 }
 
 func TestGzipTestShortenURL(t *testing.T) {
 	// describe the body being transmitted
-	requestBody := "https://practicum.yandex.ru/"
+	RequestUser := "https://practicum.yandex.ru/"
 
 	// describe the expected response body for a successful request
 	successBody := "http://localhost:8080/nOykhckC3Od"
 
-	testGzipCompression(t, requestBody, successBody, false)
+	testGzipCompression(t, RequestUser, successBody, false)
 }
 
-func testGzipCompression(t *testing.T, requestBody string, successBody string, isJSONTest bool) {
+func testGzipCompression(t *testing.T, RequestUser string, successBody string, isJSONTest bool) {
 
 	option := config.NewOptions()
 	option.ParseFlags()
@@ -237,7 +237,7 @@ func testGzipCompression(t *testing.T, requestBody string, successBody string, i
 	t.Run("sends_gzip", func(t *testing.T) {
 		buf := bytes.NewBuffer(nil)
 		zb := gzip.NewWriter(buf)
-		_, err := zb.Write([]byte(requestBody))
+		_, err := zb.Write([]byte(RequestUser))
 		require.NoError(t, err)
 		err = zb.Close()
 		require.NoError(t, err)
@@ -263,7 +263,7 @@ func testGzipCompression(t *testing.T, requestBody string, successBody string, i
 	})
 
 	t.Run("accepts_gzip", func(t *testing.T) {
-		buf := bytes.NewBufferString(requestBody)
+		buf := bytes.NewBufferString(RequestUser)
 		r := httptest.NewRequest("POST", srv.URL, buf)
 		r.RequestURI = ""
 		r.Header.Set("Accept-Encoding", "gzip")
