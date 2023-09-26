@@ -50,7 +50,7 @@ type ResponseUser struct {
 	Response string `json:"response,omitempty"`
 }
 
-type RegisterRequest struct {
+type RequestUserReg struct {
 	Email    string `json:"email"`
 	Name     string `json:"name"`
 	Password string `json:"password"`
