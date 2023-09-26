@@ -60,7 +60,7 @@ func NewBDKeeper(dsn func() string, log Log) *BDKeeper {
 	}
 
 	// fix error test path
-	path := ""
+	var path string
 	if filepath.Base(dir) == "shortener" {
 		path = "../../"
 	}
@@ -280,12 +280,16 @@ func (bdk *BDKeeper) SaveUser(key string, data models.DataUser) (models.DataUser
 		VALUES ($1, $2, $3, $4) RETURNING id`,
 		id, data.Email, data.Hash, data.Name)
 
-	q := ""
-	he := false
-
+	var (
+		cond string
+		hash []byte
+		// tryhash bool
+	)
+	hash = nil
 	if data.Hash != nil {
-		q = "AND u.hash = $2"
-		he = true
+		cond = "AND u.hash = $2"
+		hash = data.Hash
+		// tryhash = true
 	}
 	stmt := fmt.Sprintf(`
 	SELECT
@@ -295,14 +299,14 @@ func (bdk *BDKeeper) SaveUser(key string, data models.DataUser) (models.DataUser
 		u.name  	 
 	FROM users u	 
 	WHERE
-		u.email = $1 %s`, q)
+		u.email = $1 %s`, cond)
 
-	var row *sql.Row
-	if he {
-		row = bdk.conn.QueryRowContext(ctx, stmt, data.Email, data.Hash)
-	} else {
-		row = bdk.conn.QueryRowContext(ctx, stmt, data.Email)
-	}
+	// var row *sql.Row
+	// if tryhash {
+	row := bdk.conn.QueryRowContext(ctx, stmt, data.Email, hash)
+	// } else {
+	// 	row = bdk.conn.QueryRowContext(ctx, stmt, data.Email)
+	// }
 
 	// read the values from the database record into the corresponding fields of the structure
 	var m models.DataUser
