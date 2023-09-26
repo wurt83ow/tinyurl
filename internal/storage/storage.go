@@ -16,17 +16,17 @@ var ErrConflict = errors.New("data conflict")
 type StorageURL = map[string]models.DataURL
 type StorageUser = map[string]models.DataUser
 
+type Log interface {
+	Info(string, ...zapcore.Field)
+}
+
 type MemoryStorage struct {
-	mx     sync.RWMutex
+	dmx    sync.RWMutex
 	umx    sync.RWMutex
 	data   StorageURL
 	users  StorageUser
 	keeper Keeper
 	log    Log
-}
-
-type Log interface {
-	Info(string, ...zapcore.Field)
 }
 
 type Keeper interface {
@@ -74,8 +74,8 @@ func (s *MemoryStorage) InsertURL(k string,
 		return nv, err
 	}
 
-	s.mx.Lock()
-	defer s.mx.Unlock()
+	s.dmx.Lock()
+	defer s.dmx.Unlock()
 
 	s.data[k] = nv
 
@@ -112,8 +112,8 @@ func (s *MemoryStorage) InsertBatch(stg StorageURL) error {
 
 func (s *MemoryStorage) GetURL(k string) (models.DataURL, error) {
 
-	s.mx.RLock()
-	defer s.mx.RUnlock()
+	s.dmx.RLock()
+	defer s.dmx.RUnlock()
 
 	v, exists := s.data[k]
 
@@ -138,8 +138,8 @@ func (s *MemoryStorage) GetUser(k string) (models.DataUser, error) {
 func (s *MemoryStorage) GetUserURLs(userID string) []models.DataURLite {
 	var data []models.DataURLite
 
-	s.mx.RLock()
-	defer s.mx.RUnlock()
+	s.dmx.RLock()
+	defer s.dmx.RUnlock()
 	for _, url := range s.data {
 		if url.UserID == userID {
 			data = append(data, models.DataURLite{
@@ -167,8 +167,8 @@ func (s *MemoryStorage) DeleteURLs(delUrls ...models.DeleteURL) error {
 		return err
 	}
 
-	s.mx.RLock()
-	defer s.mx.RUnlock()
+	s.dmx.RLock()
+	defer s.dmx.RUnlock()
 
 	for _, urls := range delUrls {
 		for _, k := range urls.ShortURLs {
