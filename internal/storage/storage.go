@@ -41,7 +41,6 @@ type Keeper interface {
 }
 
 func NewMemoryStorage(keeper Keeper, log Log) *MemoryStorage {
-
 	data := make(StorageURL)
 	users := make(StorageUser)
 
@@ -107,11 +106,11 @@ func (s *MemoryStorage) InsertBatch(stg StorageURL) error {
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
 func (s *MemoryStorage) GetURL(k string) (models.DataURL, error) {
-
 	s.dmx.RLock()
 	defer s.dmx.RUnlock()
 
@@ -120,11 +119,11 @@ func (s *MemoryStorage) GetURL(k string) (models.DataURL, error) {
 	if !exists {
 		return models.DataURL{}, errors.New("value with such key doesn't exist")
 	}
+
 	return v, nil
 }
 
 func (s *MemoryStorage) GetUser(k string) (models.DataUser, error) {
-
 	s.umx.RLock()
 	defer s.umx.RUnlock()
 
@@ -132,6 +131,7 @@ func (s *MemoryStorage) GetUser(k string) (models.DataUser, error) {
 	if !exists {
 		return models.DataUser{}, errors.New("value with such key doesn't exist")
 	}
+
 	return v, nil
 }
 
@@ -146,6 +146,7 @@ func (s *MemoryStorage) GetUserURLs(userID string) []models.DataURLite {
 				OriginalURL: u.OriginalURL, ShortURL: u.ShortURL})
 		}
 	}
+
 	return data
 }
 
@@ -158,10 +159,10 @@ func (s *MemoryStorage) SaveURL(k string, v models.DataURL) (models.DataURL, err
 }
 
 func (s *MemoryStorage) DeleteURLs(delUrls ...models.DeleteURL) error {
-
 	if s.keeper == nil {
 		return nil
 	}
+
 	err := s.keeper.UpdateBatch(delUrls...)
 	if err != nil {
 		return err
@@ -180,6 +181,7 @@ func (s *MemoryStorage) DeleteURLs(delUrls ...models.DeleteURL) error {
 			}
 		}
 	}
+
 	return nil
 }
 
@@ -204,5 +206,6 @@ func (s *MemoryStorage) GetBaseConnection() bool {
 	if s.keeper == nil {
 		return false
 	}
+
 	return s.keeper.Ping()
 }
