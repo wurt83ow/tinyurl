@@ -176,11 +176,11 @@ func (bdk *BDKeeper) UpdateBatch(data ...models.DeleteURL) error {
 	valueArgs := make([]interface{}, 0, len(data)*2)
 	i := 0
 
-	for _, urls := range data {
-		for _, k := range urls.ShortURLs {
+	for _, u := range data {
+		for _, k := range u.ShortURLs {
 			valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d)", i*2+1, i*2+2))
 			valueArgs = append(valueArgs, k)
-			valueArgs = append(valueArgs, urls.UserID)
+			valueArgs = append(valueArgs, u.UserID)
 			i++
 		}
 	}
@@ -325,15 +325,15 @@ func (bdk *BDKeeper) SaveBatch(data storage.StorageURL) error {
 	valueStrings := make([]string, 0, len(data))
 	valueArgs := make([]interface{}, 0, len(data)*5)
 	i := 0
-	for _, post := range data {
+	for _, u := range data {
 
 		valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d, $%d, $%d)",
 			i*5+1, i*5+2, i*5+3, i*5+4, i*5+5))
-		valueArgs = append(valueArgs, post.UUID)
-		valueArgs = append(valueArgs, post.ShortURL)
-		valueArgs = append(valueArgs, post.OriginalURL)
-		valueArgs = append(valueArgs, post.UserID)
-		valueArgs = append(valueArgs, post.DeletedFlag)
+		valueArgs = append(valueArgs, u.UUID)
+		valueArgs = append(valueArgs, u.ShortURL)
+		valueArgs = append(valueArgs, u.OriginalURL)
+		valueArgs = append(valueArgs, u.UserID)
+		valueArgs = append(valueArgs, u.DeletedFlag)
 		i++
 	}
 	stmt := fmt.Sprintf(

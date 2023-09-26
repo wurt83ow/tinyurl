@@ -140,10 +140,10 @@ func (s *MemoryStorage) GetUserURLs(userID string) []models.DataURLite {
 
 	s.dmx.RLock()
 	defer s.dmx.RUnlock()
-	for _, url := range s.data {
-		if url.UserID == userID {
+	for _, u := range s.data {
+		if u.UserID == userID {
 			data = append(data, models.DataURLite{
-				OriginalURL: url.OriginalURL, ShortURL: url.ShortURL})
+				OriginalURL: u.OriginalURL, ShortURL: u.ShortURL})
 		}
 	}
 	return data
@@ -170,11 +170,11 @@ func (s *MemoryStorage) DeleteURLs(delUrls ...models.DeleteURL) error {
 	s.dmx.RLock()
 	defer s.dmx.RUnlock()
 
-	for _, urls := range delUrls {
-		for _, k := range urls.ShortURLs {
+	for _, u := range delUrls {
+		for _, k := range u.ShortURLs {
 			cs := s.data[k]
 
-			if cs.UserID == urls.UserID && strings.Contains(cs.ShortURL, k) {
+			if cs.UserID == u.UserID && strings.Contains(cs.ShortURL, k) {
 				s.data[k] = models.DataURL{UUID: cs.UUID, ShortURL: cs.ShortURL,
 					OriginalURL: cs.OriginalURL, UserID: cs.UserID, DeletedFlag: true}
 			}
