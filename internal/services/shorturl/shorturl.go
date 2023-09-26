@@ -13,7 +13,7 @@ const (
 
 // calculate the string hash from hash uint64
 func strHash(n uint64) string {
-	s := ""
+	var s string
 	for n > 0 {
 		s = s + alphabet[n%62:(n%62)+1]
 		n = n / 62

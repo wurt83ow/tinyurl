@@ -23,7 +23,7 @@ func JWTAuthzMiddleware(storage Storage, log Log) func(next http.Handler) http.H
 			// Grab jwt-token cookie
 			jwtCookie, err := r.Cookie("jwt-token")
 
-			userID := ""
+			var userID string
 			if err == nil {
 				userID, err = authz.DecodeJWTToUser(jwtCookie.Value)
 				if err != nil {

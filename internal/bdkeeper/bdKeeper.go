@@ -328,7 +328,6 @@ func (bdk *BDKeeper) SaveBatch(data storage.StorageURL) error {
 	valueArgs := make([]interface{}, 0, len(data)*5)
 	i := 0
 	for _, u := range data {
-
 		valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d, $%d, $%d)",
 			i*5+1, i*5+2, i*5+3, i*5+4, i*5+5))
 		valueArgs = append(valueArgs, u.UUID)
@@ -338,6 +337,7 @@ func (bdk *BDKeeper) SaveBatch(data storage.StorageURL) error {
 		valueArgs = append(valueArgs, u.DeletedFlag)
 		i++
 	}
+
 	stmt := fmt.Sprintf(
 		`INSERT INTO dataurl (
 		correlation_id,
