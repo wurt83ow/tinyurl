@@ -10,16 +10,16 @@ type Logger struct {
 
 func NewLogger(level string) (*Logger, error) {
 
-	// преобразуем текстовый уровень логирования в zap.AtomicLevel
+	// convert the text logging level to zap.AtomicLevel
 	lvl, err := zap.ParseAtomicLevel(level)
 	if err != nil {
 		return nil, err
 	}
 
-	// создаём новую конфигурацию логера
+	// create a new logger configuration
 	config := zap.NewProductionConfig()
 
-	// устанавливаем уровень
+	// set the level
 	config.Level = lvl
 
 	// config.OutputPaths = []string{"stdout", "./logs/" + logFile}

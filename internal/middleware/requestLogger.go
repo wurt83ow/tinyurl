@@ -21,7 +21,7 @@ func NewReqLog(log Log) *ReqLog {
 	}
 }
 
-// RequestLogger — middleware-логер для входящих HTTP-запросов.
+// RequestLogger — middleware logger for incoming HTTP requests.
 func (rl *ReqLog) RequestLogger(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		rl.log.Info("got incoming HTTP request",

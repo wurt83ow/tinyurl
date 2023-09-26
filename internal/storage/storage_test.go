@@ -8,10 +8,7 @@ func TestGet(t *testing.T) {
 
 	storage := new(MockStorage)
 
-	// Говорим что на первый вызов Get ожидаем ключ k1 и возвращаем v1
 	storage.On("Get", "k1").Return("v1", nil)
-
-	// Говорим что на второй вызов Get ожидаем ключ k2 и возвращаем v2
 	storage.On("Get", "k2").Return("v2", nil)
 
 	got, err := storage.Get("k1")
@@ -23,7 +20,7 @@ func TestGet(t *testing.T) {
 		t.Errorf("Get returns (%v, %v)", got, err)
 	}
 
-	// Проверяем что было вызвано всё, что устанавливали в моке
+	// check that everything that was installed in the mock was called
 	storage.AssertExpectations(t)
 
 }
@@ -44,6 +41,6 @@ func TestInsert(t *testing.T) {
 		t.Errorf("Insert returns error: %s", err)
 	}
 
-	// Проверяем что было вызвано всё, что устанавливали в моке
+	// check that everything that was installed in the mock was called
 	storage.AssertExpectations(t)
 }

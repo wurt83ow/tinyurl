@@ -2,12 +2,12 @@ package models
 
 type Key string
 
-// Request описывает запрос пользователя.
+// Request describes the user's request.
 type Request struct {
 	URL string `json:"url"`
 }
 
-// Response описывает ответ сервера.
+// Response describes the server's response.
 type Response struct {
 	Result string `json:"result"`
 }
