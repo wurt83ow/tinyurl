@@ -28,7 +28,7 @@ type Storage interface {
 	InsertBatch(storage.StorageURL) error
 	GetURL(k string) (models.DataURL, error)
 	GetUser(k string) (models.DataUser, error)
-	GetUserURLs(userID string) []models.DataURLite
+	GetUserURLs(userID string) []models.DataURL
 	SaveURL(k string, v models.DataURL) (models.DataURL, error)
 	DeleteURLs(delUrls ...models.DeleteURL) error
 	SaveUser(k string, v models.DataUser) (models.DataUser, error)
@@ -227,7 +227,7 @@ func (h *BaseController) shortenBatch(w http.ResponseWriter, r *http.Request) {
 	// десериализуем запрос в структуру модели
 	h.log.Info("decoding request")
 
-	batch := []models.DataURLite{}
+	batch := []models.DataURL{}
 	dec := json.NewDecoder(r.Body)
 	if err := dec.Decode(&batch); err != nil {
 		h.log.Info("cannot decode request JSON body: ", zap.Error(err))
@@ -243,7 +243,7 @@ func (h *BaseController) shortenBatch(w http.ResponseWriter, r *http.Request) {
 
 	shortURLAdress := h.options.ShortURLAdress()
 	dataURL := make(storage.StorageURL)
-	resp := []models.DataURLite{}
+	resp := []models.DataURL{}
 
 	userID, _ := r.Context().Value(keyUserID).(string)
 
@@ -256,7 +256,7 @@ func (h *BaseController) shortenBatch(w http.ResponseWriter, r *http.Request) {
 		// save full url to storage with the key received earlier
 		data := models.DataURL{UUID: s.UUID, ShortURL: shurl, OriginalURL: s.OriginalURL, UserID: userID}
 		dataURL[key] = data
-		resp = append(resp, models.DataURLite{UUID: s.UUID, ShortURL: shurl})
+		resp = append(resp, models.DataURL{UUID: s.UUID, ShortURL: shurl})
 	}
 
 	err := h.storage.InsertBatch(dataURL)
