@@ -33,19 +33,26 @@ type DataUser struct {
 	Hash  []byte `db:"hash"`
 }
 
-type RequestUser struct {
-	Email    string `json:"email,omitempty"`
-	Password string `json:"password,omitempty"`
-}
-type ResponseUser struct {
-	Response string `json:"response,omitempty"`
-}
+// type RequestUser struct {
+// 	Email    string `json:"email,omitempty"`
+// 	Password string `json:"password,omitempty"`
+// }
 
-type RequestUserReg struct {
+type RequestUser struct {
 	Email    string `json:"email"`
 	Name     string `json:"name"`
 	Password string `json:"password"`
 }
+
+type ResponseUser struct {
+	Response string `json:"response,omitempty"`
+}
+
+// type RequestUser struct {
+// 	Email    string `json:"email"`
+// 	Name     string `json:"name"`
+// 	Password string `json:"password"`
+// }
 
 type DeleteURL struct {
 	UserID    string   `db:"user_id" json:"user_id"`

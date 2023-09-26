@@ -145,7 +145,7 @@ func (h *BaseController) deleteUserURLs(w http.ResponseWriter, r *http.Request) 
 
 func (h *BaseController) Register(w http.ResponseWriter, r *http.Request) {
 
-	regReq := models.RequestUserReg{}
+	regReq := models.RequestUser{}
 	dec := json.NewDecoder(r.Body)
 	if err := dec.Decode(&regReq); err != nil {
 		h.log.Info("cannot decode request JSON body: ", zap.Error(err))
