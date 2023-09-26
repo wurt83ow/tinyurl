@@ -45,11 +45,13 @@ func NewBDKeeper(dsn func() string, log Log) *BDKeeper {
 	conn, err := sql.Open("pgx", dsn())
 	if err != nil {
 		log.Info("Unable to connection to database: ", zap.Error(err))
+		return nil
 	}
 
 	driver, err := postgres.WithInstance(conn, &postgres.Config{})
 	if err != nil {
 		log.Info("error getting driver: ", zap.Error(err))
+		return nil
 	}
 
 	dir, err := os.Getwd()
@@ -71,6 +73,7 @@ func NewBDKeeper(dsn func() string, log Log) *BDKeeper {
 	if err != nil {
 		log.Info("Error creating migration instance : ", zap.Error(err))
 	}
+
 	err = m.Up()
 	if err != nil {
 		log.Info("Error while performing migration: ", zap.Error(err))
