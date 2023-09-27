@@ -13,10 +13,11 @@ type Options struct {
 	flagLogLevel        string
 	flagFileStoragePath string
 	flagDataBaseDSN     string
+	flagJWTSigningKey   string
 }
 
 func NewOptions() *Options {
-	return &Options{"", "", "", "", ""}
+	return &Options{}
 }
 
 // parseFlags handles command line arguments
@@ -28,6 +29,7 @@ func (o *Options) ParseFlags() {
 	regStringVar(&o.flagFileStoragePath, "f", "", "")
 	// regStringVar(&o.flagFileStoragePath, "f", "/tmp/short-url-db.json", "default file storage path")
 	regStringVar(&o.flagDataBaseDSN, "d", "", "")
+	regStringVar(&o.flagJWTSigningKey, "j", "test_key", "jwt signing key")
 
 	// parse the arguments passed to the server into registered variables
 	flag.Parse()
@@ -51,6 +53,10 @@ func (o *Options) ParseFlags() {
 	if envDataBaseDSN := os.Getenv("DATABASE_DSN"); envDataBaseDSN != "" {
 		o.flagDataBaseDSN = envDataBaseDSN
 	}
+
+	if envJWTSigningKey := os.Getenv("JWT_SIGNING_KEY"); envJWTSigningKey != "" {
+		o.flagJWTSigningKey = envJWTSigningKey
+	}
 }
 
 func (o *Options) RunAddr() string {
@@ -71,6 +77,10 @@ func (o *Options) FileStoragePath() string {
 
 func (o *Options) DataBaseDSN() string {
 	return getStringFlag("d")
+}
+
+func (o *Options) JWTSigningKey() string {
+	return getStringFlag("j")
 }
 
 func regStringVar(p *string, name string, value string, usage string) {

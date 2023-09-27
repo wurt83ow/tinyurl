@@ -217,7 +217,6 @@ func (h *BaseController) Login(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-
 }
 
 // POST JSON BATCH
