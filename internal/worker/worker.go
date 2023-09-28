@@ -33,6 +33,7 @@ type worker struct {
 type Worker interface {
 	Start(pctx context.Context)
 	Stop()
+	Add(models.DeleteURL)
 	// QueueTask(task string, workDuration time.Duration) error
 }
 
@@ -61,6 +62,10 @@ func (w *worker) Stop() {
 	w.cancelFunc()
 	w.wg.Wait()
 	w.log.Warn("All workers exited!")
+}
+
+func (w *worker) Add(d models.DeleteURL) {
+	w.jobChan <- d
 }
 
 func (w *worker) spawnWorkers(ctx context.Context) {

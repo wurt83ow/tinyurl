@@ -45,6 +45,7 @@ type Log interface {
 }
 
 type Worker interface {
+	Add(models.DeleteURL)
 }
 
 type BaseController struct {
@@ -85,7 +86,7 @@ func (h *BaseController) Route() *chi.Mux {
 		r.Post("/api/shorten", h.shortenJSON)
 		r.Post("/api/shorten/batch", h.shortenBatch)
 		r.Get("/api/user/urls", h.getUserURLs)
-		// r.Delete("/api/user/urls", h.deleteUserURLs)
+		r.Delete("/api/user/urls", h.deleteUserURLs)
 	})
 
 	return r
@@ -123,27 +124,26 @@ func (h *BaseController) Route() *chi.Mux {
 // 	}
 // }
 
-// func (h *BaseController) deleteUserURLs(w http.ResponseWriter, r *http.Request) {
-// 	ids := make([]string, 0)
-// 	dec := json.NewDecoder(r.Body)
-// 	if err := dec.Decode(&ids); err != nil {
-// 		h.log.Info("cannot decode request JSON body: ", zap.Error(err))
-// 		w.WriteHeader(http.StatusBadRequest)
+func (h *BaseController) deleteUserURLs(w http.ResponseWriter, r *http.Request) {
+	ids := make([]string, 0)
+	dec := json.NewDecoder(r.Body)
+	if err := dec.Decode(&ids); err != nil {
+		h.log.Info("cannot decode request JSON body: ", zap.Error(err))
+		w.WriteHeader(http.StatusBadRequest)
 
-// 		return
-// 	}
+		return
+	}
 
-// 	userID, ok := r.Context().Value(keyUserID).(string)
+	userID, ok := r.Context().Value(keyUserID).(string)
 
-// 	if !ok {
-// 		w.WriteHeader(http.StatusUnauthorized) //401
-// 		return
-// 	}
+	if !ok {
+		w.WriteHeader(http.StatusUnauthorized) //401
+		return
+	}
 
-// 	h.delChan <- models.DeleteURL{UserID: userID, ShortURLs: ids}
-
-// 	w.WriteHeader(http.StatusAccepted)
-// }
+	h.worker.Add(models.DeleteURL{UserID: userID, ShortURLs: ids})
+	w.WriteHeader(http.StatusAccepted)
+}
 
 func (h *BaseController) Register(w http.ResponseWriter, r *http.Request) {
 	regReq := models.RequestUser{}
