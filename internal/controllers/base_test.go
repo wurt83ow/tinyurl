@@ -18,6 +18,7 @@ import (
 	"github.com/wurt83ow/tinyurl/internal/logger"
 	compressor "github.com/wurt83ow/tinyurl/internal/middleware"
 	"github.com/wurt83ow/tinyurl/internal/storage"
+	"github.com/wurt83ow/tinyurl/internal/worker"
 )
 
 func TestShortenJSON(t *testing.T) {
@@ -83,7 +84,8 @@ func testPostReq(t *testing.T, RequestUser *strings.Reader, successBody string, 
 
 	memoryStorage := storage.NewMemoryStorage(keeper, nLogger)
 
-	controller := NewBaseController(memoryStorage, option, nLogger)
+	worker := worker.NewWorker(nLogger, memoryStorage)
+	controller := NewBaseController(memoryStorage, option, nLogger, worker)
 
 	for _, tc := range testCases {
 		t.Run(tc.method, func(t *testing.T) {
@@ -150,7 +152,8 @@ func TestGetFullURL(t *testing.T) {
 
 	memoryStorage := storage.NewMemoryStorage(keeper, nLogger)
 
-	controller := NewBaseController(memoryStorage, option, nLogger)
+	worker := worker.NewWorker(nLogger, memoryStorage)
+	controller := NewBaseController(memoryStorage, option, nLogger, worker)
 
 	// place the data for further retrieval using the get method
 	RequestUser := strings.NewReader(url)
@@ -222,7 +225,8 @@ func testGzipCompression(t *testing.T, RequestUser string, successBody string, i
 
 	memoryStorage := storage.NewMemoryStorage(keeper, nLogger)
 
-	controller := NewBaseController(memoryStorage, option, nLogger)
+	worker := worker.NewWorker(nLogger, memoryStorage)
+	controller := NewBaseController(memoryStorage, option, nLogger, worker)
 
 	curentFunc := controller.shortenURL
 	if isJSONTest {

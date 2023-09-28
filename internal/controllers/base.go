@@ -6,8 +6,6 @@ import (
 	"io"
 	"net/http"
 	"strings"
-	"sync"
-	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/google/uuid"
@@ -46,23 +44,28 @@ type Log interface {
 	Info(string, ...zapcore.Field)
 }
 
+type Worker interface {
+}
+
 type BaseController struct {
 	storage Storage
 	options Options
 	log     Log
+	worker  Worker
 
-	delChan chan models.DeleteURL
+	// delChan chan models.DeleteURL
 }
 
-func NewBaseController(storage Storage, options Options, log Log) *BaseController {
+func NewBaseController(storage Storage, options Options, log Log, worker Worker) *BaseController {
 	instance := &BaseController{
 		storage: storage,
 		options: options,
 		log:     log,
-		delChan: make(chan models.DeleteURL, 1024), // set the channel buffer to 1024 messages
+		worker:  worker,
+		// delChan: make(chan models.DeleteURL, 1024), // set the channel buffer to 1024 messages
 	}
 
-	go instance.flushURLs()
+	// go instance.flushURLs()
 
 	return instance
 }
@@ -82,65 +85,65 @@ func (h *BaseController) Route() *chi.Mux {
 		r.Post("/api/shorten", h.shortenJSON)
 		r.Post("/api/shorten/batch", h.shortenBatch)
 		r.Get("/api/user/urls", h.getUserURLs)
-		r.Delete("/api/user/urls", h.deleteUserURLs)
+		// r.Delete("/api/user/urls", h.deleteUserURLs)
 	})
 
 	return r
 }
 
-// flushURLs continuously saves multiple messages to storage at a certain interval
-func (h *BaseController) flushURLs() {
-	// save messages accumulated over the last 10 seconds
-	ticker := time.NewTicker(10 * time.Second)
+// // flushURLs continuously saves multiple messages to storage at a certain interval
+// func (h *BaseController) flushURLs() {
+// 	// save messages accumulated over the last 10 seconds
+// 	ticker := time.NewTicker(10 * time.Second)
 
-	var delUrls []models.DeleteURL
-	var mu sync.Mutex
-	for {
-		select {
-		case msg := <-h.delChan:
-			// add a message to the slice for later saving
-			mu.Lock()
-			delUrls = append(delUrls, msg)
-			mu.Unlock()
-		case <-ticker.C:
-			// wait until at least one message arrives
-			if len(delUrls) == 0 {
-				continue
-			}
-			// save all incoming messages at once
-			err := h.storage.DeleteURLs(delUrls...)
-			if err != nil {
-				h.log.Info("cannot save delUrls", zap.Error(err))
-				// not delete messages, we'll try to send them a little later
-				continue
-			}
-			// erase successfully sent messages
-			delUrls = nil
-		}
-	}
-}
+// 	var delUrls []models.DeleteURL
+// 	var mu sync.Mutex
+// 	for {
+// 		select {
+// 		case msg := <-h.delChan:
+// 			// add a message to the slice for later saving
+// 			mu.Lock()
+// 			delUrls = append(delUrls, msg)
+// 			mu.Unlock()
+// 		case <-ticker.C:
+// 			// wait until at least one message arrives
+// 			if len(delUrls) == 0 {
+// 				continue
+// 			}
+// 			// save all incoming messages at once
+// 			err := h.storage.DeleteURLs(delUrls...)
+// 			if err != nil {
+// 				h.log.Info("cannot save delUrls", zap.Error(err))
+// 				// not delete messages, we'll try to send them a little later
+// 				continue
+// 			}
+// 			// erase successfully sent messages
+// 			delUrls = nil
+// 		}
+// 	}
+// }
 
-func (h *BaseController) deleteUserURLs(w http.ResponseWriter, r *http.Request) {
-	ids := make([]string, 0)
-	dec := json.NewDecoder(r.Body)
-	if err := dec.Decode(&ids); err != nil {
-		h.log.Info("cannot decode request JSON body: ", zap.Error(err))
-		w.WriteHeader(http.StatusBadRequest)
+// func (h *BaseController) deleteUserURLs(w http.ResponseWriter, r *http.Request) {
+// 	ids := make([]string, 0)
+// 	dec := json.NewDecoder(r.Body)
+// 	if err := dec.Decode(&ids); err != nil {
+// 		h.log.Info("cannot decode request JSON body: ", zap.Error(err))
+// 		w.WriteHeader(http.StatusBadRequest)
 
-		return
-	}
+// 		return
+// 	}
 
-	userID, ok := r.Context().Value(keyUserID).(string)
+// 	userID, ok := r.Context().Value(keyUserID).(string)
 
-	if !ok {
-		w.WriteHeader(http.StatusUnauthorized) //401
-		return
-	}
+// 	if !ok {
+// 		w.WriteHeader(http.StatusUnauthorized) //401
+// 		return
+// 	}
 
-	h.delChan <- models.DeleteURL{UserID: userID, ShortURLs: ids}
+// 	h.delChan <- models.DeleteURL{UserID: userID, ShortURLs: ids}
 
-	w.WriteHeader(http.StatusAccepted)
-}
+// 	w.WriteHeader(http.StatusAccepted)
+// }
 
 func (h *BaseController) Register(w http.ResponseWriter, r *http.Request) {
 	regReq := models.RequestUser{}

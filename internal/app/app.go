@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/go-chi/chi"
@@ -11,6 +12,7 @@ import (
 	"github.com/wurt83ow/tinyurl/internal/logger"
 	"github.com/wurt83ow/tinyurl/internal/middleware"
 	"github.com/wurt83ow/tinyurl/internal/storage"
+	"github.com/wurt83ow/tinyurl/internal/worker"
 	"go.uber.org/zap"
 )
 
@@ -34,11 +36,16 @@ func Run() error {
 		defer keeper.Close()
 	}
 
+	ctx := context.Background()
+
 	memoryStorage := storage.NewMemoryStorage(keeper, nLogger)
 
-	controller := controllers.NewBaseController(memoryStorage, option, nLogger)
+	worker := worker.NewWorker(nLogger, memoryStorage)
+	controller := controllers.NewBaseController(memoryStorage, option, nLogger, worker)
+
 	reqLog := middleware.NewReqLog(nLogger)
 
+	worker.Start(ctx)
 	r := chi.NewRouter()
 	r.Use(reqLog.RequestLogger)
 	r.Use(middleware.GzipMiddleware)
