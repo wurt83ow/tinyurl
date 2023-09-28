@@ -42,8 +42,8 @@ func NewWorker(log Log, storage Storage) Worker {
 		wg:         new(sync.WaitGroup),
 		log:        log,
 		storage:    storage,
-		jobChan:    make(chan models.DeleteURL, 1024), // set the channel buffer to 1024 messages
-		resultChan: make(chan models.DeleteURL, 1024),
+		jobChan:    make(chan models.DeleteURL),
+		resultChan: make(chan models.DeleteURL, 1024), // set the channel buffer to 1024 messages
 	}
 
 	return &w
@@ -104,7 +104,4 @@ func (w *worker) doWork(ctx context.Context) {
 		// erase successfully sent messages
 		w.resultChan = nil
 	}
-
-	// rnd := rand.Int63()
-	// w.storage.Set(strconv.FormatInt(rnd, 36), strconv.FormatInt(rnd, 10))
 }
