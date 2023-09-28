@@ -25,7 +25,7 @@ type worker struct {
 	log        Log
 	storage    Storage
 	jobChan    chan models.DeleteURL
-	result     []models.DeleteURL //chan interface{}
+	resultChan chan models.DeleteURL
 }
 
 // type workType string
@@ -39,11 +39,11 @@ type Worker interface {
 
 func NewWorker(log Log, storage Storage) Worker {
 	w := worker{
-		wg:      new(sync.WaitGroup),
-		log:     log,
-		storage: storage,
-		jobChan: make(chan models.DeleteURL, 1024), // set the channel buffer to 1024 messages
-		result:  make([]models.DeleteURL, 0),       //make(chan interface{}, 1024)
+		wg:         new(sync.WaitGroup),
+		log:        log,
+		storage:    storage,
+		jobChan:    make(chan models.DeleteURL, 1024), // set the channel buffer to 1024 messages
+		resultChan: make(chan models.DeleteURL, 1024),
 	}
 
 	return &w
@@ -78,9 +78,7 @@ func (w *worker) spawnWorkers(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case job := <-w.jobChan:
-
-			w.result = append(w.result, job)
-
+			w.resultChan <- job
 		case <-t.C:
 			w.doWork(ctx)
 
@@ -90,18 +88,21 @@ func (w *worker) spawnWorkers(ctx context.Context) {
 
 func (w *worker) doWork(ctx context.Context) {
 	w.log.Warn("I'm here")
-
-	if len(w.result) != 0 {
-
+	count := len(w.resultChan)
+	if count != 0 {
+		result := make([]models.DeleteURL, count)
+		for res := range w.resultChan {
+			result = append(result, res)
+		}
 		// save all incoming messages at once
-		err := w.storage.DeleteURLs(w.result...)
+		err := w.storage.DeleteURLs(result...)
 		if err != nil {
 			w.log.Info("cannot save delUrls", zap.Error(err))
 			// not delete messages, we'll try to send them a little later
 
 		}
 		// erase successfully sent messages
-		w.result = nil
+		w.resultChan = nil
 	}
 
 	// rnd := rand.Int63()
