@@ -10,7 +10,6 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/google/uuid"
 	authz "github.com/wurt83ow/tinyurl/internal/authorization"
-	"github.com/wurt83ow/tinyurl/internal/middleware"
 	"github.com/wurt83ow/tinyurl/internal/models"
 	"github.com/wurt83ow/tinyurl/internal/services/shorturl"
 	"github.com/wurt83ow/tinyurl/internal/storage"
@@ -48,21 +47,30 @@ type Worker interface {
 	Add(models.DeleteURL)
 }
 
+type Authz interface {
+	JWTAuthzMiddleware(authz.Storage, authz.Log) func(http.Handler) http.Handler
+	GetHash(email string, password string) []byte
+	CreateJWTTokenForUser(userid string) string
+	AuthCookie(name string, token string) *http.Cookie
+}
+
 type BaseController struct {
 	storage Storage
 	options Options
 	log     Log
 	worker  Worker
+	authz   Authz
 
 	// delChan chan models.DeleteURL
 }
 
-func NewBaseController(storage Storage, options Options, log Log, worker Worker) *BaseController {
+func NewBaseController(storage Storage, options Options, log Log, worker Worker, authz Authz) *BaseController {
 	instance := &BaseController{
 		storage: storage,
 		options: options,
 		log:     log,
 		worker:  worker,
+		authz:   authz,
 		// delChan: make(chan models.DeleteURL, 1024), // set the channel buffer to 1024 messages
 	}
 
@@ -80,7 +88,7 @@ func (h *BaseController) Route() *chi.Mux {
 
 	// group where the middleware authorization is needed
 	r.Group(func(r chi.Router) {
-		r.Use(middleware.JWTAuthzMiddleware(h.storage, h.log))
+		r.Use(h.authz.JWTAuthzMiddleware(h.storage, h.log))
 
 		r.Post("/", h.shortenURL)
 		r.Post("/api/shorten", h.shortenJSON)
@@ -129,7 +137,7 @@ func (h *BaseController) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	Hash := authz.GetHash(regReq.Email, regReq.Password)
+	Hash := h.authz.GetHash(regReq.Email, regReq.Password)
 
 	// save the user to the storage
 	dataUser := models.DataUser{UUID: uuid.New().String(), Email: regReq.Email, Hash: Hash, Name: regReq.Name}
@@ -162,10 +170,10 @@ func (h *BaseController) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if bytes.Equal(user.Hash, authz.GetHash(rb.Email, rb.Password)) {
-		freshToken := authz.CreateJWTTokenForUser(user.UUID)
-		http.SetCookie(w, authz.AuthCookie("jwt-token", freshToken))
-		http.SetCookie(w, authz.AuthCookie("Authorization", freshToken))
+	if bytes.Equal(user.Hash, h.authz.GetHash(rb.Email, rb.Password)) {
+		freshToken := h.authz.CreateJWTTokenForUser(user.UUID)
+		http.SetCookie(w, h.authz.AuthCookie("jwt-token", freshToken))
+		http.SetCookie(w, h.authz.AuthCookie("Authorization", freshToken))
 
 		w.Header().Set("Authorization", freshToken)
 		err := json.NewEncoder(w).Encode(models.ResponseUser{

@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi"
+	authz "github.com/wurt83ow/tinyurl/internal/authorization"
 	"github.com/wurt83ow/tinyurl/internal/bdkeeper"
 	"github.com/wurt83ow/tinyurl/internal/config"
 	"github.com/wurt83ow/tinyurl/internal/controllers"
@@ -41,7 +42,8 @@ func Run() error {
 	memoryStorage := storage.NewMemoryStorage(keeper, nLogger)
 
 	worker := worker.NewWorker(nLogger, memoryStorage)
-	controller := controllers.NewBaseController(memoryStorage, option, nLogger, worker)
+	authz := authz.NewJWTAuthz(option.JWTSigningKey(), nLogger)
+	controller := controllers.NewBaseController(memoryStorage, option, nLogger, worker, authz)
 
 	reqLog := middleware.NewReqLog(nLogger)
 

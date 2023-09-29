@@ -12,6 +12,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	authz "github.com/wurt83ow/tinyurl/internal/authorization"
 	"github.com/wurt83ow/tinyurl/internal/bdkeeper"
 	"github.com/wurt83ow/tinyurl/internal/config"
 	"github.com/wurt83ow/tinyurl/internal/filekeeper"
@@ -85,7 +86,8 @@ func testPostReq(t *testing.T, RequestUser *strings.Reader, successBody string, 
 	memoryStorage := storage.NewMemoryStorage(keeper, nLogger)
 
 	worker := worker.NewWorker(nLogger, memoryStorage)
-	controller := NewBaseController(memoryStorage, option, nLogger, worker)
+	authz := authz.NewJWTAuthz(option.JWTSigningKey(), nLogger)
+	controller := NewBaseController(memoryStorage, option, nLogger, worker, authz)
 
 	for _, tc := range testCases {
 		t.Run(tc.method, func(t *testing.T) {
@@ -153,7 +155,8 @@ func TestGetFullURL(t *testing.T) {
 	memoryStorage := storage.NewMemoryStorage(keeper, nLogger)
 
 	worker := worker.NewWorker(nLogger, memoryStorage)
-	controller := NewBaseController(memoryStorage, option, nLogger, worker)
+	authz := authz.NewJWTAuthz(option.JWTSigningKey(), nLogger)
+	controller := NewBaseController(memoryStorage, option, nLogger, worker, authz)
 
 	// place the data for further retrieval using the get method
 	RequestUser := strings.NewReader(url)
@@ -226,7 +229,8 @@ func testGzipCompression(t *testing.T, RequestUser string, successBody string, i
 	memoryStorage := storage.NewMemoryStorage(keeper, nLogger)
 
 	worker := worker.NewWorker(nLogger, memoryStorage)
-	controller := NewBaseController(memoryStorage, option, nLogger, worker)
+	authz := authz.NewJWTAuthz(option.JWTSigningKey(), nLogger)
+	controller := NewBaseController(memoryStorage, option, nLogger, worker, authz)
 
 	curentFunc := controller.shortenURL
 	if isJSONTest {
