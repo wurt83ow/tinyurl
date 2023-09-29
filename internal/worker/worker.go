@@ -29,12 +29,10 @@ type worker struct {
 }
 
 // type workType string
-
 type Worker interface {
 	Start(pctx context.Context)
 	Stop()
 	Add(models.DeleteURL)
-	// QueueTask(task string, workDuration time.Duration) error
 }
 
 func NewWorker(log Log, storage Storage) Worker {
@@ -42,8 +40,8 @@ func NewWorker(log Log, storage Storage) Worker {
 		wg:      new(sync.WaitGroup),
 		log:     log,
 		storage: storage,
-		jobChan: make(chan models.DeleteURL, 1024), // set the channel buffer to 1024 messages
-		result:  make([]models.DeleteURL, 0),       //make(chan interface{}, 1024)
+		jobChan: make(chan models.DeleteURL, 1024),
+		result:  make([]models.DeleteURL, 0),
 	}
 
 	return &w
@@ -81,27 +79,16 @@ func (w *worker) spawnWorkers(ctx context.Context) {
 			w.result = append(w.result, job)
 		case <-t.C:
 			w.doWork(ctx)
-
 		}
 	}
 }
 
 func (w *worker) doWork(ctx context.Context) {
-	w.log.Warn("I'm here")
-
 	if len(w.result) != 0 {
-
-		// save all incoming messages at once
 		err := w.storage.DeleteURLs(w.result...)
 		if err != nil {
 			w.log.Info("cannot save delUrls", zap.Error(err))
-			// not delete messages, we'll try to send them a little later
-
 		}
-		// erase successfully sent messages
 		w.result = nil
 	}
-
-	// rnd := rand.Int63()
-	// w.storage.Set(strconv.FormatInt(rnd, 36), strconv.FormatInt(rnd, 10))
 }
