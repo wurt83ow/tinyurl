@@ -42,9 +42,6 @@ func NewJWTAuthz(signingKey string, log Log) *JWTAuthz {
 
 		defaultCookie: http.Cookie{
 			HttpOnly: true,
-			// SameSite: http.SameSiteLaxMode,
-			// Domain:   configs.GetAsString("COOKIE_DOMAIN", "localhost"),
-			// Secure:   configs.GetAsBool("COOKIE_SECURE", true),
 		},
 	}
 }
