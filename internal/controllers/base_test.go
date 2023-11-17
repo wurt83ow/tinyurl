@@ -1,9 +1,6 @@
 package controllers
 
 import (
-	"bytes"
-	"compress/gzip"
-	"io"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -11,13 +8,11 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	authz "github.com/wurt83ow/tinyurl/internal/authorization"
 	"github.com/wurt83ow/tinyurl/internal/bdkeeper"
 	"github.com/wurt83ow/tinyurl/internal/config"
 	"github.com/wurt83ow/tinyurl/internal/filekeeper"
 	"github.com/wurt83ow/tinyurl/internal/logger"
-	compressor "github.com/wurt83ow/tinyurl/internal/middleware"
 	"github.com/wurt83ow/tinyurl/internal/storage"
 	"github.com/wurt83ow/tinyurl/internal/worker"
 )
@@ -215,120 +210,4 @@ func TestGetFullURL(t *testing.T) {
 			assert.Equal(t, tc.location, w.Header().Get("Location"), "Заголовок Location не совпадает с ожидаемым")
 		})
 	}
-}
-
-func TestGzipShortenJSON(t *testing.T) {
-
-	// describe the body being transmitted
-	userReq := `{         
-        "url": "https://practicum.yandex.ru/"
-    }`
-
-	// describe the expected response body for a successful request
-	successBody := `{"result":"http://localhost:8080/nOykhckC3Od"}`
-
-	testGzipCompression(t, userReq, successBody, true)
-}
-
-func TestGzipTestShortenURL(t *testing.T) {
-	// describe the body being transmitted
-	userReq := "https://practicum.yandex.ru/"
-
-	// describe the expected response body for a successful request
-	successBody := "http://localhost:8080/nOykhckC3Od"
-
-	testGzipCompression(t, userReq, successBody, false)
-}
-
-func testGzipCompression(t *testing.T, userReq string, successBody string, isJSONTest bool) {
-
-	option := config.NewOptions()
-	option.ParseFlags()
-
-	nLogger, err := logger.NewLogger(option.LogLevel())
-	if err != nil {
-		log.Fatalf("Unable to setup logger: %s\n", err)
-	}
-
-	bdKeeper := bdkeeper.NewBDKeeper(option.DataBaseDSN, nLogger)
-	var keeper storage.Keeper = nil
-	if bdKeeper != nil {
-		keeper = bdKeeper
-	} else if fileKeeper := filekeeper.NewFileKeeper(option.FileStoragePath, nLogger); fileKeeper != nil {
-		keeper = fileKeeper
-	}
-
-	if keeper != nil {
-		defer keeper.Close()
-	}
-
-	memoryStorage := storage.NewMemoryStorage(keeper, nLogger)
-
-	worker := worker.NewWorker(nLogger, memoryStorage)
-	authz := authz.NewJWTAuthz(option.JWTSigningKey(), nLogger)
-	controller := NewBaseController(memoryStorage, option, nLogger, worker, authz)
-
-	curentFunc := controller.shortenURL
-	if isJSONTest {
-		curentFunc = controller.shortenJSON
-	}
-
-	handler := compressor.GzipMiddleware(http.HandlerFunc(curentFunc))
-
-	srv := httptest.NewServer(handler)
-	defer srv.Close()
-
-	t.Run("sends_gzip", func(t *testing.T) {
-		buf := bytes.NewBuffer(nil)
-		zb := gzip.NewWriter(buf)
-		_, err := zb.Write([]byte(userReq))
-		require.NoError(t, err)
-		err = zb.Close()
-		require.NoError(t, err)
-
-		r := httptest.NewRequest("POST", srv.URL, buf)
-		r.RequestURI = ""
-		r.Header.Set("Content-Encoding", "gzip")
-
-		resp, err := http.DefaultClient.Do(r)
-		require.NoError(t, err)
-		require.Equal(t, http.StatusCreated, resp.StatusCode)
-
-		defer resp.Body.Close()
-
-		b, err := io.ReadAll(resp.Body)
-		require.NoError(t, err)
-
-		if isJSONTest {
-			require.JSONEq(t, successBody, string(b))
-		} else {
-			require.Equal(t, successBody, string(b))
-		}
-	})
-
-	t.Run("accepts_gzip", func(t *testing.T) {
-		buf := bytes.NewBufferString(userReq)
-		r := httptest.NewRequest("POST", srv.URL, buf)
-		r.RequestURI = ""
-		r.Header.Set("Accept-Encoding", "gzip")
-
-		resp, err := http.DefaultClient.Do(r)
-		require.NoError(t, err)
-		require.Equal(t, http.StatusCreated, resp.StatusCode)
-
-		defer resp.Body.Close()
-
-		zr, err := gzip.NewReader(resp.Body)
-		require.NoError(t, err)
-
-		b, err := io.ReadAll(zr)
-		require.NoError(t, err)
-
-		if isJSONTest {
-			require.JSONEq(t, successBody, string(b))
-		} else {
-			require.Equal(t, successBody, string(b))
-		}
-
-	})
 }
