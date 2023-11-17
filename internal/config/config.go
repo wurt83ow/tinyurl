@@ -3,8 +3,6 @@ package config
 import (
 	"flag"
 	"os"
-	"strconv"
-	"strings"
 )
 
 type Options struct {
@@ -26,9 +24,8 @@ func (o *Options) ParseFlags() {
 	regStringVar(&o.flagRunAddr, "a", ":8080", "address and port to run server")
 	regStringVar(&o.flagShortURLAdress, "b", "http://localhost:8080/", "server`s address for shor url")
 	regStringVar(&o.flagLogLevel, "l", "info", "log level")
-	regStringVar(&o.flagFileStoragePath, "f", "", "")
-	// regStringVar(&o.flagFileStoragePath, "f", "/tmp/short-url-db.json", "default file storage path")
-	regStringVar(&o.flagDataBaseDSN, "d", "", "")
+	regStringVar(&o.flagFileStoragePath, "f", "/tmp/short-url-db.json", "")
+	regStringVar(&o.flagDataBaseDSN, "d", "user=tinyurl password=example dbname=tinyurl", "")
 	regStringVar(&o.flagJWTSigningKey, "j", "test_key", "jwt signing key")
 
 	// parse the arguments passed to the server into registered variables
@@ -100,35 +97,4 @@ func GetAsString(key string, defaultValue string) string {
 	}
 
 	return defaultValue
-}
-
-// GetAsBool reads an environment variable into a bool or return default value
-func GetAsBool(name string, defaultValue bool) bool {
-	valStr := GetAsString(name, "")
-	if val, err := strconv.ParseBool(valStr); err == nil {
-		return val
-	}
-
-	return defaultValue
-}
-
-// GetAsInt reads an environment variable into integer or returns a default value
-func GetAsInt(name string, defaultValue int) int {
-	valueStr := GetAsString(name, "")
-	if value, err := strconv.Atoi(valueStr); err == nil {
-		return value
-	}
-
-	return defaultValue
-}
-
-// GetAsSlice reads an environment variable into a string slice or returns the default value
-func GetAsSlice(name string, defaultValue []string, sep string) []string {
-	valStr := GetAsString(name, "")
-
-	if valStr == "" {
-		return defaultValue
-	}
-
-	return strings.Split(valStr, sep)
 }
