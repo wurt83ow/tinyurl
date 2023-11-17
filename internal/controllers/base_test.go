@@ -25,28 +25,61 @@ import (
 func TestShortenJSON(t *testing.T) {
 
 	// describe the body being transmitted
-	RequestUser := strings.NewReader(`{         
+	userReq := strings.NewReader(`{         
         "url": "https://practicum.yandex.ru/"
     }`)
 
 	// describe the expected response body for a successful request
 	successBody := `{"result":"http://localhost:8080/nOykhckC3Od"}`
 
-	testPostReq(t, RequestUser, successBody, true)
+	testPostReq(t, userReq, successBody, "shortenJSON")
+}
+
+func TestShortenBatch(t *testing.T) {
+
+	// describe the body being transmitted
+	userReq := strings.NewReader(`[
+		{
+			"correlation_id": "1",
+			"original_url": "https://practicum.yandex.ru/"
+		},
+		 {
+			"correlation_id": "2",
+			"original_url": "https://www.google.ru/"
+		}
+	]`)
+
+	// describe the expected response body for a successful request
+	successBody := `[
+		{
+			"correlation_id":"1",
+			"short_url":"http://localhost:8080/nOykhckC3Od",
+			"original_url":""
+		},
+		{
+			"correlation_id":"2",
+			"short_url":"http://localhost:8080/5i80Tt3Jodo",
+			"original_url":""
+		}
+	]`
+
+	successBody = strings.ReplaceAll(successBody, "\n", "")
+	successBody = strings.ReplaceAll(successBody, "\t", "")
+	testPostReq(t, userReq, strings.TrimSpace(successBody), "shortenBatch")
 }
 
 func TestShortenURL(t *testing.T) {
 	// describe the body being transmitted
 	url := "https://practicum.yandex.ru/"
-	RequestUser := strings.NewReader(url)
+	userReq := strings.NewReader(url)
 
 	// describe the expected response body for a successful request
 	successBody := "http://localhost:8080/nOykhckC3Od"
 
-	testPostReq(t, RequestUser, successBody, false)
+	testPostReq(t, userReq, successBody, "shortenURL")
 }
 
-func testPostReq(t *testing.T, RequestUser *strings.Reader, successBody string, isJSONTest bool) {
+func testPostReq(t *testing.T, userReq *strings.Reader, successBody string, funcName string) {
 
 	defaultBody := strings.NewReader("")
 
@@ -55,12 +88,12 @@ func testPostReq(t *testing.T, RequestUser *strings.Reader, successBody string, 
 		method       string
 		expectedCode int
 		expectedBody string
-		RequestUser  *strings.Reader
+		userReq      *strings.Reader
 	}{
-		{method: http.MethodPost, expectedCode: http.StatusCreated, expectedBody: successBody, RequestUser: RequestUser},
-		{method: http.MethodGet, expectedCode: http.StatusBadRequest, expectedBody: "", RequestUser: defaultBody},
-		{method: http.MethodPut, expectedCode: http.StatusBadRequest, expectedBody: "", RequestUser: defaultBody},
-		{method: http.MethodDelete, expectedCode: http.StatusBadRequest, expectedBody: "", RequestUser: defaultBody},
+		{method: http.MethodPost, expectedCode: http.StatusCreated, expectedBody: successBody, userReq: userReq},
+		{method: http.MethodGet, expectedCode: http.StatusBadRequest, expectedBody: "", userReq: defaultBody},
+		{method: http.MethodPut, expectedCode: http.StatusBadRequest, expectedBody: "", userReq: defaultBody},
+		{method: http.MethodDelete, expectedCode: http.StatusBadRequest, expectedBody: "", userReq: defaultBody},
 	}
 
 	option := config.NewOptions()
@@ -92,13 +125,16 @@ func testPostReq(t *testing.T, RequestUser *strings.Reader, successBody string, 
 	for _, tc := range testCases {
 		t.Run(tc.method, func(t *testing.T) {
 
-			r := httptest.NewRequest(tc.method, "/", tc.RequestUser)
+			r := httptest.NewRequest(tc.method, "/", tc.userReq)
 			w := httptest.NewRecorder()
 
 			// call the handler as a regular function, without starting the server itself
-			if isJSONTest {
+			switch funcName {
+			case "shortenJSON":
 				controller.shortenJSON(w, r)
-			} else {
+			case "shortenBatch":
+				controller.shortenBatch(w, r)
+			case "shortenURL":
 				controller.shortenURL(w, r)
 			}
 
@@ -159,8 +195,8 @@ func TestGetFullURL(t *testing.T) {
 	controller := NewBaseController(memoryStorage, option, nLogger, worker, authz)
 
 	// place the data for further retrieval using the get method
-	RequestUser := strings.NewReader(url)
-	r := httptest.NewRequest(http.MethodPost, "/", RequestUser)
+	userReq := strings.NewReader(url)
+	r := httptest.NewRequest(http.MethodPost, "/", userReq)
 	w := httptest.NewRecorder()
 
 	// call the handler as a regular function, without starting the server itself
@@ -184,27 +220,27 @@ func TestGetFullURL(t *testing.T) {
 func TestGzipShortenJSON(t *testing.T) {
 
 	// describe the body being transmitted
-	RequestUser := `{         
+	userReq := `{         
         "url": "https://practicum.yandex.ru/"
     }`
 
 	// describe the expected response body for a successful request
 	successBody := `{"result":"http://localhost:8080/nOykhckC3Od"}`
 
-	testGzipCompression(t, RequestUser, successBody, true)
+	testGzipCompression(t, userReq, successBody, true)
 }
 
 func TestGzipTestShortenURL(t *testing.T) {
 	// describe the body being transmitted
-	RequestUser := "https://practicum.yandex.ru/"
+	userReq := "https://practicum.yandex.ru/"
 
 	// describe the expected response body for a successful request
 	successBody := "http://localhost:8080/nOykhckC3Od"
 
-	testGzipCompression(t, RequestUser, successBody, false)
+	testGzipCompression(t, userReq, successBody, false)
 }
 
-func testGzipCompression(t *testing.T, RequestUser string, successBody string, isJSONTest bool) {
+func testGzipCompression(t *testing.T, userReq string, successBody string, isJSONTest bool) {
 
 	option := config.NewOptions()
 	option.ParseFlags()
@@ -245,7 +281,7 @@ func testGzipCompression(t *testing.T, RequestUser string, successBody string, i
 	t.Run("sends_gzip", func(t *testing.T) {
 		buf := bytes.NewBuffer(nil)
 		zb := gzip.NewWriter(buf)
-		_, err := zb.Write([]byte(RequestUser))
+		_, err := zb.Write([]byte(userReq))
 		require.NoError(t, err)
 		err = zb.Close()
 		require.NoError(t, err)
@@ -271,7 +307,7 @@ func testGzipCompression(t *testing.T, RequestUser string, successBody string, i
 	})
 
 	t.Run("accepts_gzip", func(t *testing.T) {
-		buf := bytes.NewBufferString(RequestUser)
+		buf := bytes.NewBufferString(userReq)
 		r := httptest.NewRequest("POST", srv.URL, buf)
 		r.RequestURI = ""
 		r.Header.Set("Accept-Encoding", "gzip")
