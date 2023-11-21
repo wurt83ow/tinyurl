@@ -1,6 +1,7 @@
 package shorturl
 
 import (
+	"math/rand"
 	"testing"
 )
 
@@ -32,4 +33,25 @@ func TestShorten(t *testing.T) {
 			}
 		})
 	}
+}
+
+var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+func RandStringRunes(n int) string {
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letterRunes[rand.Intn(len(letterRunes))]
+	}
+	return string(b)
+}
+
+func BenchmarkLoad(b *testing.B) {
+
+	b.Run("ShortenURL", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+
+			_, _ = Shorten(RandStringRunes(8), "http://localhost:8080/")
+		}
+	})
+
 }
