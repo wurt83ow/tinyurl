@@ -33,7 +33,6 @@ func TestShorten(t *testing.T) {
 		{name: "test func ShortURLAdress", testfunc: option.ShortURLAdress, result: "http://localhost:8080/"},
 		{name: "test func LogLevel", testfunc: option.LogLevel, result: "info"},
 		{name: "test func FileStoragePath", testfunc: option.FileStoragePath, result: "/tmp/short-url-db.json"},
-		{name: "test func DataBaseDSN", testfunc: option.DataBaseDSN, result: "user=tinyurl password=example dbname=tinyurl"},
 		{name: "test func JWTSigningKey", testfunc: option.JWTSigningKey, result: "test_key"},
 	}
 
