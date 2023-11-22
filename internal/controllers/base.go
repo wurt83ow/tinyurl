@@ -401,10 +401,10 @@ func (h *BaseController) getUserURLs(w http.ResponseWriter, r *http.Request) {
 
 	data := h.storage.GetUserURLs(userID)
 	if len(data) == 0 {
-		// corrected it to pass the Yandex test
-		w.WriteHeader(http.StatusUnauthorized) //401
+		// // corrected it to pass the Yandex test
+		// w.WriteHeader(http.StatusUnauthorized) //401
 		// value not found for the passed key
-		// w.WriteHeader(http.StatusNoContent) // 204
+		w.WriteHeader(http.StatusNoContent) // 204
 		return
 	}
 
