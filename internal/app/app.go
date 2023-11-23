@@ -21,18 +21,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// func foo() {
-// 	maxSize := 50000000
-// 	// полезная нагрузка
-// 	for i := 0; i < 10; i++ {
-// 		s := make([]byte, maxSize)
-// 		if s == nil {
-// 			fmt.Println("Operation failed!")
-// 		}
-// 		time.Sleep(50 * time.Millisecond)
-// 	}
-// }
-
 func Run() error {
 	option := config.NewOptions()
 	option.ParseFlags()
@@ -67,9 +55,8 @@ func Run() error {
 	r := chi.NewRouter()
 
 	r.Use(reqLog.RequestLogger)
-	// r.Use(middleware.GzipMiddleware)
+	r.Use(middleware.GzipMiddleware)
 
-	// r.Mount("/debug", middleware.Profiler())
 	r.Mount("/", controller.Route())
 
 	flagRunAddr := option.RunAddr()
@@ -84,7 +71,6 @@ func Run() error {
 	defer memory.Close()
 	runtime.GC() // получаем статистику по использованию памяти
 
-	// go foo()
 	if err := pprof.WriteHeapProfile(memory); err != nil {
 		panic(err)
 	}
