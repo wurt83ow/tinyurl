@@ -133,10 +133,10 @@ func testPostReq(t *testing.T, userReq *strings.Reader, successBody string, func
 				controller.shortenURL(w, r)
 			}
 
-			assert.Equal(t, tc.expectedCode, w.Code, "Код ответа не совпадает с ожидаемым")
+			assert.Equal(t, tc.expectedCode, w.Code, "The response code does not match what is expected")
 			// check the correctness of the received response body if we expect it
 			if tc.expectedBody != "" {
-				assert.Equal(t, tc.expectedBody, strings.TrimSpace(w.Body.String()), "Тело ответа не совпадает с ожидаемым")
+				assert.Equal(t, tc.expectedBody, strings.TrimSpace(w.Body.String()), "The response body does not match what is expected")
 			}
 
 		})
@@ -205,9 +205,9 @@ func TestGetFullURL(t *testing.T) {
 
 			controller.getFullURL(w, r)
 
-			assert.Equal(t, tc.expectedCode, w.Code, "Код ответа не совпадает с ожидаемым")
+			assert.Equal(t, tc.expectedCode, w.Code, "The response code does not match what is expected")
 
-			assert.Equal(t, tc.location, w.Header().Get("Location"), "Заголовок Location не совпадает с ожидаемым")
+			assert.Equal(t, tc.location, w.Header().Get("Location"), "The Location header is not what you expect")
 		})
 	}
 }

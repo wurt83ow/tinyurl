@@ -63,13 +63,14 @@ func Run() error {
 	nLogger.Info("Running server", zap.String("address", flagRunAddr))
 
 	time.Sleep(50 * time.Millisecond)
-	// создаём файл журнала профилирования памяти
+	// create a memory profiling log file
 	memory, err := os.Create(`result.pprof`)
 	if err != nil {
 		panic(err)
 	}
 	defer memory.Close()
-	runtime.GC() // получаем статистику по использованию памяти
+	// get statistics on memory usage
+	runtime.GC()
 
 	if err := pprof.WriteHeapProfile(memory); err != nil {
 		panic(err)
