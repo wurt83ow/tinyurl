@@ -272,13 +272,15 @@ func (h *BaseController) Register(w http.ResponseWriter, r *http.Request) {
 	h.log.Info("sending HTTP 201 response")
 }
 
-// Login is a method of the *BaseController structure.
+// Login is a handler method for user authentication and login.
+// It takes a pointer to the BaseController instance, an http.ResponseWriter, and an http.Request as parameters.
+// The function decodes the request body into a RequestUser model, retrieves the user from storage based on the provided email,
+// validates the password, generates and sets a new JWT token in cookies, and responds with the appropriate HTTP status code.
 //
-// The method handles user authentication by accepting the email and password
-// as parameters in the request body. If the provided credentials are valid,
-// it returns a HTTP status code 200 along with a newly created JWT token (cookies).
-// If the user does not exist in the system, it returns a HTTP status code 404.
-// In case of invalid email or password, it returns a HTTP status code 400.
+// Parameters:
+//   - h: A pointer to the BaseController instance.
+//   - w: An http.ResponseWriter for writing the HTTP response.
+//   - r: An http.Request representing the incoming HTTP request.
 //
 // # Example
 //
@@ -293,24 +295,31 @@ func (h *BaseController) Register(w http.ResponseWriter, r *http.Request) {
 //
 // Output: Login successful, Status Code: 200
 func (h *BaseController) Login(w http.ResponseWriter, r *http.Request) {
+	// Decode the request body into a RequestUser model
 	var rb models.RequestUser
 	if err := json.NewDecoder(r.Body).Decode(&rb); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
+	// Retrieve the user from storage based on the provided email
 	user, err := h.storage.GetUser(rb.Email)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
+	// Validate the password
 	if bytes.Equal(user.Hash, h.authz.GetHash(rb.Email, rb.Password)) {
+		// Generate a new JWT token for the user
 		freshToken := h.authz.CreateJWTTokenForUser(user.UUID)
+
+		// Set the JWT token in cookies and response headers
 		http.SetCookie(w, h.authz.AuthCookie("jwt-token", freshToken))
 		http.SetCookie(w, h.authz.AuthCookie("Authorization", freshToken))
-
 		w.Header().Set("Authorization", freshToken)
+
+		// Respond with a success message
 		err := json.NewEncoder(w).Encode(models.ResponseUser{
 			Response: "success",
 		})
@@ -323,6 +332,7 @@ func (h *BaseController) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Respond with an incorrect email/password message
 	err = json.NewEncoder(w).Encode(models.ResponseUser{
 		Response: "incorrect email/password",
 	})
@@ -333,105 +343,157 @@ func (h *BaseController) Login(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// shortenBatch is a handler method for batch URL shortening.
+// It takes a pointer to the BaseController instance, an http.ResponseWriter, and an http.Request as parameters.
+// The function deserializes the request JSON body into a model structure, performs URL shortening for each URL in the batch,
+// saves the shortened URLs to storage, and responds with the appropriate HTTP status code and serialized response.
+//
+// Parameters:
+//   - h: A pointer to the BaseController instance.
+//   - w: An http.ResponseWriter for writing the HTTP response.
+//   - r: An http.Request representing the incoming HTTP request.
 func (h *BaseController) shortenBatch(w http.ResponseWriter, r *http.Request) {
-	// deserialize the request into the model structure
+	// Deserialize the request into the model structure
 	h.log.Info("decoding request")
 
+	// Initialize a batch slice to store DataURLite models
 	batch := []models.DataURLite{}
+
+	// Create a JSON decoder for decoding the request body
 	dec := json.NewDecoder(r.Body)
+
+	// Decode the request JSON body into the batch slice
 	if err := dec.Decode(&batch); err != nil {
+		// Log the error and respond with a Bad Request status code
 		h.log.Info("cannot decode request JSON body: ", zap.Error(err))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
+	// Check if the request JSON body is empty
 	if len(batch) == 0 {
+		// Log the error and respond with a Bad Request status code
 		h.log.Info("request JSON body is empty")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
+	// Get the short URL address from the options
 	shortURLAdress := h.options.ShortURLAdress()
+
+	// Initialize a storageURL map to store data for batch insertion
 	dataURL := make(storage.StorageURL)
+
+	// Initialize a response slice to store the shortened URLs for the client response
 	resp := []models.DataURLite{}
 
+	// Retrieve the user ID from the request context
 	userID, _ := r.Context().Value(keyUserID).(string)
 
+	// Loop through each URL in the batch
 	for i := range batch {
-
 		s := batch[i]
-		// get short url
+
+		// Shorten the original URL
 		key, shurl := shorturl.Shorten(s.OriginalURL, shortURLAdress)
 
-		// save full url to storage with the key received earlier
+		// Save the full URL to storage with the key received earlier
 		data := models.DataURL{UUID: s.UUID, ShortURL: shurl, OriginalURL: s.OriginalURL, UserID: userID}
 		dataURL[key] = data
+
+		// Append the shortened URL to the response slice
 		resp = append(resp, models.DataURLite{UUID: s.UUID, ShortURL: shurl})
 	}
 
+	// Insert the batch of URLs into the storage
 	err := h.storage.InsertBatch(dataURL)
 	if err != nil {
+		// Respond with a Bad Request status code if there is an error
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	// fill in the response model
+	// Set the response headers
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 
-	// serialize the server response
+	// Serialize the server response
 	enc := json.NewEncoder(w)
 	if err := enc.Encode(resp); err != nil {
+		// Log the error if there is an encoding issue
 		h.log.Info("error encoding response: ", zap.Error(err))
 		return
 	}
 
+	// Log the successful HTTP 201 response
 	h.log.Info("sending HTTP 201 response")
 }
 
-// POST JSON
+// shortenJSON is a handler method for shortening a single URL from a JSON request.
+// It takes a pointer to the BaseController instance, an http.ResponseWriter, and an http.Request as parameters.
+// The function deserializes the request JSON body into a Request model, shortens the URL, saves it to storage,
+// and responds with the appropriate HTTP status code and serialized response.
+//
+// Parameters:
+//   - h: A pointer to the BaseController instance.
+//   - w: An http.ResponseWriter for writing the HTTP response.
+//   - r: An http.Request representing the incoming HTTP request.
 func (h *BaseController) shortenJSON(w http.ResponseWriter, r *http.Request) {
-	// deserialize the request into the model structure
+	// Deserialize the request into the model structure
 	h.log.Info("decoding request")
 
+	// Initialize a Request model
 	var req models.Request
+
+	// Create a JSON decoder for decoding the request body
 	dec := json.NewDecoder(r.Body)
+
+	// Decode the request JSON body into the Request model
 	if err := dec.Decode(&req); err != nil {
+		// Log the error and respond with a Bad Request status code
 		h.log.Info("cannot decode request JSON body: ", zap.Error(err))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
+	// Check if the request JSON body is empty
 	if req.URL == "" {
+		// Log the error and respond with a Bad Request status code
 		h.log.Info("request JSON body is empty")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
+	// Get the short URL address from the options
 	shortURLAdress := h.options.ShortURLAdress()
 
-	// get short url
+	// Shorten the original URL
 	key, shurl := shorturl.Shorten(string(req.URL), shortURLAdress)
+
+	// Retrieve the user ID from the request context
 	userID, _ := r.Context().Value(keyUserID).(string)
 
-	// save full url to storage with the key received earlier
+	// Save the full URL to storage with the key received earlier
 	m, err := h.storage.InsertURL(key, models.DataURL{ShortURL: shurl, OriginalURL: string(req.URL), UserID: userID})
-	conflict := false
 
+	// Check for conflicts or other errors during insertion
+	conflict := false
 	if err != nil {
 		if err == storage.ErrConflict {
 			conflict = true
 		} else {
+			// Respond with a Bad Request status code for other errors
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 	}
 
-	// fill in the response model
+	// Fill in the response model
 	resp := models.Response{
 		Result: m.ShortURL,
 	}
 
+	// Set the response headers
 	w.Header().Set("Content-Type", "application/json")
 	if conflict {
 		w.WriteHeader(http.StatusConflict)
@@ -439,13 +501,15 @@ func (h *BaseController) shortenJSON(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusCreated)
 	}
 
-	// serialize the server response
+	// Serialize the server response
 	enc := json.NewEncoder(w)
 	if err := enc.Encode(resp); err != nil {
+		// Log the error if there is an encoding issue
 		h.log.Info("error encoding response: ", zap.Error(err))
 		return
 	}
 
+	// Log the successful HTTP 201 response
 	h.log.Info("sending HTTP 201 response")
 }
 
