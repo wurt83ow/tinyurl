@@ -1,4 +1,4 @@
-// The compress package provides a set of utilities for transparently compressing
+// Package compress provides a set of utilities for transparently compressing
 // and decompressing HTTP data using gzip encoding. It includes compressWriter and
 // compressReader types that implement the http.ResponseWriter and io.ReadCloser
 // interfaces, respectively, to enable compression and decompression of transmitted data.
