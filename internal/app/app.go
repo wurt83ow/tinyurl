@@ -67,7 +67,7 @@ func Run() error {
 	r := chi.NewRouter()
 
 	r.Use(reqLog.RequestLogger)
-	// r.Use(middleware.GzipMiddleware)
+	r.Use(middleware.GzipMiddleware)
 
 	// r.Mount("/debug", middleware.Profiler())
 	r.Mount("/", controller.Route())
