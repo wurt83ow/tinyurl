@@ -98,4 +98,5 @@ func Run() error {
 
 	// Start the HTTP server
 	return http.ListenAndServe(flagRunAddr, r)
+
 }
