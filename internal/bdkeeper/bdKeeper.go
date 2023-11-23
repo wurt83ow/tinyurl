@@ -1,3 +1,5 @@
+// Package bdkeeper provides a PostgreSQL-backed implementation of the storage.Keeper interface.
+// It manages the storage and retrieval of URL and user data in a PostgreSQL database.
 package bdkeeper
 
 import (
@@ -26,15 +28,19 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+// Log is an interface representing a logger with Info method.
 type Log interface {
 	Info(string, ...zapcore.Field)
 }
 
+// BDKeeper is a PostgreSQL-backed implementation of the storage.Keeper interface.
 type BDKeeper struct {
 	conn *sql.DB
 	log  Log
 }
 
+// NewBDKeeper creates a new BDKeeper instance with the provided DSN (data source name) function and logger.
+// It establishes a connection to the PostgreSQL database, performs any required migrations, and returns the BDKeeper instance.
 func NewBDKeeper(dsn func() string, log Log) *BDKeeper {
 	addr := dsn()
 	if addr == "" {
@@ -44,19 +50,19 @@ func NewBDKeeper(dsn func() string, log Log) *BDKeeper {
 
 	conn, err := sql.Open("pgx", dsn())
 	if err != nil {
-		log.Info("Unable to connection to database: ", zap.Error(err))
+		log.Info("Unable to connect to the database: ", zap.Error(err))
 		return nil
 	}
 
 	driver, err := postgres.WithInstance(conn, &postgres.Config{})
 	if err != nil {
-		log.Info("error getting driver: ", zap.Error(err))
+		log.Info("Error getting driver: ", zap.Error(err))
 		return nil
 	}
 
 	dir, err := os.Getwd()
 	if err != nil {
-		log.Info("error getting getwd: ", zap.Error(err))
+		log.Info("Error getting getwd: ", zap.Error(err))
 	}
 
 	// fix error test path
@@ -71,7 +77,7 @@ func NewBDKeeper(dsn func() string, log Log) *BDKeeper {
 		driver)
 
 	if err != nil {
-		log.Info("Error creating migration instance : ", zap.Error(err))
+		log.Info("Error creating migration instance: ", zap.Error(err))
 	}
 
 	err = m.Up()
@@ -87,6 +93,7 @@ func NewBDKeeper(dsn func() string, log Log) *BDKeeper {
 	}
 }
 
+// Load retrieves URL data from the PostgreSQL database and returns it as a map.
 func (bdk *BDKeeper) Load() (storage.StorageURL, error) {
 	ctx := context.Background()
 
@@ -133,7 +140,7 @@ func (bdk *BDKeeper) Load() (storage.StorageURL, error) {
 	return data, nil
 }
 
-// LoadUsers implements storage.Keeper.
+// LoadUsers retrieves user data from the PostgreSQL database and returns it as a map.
 func (bdk *BDKeeper) LoadUsers() (storage.StorageUser, error) {
 	ctx := context.Background()
 
@@ -172,6 +179,7 @@ func (bdk *BDKeeper) LoadUsers() (storage.StorageUser, error) {
 	return data, nil
 }
 
+// UpdateBatch updates the is_deleted flag for the specified URLs in the PostgreSQL database.
 func (bdk *BDKeeper) UpdateBatch(data ...models.DeleteURL) error {
 	ctx := context.Background()
 
@@ -205,6 +213,8 @@ func (bdk *BDKeeper) UpdateBatch(data ...models.DeleteURL) error {
 	return nil
 }
 
+// Save inserts or updates the specified URL data in the PostgreSQL database.
+// It returns the saved data along with any error encountered.
 func (bdk *BDKeeper) Save(key string, data models.DataURL) (models.DataURL, error) {
 	ctx := context.Background()
 
@@ -260,6 +270,8 @@ func (bdk *BDKeeper) Save(key string, data models.DataURL) (models.DataURL, erro
 	return m, nil
 }
 
+// SaveUser inserts or updates the specified user data in the PostgreSQL database.
+// It returns the saved data along with any error encountered.
 func (bdk *BDKeeper) SaveUser(key string, data models.DataUser) (models.DataUser, error) {
 	ctx := context.Background()
 
@@ -321,6 +333,8 @@ func (bdk *BDKeeper) SaveUser(key string, data models.DataUser) (models.DataUser
 	return m, nil
 }
 
+// SaveBatch inserts or updates the specified batch of URL data in the PostgreSQL database.
+// It returns any error encountered during the operation.
 func (bdk *BDKeeper) SaveBatch(data storage.StorageURL) error {
 	ctx := context.Background()
 
@@ -356,6 +370,7 @@ func (bdk *BDKeeper) SaveBatch(data storage.StorageURL) error {
 	return nil
 }
 
+// Ping checks the connectivity to the PostgreSQL database and returns true if successful, otherwise false.
 func (bdk *BDKeeper) Ping() bool {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
@@ -367,6 +382,7 @@ func (bdk *BDKeeper) Ping() bool {
 	return true
 }
 
+// Close closes the connection to the PostgreSQL database and returns true if successful, otherwise false.
 func (bdk *BDKeeper) Close() bool {
 	bdk.conn.Close()
 
