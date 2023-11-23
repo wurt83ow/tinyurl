@@ -333,7 +333,6 @@ func (h *BaseController) Login(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// POST JSON BATCH
 func (h *BaseController) shortenBatch(w http.ResponseWriter, r *http.Request) {
 	// deserialize the request into the model structure
 	h.log.Info("decoding request")
@@ -450,102 +449,143 @@ func (h *BaseController) shortenJSON(w http.ResponseWriter, r *http.Request) {
 	h.log.Info("sending HTTP 201 response")
 }
 
-// POST
+// shortenURL is a handler method for shortening a single URL.
+// It takes a pointer to the BaseController instance, an http.ResponseWriter, and an http.Request as parameters.
+// The function reads the request body, shortens the URL, saves it to storage, and responds with the appropriate HTTP status code.
+//
+// Parameters:
+//   - h: A pointer to the BaseController instance.
+//   - w: An http.ResponseWriter for writing the HTTP response.
+//   - r: An http.Request representing the incoming HTTP request.
 func (h *BaseController) shortenURL(w http.ResponseWriter, r *http.Request) {
-	// set the correct header for the data type
+	// Read the request body
 	body, err := io.ReadAll(r.Body)
 	if err != nil || len(body) == 0 {
+		// Respond with a Bad Request status code if there is an error or the body is empty
 		w.WriteHeader(http.StatusBadRequest)
-		h.log.Info("got bad request status 400: %v", zap.String("method", r.Method))
+		h.log.Info("got bad request status 400", zap.String("method", r.Method))
 		return
 	}
 
+	// Set the correct content type header
 	w.Header().Set("Content-Type", "text/plain")
 
+	// Get the short URL address from the options
 	shortURLAdress := h.options.ShortURLAdress()
+
+	// Shorten the URL
 	key, shurl := shorturl.Shorten(string(body), shortURLAdress)
 
+	// Retrieve the user ID from the request context
 	userID, _ := r.Context().Value(keyUserID).(string)
 
-	// save full url to storage with the key received earlier
+	// Save the full URL to storage with the key received earlier
 	m, err := h.storage.InsertURL(key, models.DataURL{ShortURL: shurl, OriginalURL: string(body), UserID: userID})
 
+	// Check for conflicts or other errors during insertion
 	conflict := false
 	if err != nil {
 		if err == storage.ErrConflict {
 			conflict = true
 		} else {
+			// Respond with a Bad Request status code for other errors
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 	}
 
-	// respond to client
-	w.Header().Set("Content-Type", "text/plain")
+	// Respond to the client
 	if conflict {
-		w.WriteHeader(http.StatusConflict) //code 409
+		w.WriteHeader(http.StatusConflict) // Code 409
 	} else {
-		w.WriteHeader(http.StatusCreated) //code 201
+		w.WriteHeader(http.StatusCreated) // Code 201
 	}
 
+	// Write the shortened URL to the response
 	_, err = w.Write([]byte(m.ShortURL))
 	if err != nil {
+		// Respond with a Bad Request status code if there is an error writing the response
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
+	// Log the successful HTTP 201 response
 	h.log.Info("sending HTTP 201 response")
 }
 
-// getFullURL processes a custom GET request and returns from storage
-// full url for the passed shortened url.
+// getFullURL is a handler method for retrieving the original URL for a given shortened URL key.
+// It takes a pointer to the BaseController instance, an http.ResponseWriter, and an http.Request as parameters.
+// The function processes a custom GET request, retrieves the original URL from storage, and responds with the appropriate HTTP status code.
+//
+// Parameters:
+//   - h: A pointer to the BaseController instance.
+//   - w: An http.ResponseWriter for writing the HTTP response.
+//   - r: An http.Request representing the incoming HTTP request.
 func (h *BaseController) getFullURL(w http.ResponseWriter, r *http.Request) {
+	// Extract the key from the URL path
 	key := r.URL.Path
 	key = strings.Replace(key, "/", "", -1)
+
+	// Respond with a Bad Request status code if the key is empty
 	if len(key) == 0 {
-		// passed empty key
-		w.WriteHeader(http.StatusBadRequest) // 400
-		h.log.Info("got bad request status 400: %v", zap.String("method", r.Method))
+		w.WriteHeader(http.StatusBadRequest) // Code 400
+		h.log.Info("got bad request status 400", zap.String("method", r.Method))
 		return
 	}
 
-	// get full url from storage
+	// Get the full URL from storage
 	data, err := h.storage.GetURL(key)
+
+	// Respond with a Bad Request status code if the URL is not found or there is an error
 	if err != nil || len(data.OriginalURL) == 0 {
-		// value not found for the passed key
-		w.WriteHeader(http.StatusBadRequest) // 400
+		w.WriteHeader(http.StatusBadRequest) // Code 400
 		return
 	}
 
+	// Respond with a Gone status code if the URL has been marked as deleted
 	if data.DeletedFlag {
-		w.WriteHeader(http.StatusGone) // 410
+		w.WriteHeader(http.StatusGone) // Code 410
 		return
 	}
 
+	// Set the Location header for a temporary redirect
 	w.Header().Set("Location", data.OriginalURL)
-	w.WriteHeader(http.StatusTemporaryRedirect) // 307
+	w.WriteHeader(http.StatusTemporaryRedirect) // Code 307
 	h.log.Info("temporary redirect status 307")
 }
 
-// GET
+// getUserURLs is a handler method for retrieving URLs associated with the authenticated user.
+// It takes a pointer to the BaseController instance, an http.ResponseWriter, and an http.Request as parameters.
+// The function retrieves the user ID from the request context, retrieves associated URLs from storage,
+// and responds with the appropriate HTTP status code and serialized response.
+//
+// Parameters:
+//   - h: A pointer to the BaseController instance.
+//   - w: An http.ResponseWriter for writing the HTTP response.
+//   - r: An http.Request representing the incoming HTTP request.
 func (h *BaseController) getUserURLs(w http.ResponseWriter, r *http.Request) {
+	// Retrieve the user ID from the request context
 	userID, ok := r.Context().Value(keyUserID).(string)
 	if !ok {
-		w.WriteHeader(http.StatusUnauthorized) //401
+		// Respond with an Unauthorized status code if the user ID is not present
+		w.WriteHeader(http.StatusUnauthorized) // Code 401
 		return
 	}
 
+	// Retrieve URLs associated with the user from storage
 	data := h.storage.GetUserURLs(userID)
+
+	// Respond with a No Content status code if no URLs are found for the user
 	if len(data) == 0 {
-		// value not found for the passed key
-		w.WriteHeader(http.StatusNoContent) // 204
+		w.WriteHeader(http.StatusNoContent) // Code 204
 		return
 	}
 
+	// Set the Content-Type header
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK) //code 200
 
-	// serialize the server response
+	// Respond with an OK status code and serialize the response
+	w.WriteHeader(http.StatusOK) // Code 200
 	enc := json.NewEncoder(w)
 	if err := enc.Encode(data); err != nil {
 		h.log.Info("error encoding response: ", zap.Error(err))
@@ -553,10 +593,18 @@ func (h *BaseController) getUserURLs(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// getPing processes incoming get requests and sends a response with code 200
-// if the storage (bd or file json) is available or with code 500 if it is not available.
+// getPing is a handler method for processing incoming GET requests and sending a response based on storage availability.
+// It takes a pointer to the BaseController instance, an http.ResponseWriter, and an http.Request as parameters.
+// The function responds with an OK status code if the storage is available, or an Internal Server Error status code if it is not.
+//
+// Parameters:
+//   - h: A pointer to the BaseController instance.
+//   - w: An http.ResponseWriter for writing the HTTP response.
+//   - r: An http.Request representing the incoming HTTP request.
 func (h *BaseController) getPing(w http.ResponseWriter, r *http.Request) {
+	// Check if the storage (database or file JSON) is available
 	if !h.storage.GetBaseConnection() {
+		// Respond with an Internal Server Error status code if the storage
 		h.log.Info("got status internal server error")
 		w.WriteHeader(http.StatusInternalServerError) // 500
 		return
