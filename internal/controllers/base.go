@@ -3,8 +3,10 @@ package controllers
 import (
 	"bytes"
 	"encoding/json"
+	"expvar"
 	"io"
 	"net/http"
+	"net/http/pprof"
 	"strings"
 
 	"github.com/go-chi/chi"
@@ -85,6 +87,20 @@ func (h *BaseController) Route() *chi.Mux {
 	r.Post("/login", h.Login)
 	r.Get("/{name}", h.getFullURL)
 	r.Get("/ping", h.getPing)
+
+	r.Get("/pprof/*", pprof.Index)
+	r.HandleFunc("/pprof/cmdline", pprof.Cmdline)
+	r.HandleFunc("/pprof/profile", pprof.Profile)
+	r.HandleFunc("/pprof/symbol", pprof.Symbol)
+	r.HandleFunc("/pprof/trace", pprof.Trace)
+	r.Handle("/vars", expvar.Handler())
+
+	r.Handle("/pprof/goroutine", pprof.Handler("goroutine"))
+	r.Handle("/pprof/threadcreate", pprof.Handler("threadcreate"))
+	r.Handle("/pprof/mutex", pprof.Handler("mutex"))
+	r.Handle("/pprof/heap", pprof.Handler("heap"))
+	r.Handle("/pprof/block", pprof.Handler("block"))
+	r.Handle("/pprof/allocs", pprof.Handler("allocs"))
 
 	// group where the middleware authorization is needed
 	r.Group(func(r chi.Router) {

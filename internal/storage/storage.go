@@ -110,8 +110,8 @@ func (s *MemoryStorage) InsertBatch(stg StorageURL) error {
 }
 
 func (s *MemoryStorage) GetURL(k string) (models.DataURL, error) {
-	// s.dmx.RLock()
-	// defer s.dmx.RUnlock()
+	s.dmx.RLock()
+	defer s.dmx.RUnlock()
 
 	v, exists := s.data[k]
 

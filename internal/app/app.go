@@ -3,6 +3,10 @@ package app
 import (
 	"context"
 	"net/http"
+	"os"
+	"runtime"
+	"runtime/pprof"
+	"time"
 
 	"github.com/go-chi/chi"
 	authz "github.com/wurt83ow/tinyurl/internal/authorization"
@@ -16,6 +20,18 @@ import (
 	"github.com/wurt83ow/tinyurl/internal/worker"
 	"go.uber.org/zap"
 )
+
+// func foo() {
+// 	maxSize := 50000000
+// 	// полезная нагрузка
+// 	for i := 0; i < 10; i++ {
+// 		s := make([]byte, maxSize)
+// 		if s == nil {
+// 			fmt.Println("Operation failed!")
+// 		}
+// 		time.Sleep(50 * time.Millisecond)
+// 	}
+// }
 
 func Run() error {
 	option := config.NewOptions()
@@ -49,13 +65,29 @@ func Run() error {
 
 	worker.Start(ctx)
 	r := chi.NewRouter()
-	r.Use(reqLog.RequestLogger)
-	r.Use(middleware.GzipMiddleware)
 
+	r.Use(reqLog.RequestLogger)
+	// r.Use(middleware.GzipMiddleware)
+
+	// r.Mount("/debug", middleware.Profiler())
 	r.Mount("/", controller.Route())
 
 	flagRunAddr := option.RunAddr()
 	nLogger.Info("Running server", zap.String("address", flagRunAddr))
+
+	time.Sleep(50 * time.Millisecond)
+	// создаём файл журнала профилирования памяти
+	memory, err := os.Create(`result.pprof`)
+	if err != nil {
+		panic(err)
+	}
+	defer memory.Close()
+	runtime.GC() // получаем статистику по использованию памяти
+
+	// go foo()
+	if err := pprof.WriteHeapProfile(memory); err != nil {
+		panic(err)
+	}
 
 	return http.ListenAndServe(flagRunAddr, r)
 }
