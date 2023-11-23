@@ -1,3 +1,6 @@
+// Package controllers provides a basic controller for handling user requests.
+// It contains the BaseController struct, constructor NewBaseController and its methods for
+// authorization, logging and processing user requests.
 package controllers
 
 import (
@@ -21,41 +24,83 @@ import (
 
 var keyUserID models.Key = "userID"
 
+// Storage represents an interface for data storage operations.
 type Storage interface {
+	// InsertURL inserts a URL entry into the storage.
 	InsertURL(k string, v models.DataURL) (models.DataURL, error)
+
+	// InsertUser inserts a user entry into the storage.
 	InsertUser(k string, v models.DataUser) (models.DataUser, error)
-	InsertBatch(storage.StorageURL) error
+
+	// InsertBatch inserts a batch of URL entries into the storage.
+	InsertBatch(storageURL storage.StorageURL) error
+
+	// GetURL retrieves a URL entry from the storage.
 	GetURL(k string) (models.DataURL, error)
+
+	// GetUser retrieves a user entry from the storage.
 	GetUser(k string) (models.DataUser, error)
+
+	// GetUserURLs retrieves URLs associated with a user from the storage.
 	GetUserURLs(userID string) []models.DataURLite
+
+	// SaveURL saves a URL entry in the storage.
 	SaveURL(k string, v models.DataURL) (models.DataURL, error)
+
+	// DeleteURLs deletes specified URL entries from the storage.
 	DeleteURLs(delUrls ...models.DeleteURL) error
+
+	// SaveUser saves a user entry in the storage.
 	SaveUser(k string, v models.DataUser) (models.DataUser, error)
-	SaveBatch(storage.StorageURL) error
+
+	// SaveBatch saves a batch of URL entries in the storage.
+	SaveBatch(storageURL storage.StorageURL) error
+
+	// GetBaseConnection checks the base connection status.
 	GetBaseConnection() bool
 }
 
+// Options represents an interface for parsing command line options.
 type Options interface {
+	// ParseFlags parses command line flags.
 	ParseFlags()
+
+	// RunAddr returns the address to run the application.
 	RunAddr() string
+
+	// ShortURLAdress returns the short URL address.
 	ShortURLAdress() string
 }
 
+// Log represents an interface for logging functionality.
 type Log interface {
+	// Info logs an informational message with optional fields.
 	Info(string, ...zapcore.Field)
 }
 
+// Worker represents an interface for worker functionality.
 type Worker interface {
+	// Add adds a task to the worker.
 	Add(models.DeleteURL)
 }
 
+// Authz represents an interface for user authorization functionality.
 type Authz interface {
+	// JWTAuthzMiddleware returns a middleware function for JWT-based authorization.
 	JWTAuthzMiddleware(authz.Storage, authz.Log) func(http.Handler) http.Handler
+
+	// GetHash generates a hash for a given email and password.
 	GetHash(email string, password string) []byte
-	CreateJWTTokenForUser(userid string) string
+
+	// CreateJWTTokenForUser creates a JWT token for a specified user ID.
+	CreateJWTTokenForUser(userID string) string
+
+	// AuthCookie creates an HTTP cookie for authorization purposes.
 	AuthCookie(name string, token string) *http.Cookie
 }
 
+// BaseController represents a basic controller for handling user requests.
+// It includes handler methods for various operations.
 type BaseController struct {
 	storage Storage
 	options Options
@@ -66,6 +111,12 @@ type BaseController struct {
 	// delChan chan models.DeleteURL
 }
 
+// Example usage:
+//
+//	controller := NewBaseController(memoryStorage, option, nLogger, worker, authz)
+//	r.Mount("/", controller.Route())
+//	flagRunAddr := option.RunAddr()
+//	http.ListenAndServe(flagRunAddr, r)
 func NewBaseController(storage Storage, options Options, log Log, worker Worker, authz Authz) *BaseController {
 	instance := &BaseController{
 		storage: storage,
@@ -81,6 +132,16 @@ func NewBaseController(storage Storage, options Options, log Log, worker Worker,
 	return instance
 }
 
+// Route returns a chi.Mux router with registered handlers for BaseController routes.
+// It creates a new chi router, registers the routes with the corresponding handler
+// methods, and returns the configured router.
+//
+// Receiver:
+//   - h: A pointer to the BaseController instance.
+//
+// Returns:
+//
+//	A chi.Mux router with registered routes and handlers.
 func (h *BaseController) Route() *chi.Mux {
 	r := chi.NewRouter()
 	r.Post("/register", h.Register)
@@ -116,27 +177,65 @@ func (h *BaseController) Route() *chi.Mux {
 	return r
 }
 
+// deleteUserURLs is a handler method for deleting user URLs.
+// It takes a pointer to the BaseController instance, an http.ResponseWriter, and an http.Request as parameters.
+// The function decodes the request JSON body containing URL IDs to be deleted, validates the user ID from the request context,
+// adds a task to the worker for asynchronous deletion, and responds with the appropriate HTTP status code.
+//
+// Parameters:
+//   - h: A pointer to the BaseController instance.
+//   - w: An http.ResponseWriter for writing the HTTP response.
+//   - r: An http.Request representing the incoming HTTP request.
 func (h *BaseController) deleteUserURLs(w http.ResponseWriter, r *http.Request) {
+	// Initialize an empty slice to store URL IDs
 	ids := make([]string, 0)
+
+	// Create a JSON decoder for decoding the request body
 	dec := json.NewDecoder(r.Body)
+
+	// Decode the request JSON body into the ids slice
 	if err := dec.Decode(&ids); err != nil {
+		// Log the error and respond with a Bad Request status code
 		h.log.Info("cannot decode request JSON body: ", zap.Error(err))
 		w.WriteHeader(http.StatusBadRequest)
-
 		return
 	}
 
+	// Retrieve the user ID from the request context
 	userID, ok := r.Context().Value(keyUserID).(string)
 
+	// Check if user ID is present in the context
 	if !ok {
-		w.WriteHeader(http.StatusUnauthorized) //401
+		// Respond with an Unauthorized status code
+		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
+	// Add a task to the worker for asynchronous deletion
 	h.worker.Add(models.DeleteURL{UserID: userID, ShortURLs: ids})
+
+	// Respond with an Accepted status code
 	w.WriteHeader(http.StatusAccepted)
 }
 
+// Register is a method of the *BaseController structure.
+//
+// The method handles user registration by accepting the email and password
+// as parameters in the request body. Upon successful registration (user creation),
+// it returns a HTTP status code 201. If the user already exists in the system
+// (previously created), it returns a HTTP status code 409. In case of invalid
+// email or password, it returns a HTTP status code 400.
+//
+// # Example
+//
+// Code:
+//
+//	func (h *BaseController) Route() *chi.Mux {
+//		r := chi.NewRouter()
+//		r.Post("/register", h.Register)
+//
+//	  return r
+//	}
 func (h *BaseController) Register(w http.ResponseWriter, r *http.Request) {
 	regReq := models.RequestUser{}
 	dec := json.NewDecoder(r.Body)
@@ -173,6 +272,26 @@ func (h *BaseController) Register(w http.ResponseWriter, r *http.Request) {
 	h.log.Info("sending HTTP 201 response")
 }
 
+// Login is a method of the *BaseController structure.
+//
+// The method handles user authentication by accepting the email and password
+// as parameters in the request body. If the provided credentials are valid,
+// it returns a HTTP status code 200 along with a newly created JWT token (cookies).
+// If the user does not exist in the system, it returns a HTTP status code 404.
+// In case of invalid email or password, it returns a HTTP status code 400.
+//
+// # Example
+//
+// Code:
+//
+//	   func (h *BaseController) Route() *chi.Mux {
+//	       r := chi.NewRouter()
+//			  r.Post("/login", h.Login)
+//
+//		      return r
+//	}
+//
+// Output: Login successful, Status Code: 200
 func (h *BaseController) Login(w http.ResponseWriter, r *http.Request) {
 	var rb models.RequestUser
 	if err := json.NewDecoder(r.Body).Decode(&rb); err != nil {
@@ -378,7 +497,8 @@ func (h *BaseController) shortenURL(w http.ResponseWriter, r *http.Request) {
 	h.log.Info("sending HTTP 201 response")
 }
 
-// GET
+// getFullURL processes a custom GET request and returns from storage
+// full url for the passed shortened url.
 func (h *BaseController) getFullURL(w http.ResponseWriter, r *http.Request) {
 	key := r.URL.Path
 	key = strings.Replace(key, "/", "", -1)
@@ -417,8 +537,6 @@ func (h *BaseController) getUserURLs(w http.ResponseWriter, r *http.Request) {
 
 	data := h.storage.GetUserURLs(userID)
 	if len(data) == 0 {
-		// // corrected it to pass the Yandex test
-		// w.WriteHeader(http.StatusUnauthorized) //401
 		// value not found for the passed key
 		w.WriteHeader(http.StatusNoContent) // 204
 		return
@@ -435,7 +553,8 @@ func (h *BaseController) getUserURLs(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// GET
+// getPing processes incoming get requests and sends a response with code 200
+// if the storage (bd or file json) is available or with code 500 if it is not available.
 func (h *BaseController) getPing(w http.ResponseWriter, r *http.Request) {
 	if !h.storage.GetBaseConnection() {
 		h.log.Info("got status internal server error")
