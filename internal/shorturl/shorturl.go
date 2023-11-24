@@ -44,4 +44,5 @@ func Shorten(url string, shortURLAdress string) (string, string) {
 	}
 
 	return key, shortURLAdress + key
+
 }
