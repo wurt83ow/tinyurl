@@ -18,4 +18,5 @@ func ExampleShorten() {
 	// Output:
 	// Shortened Key: nOykhckC3Od
 	// Shortened URL: http://localhost:8080/nOykhckC3Od
+
 }
