@@ -3,7 +3,7 @@ package shorturl_test
 import (
 	"fmt"
 
-	"github.com/wurt83ow/tinyurl/internal/shorturl"
+	"github.com/wurt83ow/tinyurl/internal/services/shorturl"
 )
 
 // ExampleShorten demonstrates how to use the Shorten function to generate a short URL.
