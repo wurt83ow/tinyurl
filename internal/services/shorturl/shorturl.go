@@ -1,4 +1,3 @@
-
 // Package shorturl provides functionality for shortening URLs.
 package shorturl
 
