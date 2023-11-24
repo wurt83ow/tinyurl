@@ -211,3 +211,61 @@ func TestGetFullURL(t *testing.T) {
 		})
 	}
 }
+
+func TestGetPing(t *testing.T) {
+	option := config.NewOptions()
+	option.ParseFlags()
+
+	nLogger, err := logger.NewLogger(option.LogLevel())
+	if err != nil {
+		log.Fatalf("Unable to setup logger: %s\n", err)
+	}
+
+	bdKeeper := bdkeeper.NewBDKeeper(option.DataBaseDSN, nLogger)
+	var keeper storage.Keeper = nil
+	if bdKeeper != nil {
+		keeper = bdKeeper
+	} else if fileKeeper := filekeeper.NewFileKeeper(option.FileStoragePath, nLogger); fileKeeper != nil {
+		keeper = fileKeeper
+	}
+
+	if keeper != nil {
+		defer keeper.Close()
+	}
+
+	memoryStorage := storage.NewMemoryStorage(keeper, nLogger)
+
+	worker := worker.NewWorker(nLogger, memoryStorage)
+	authz := authz.NewJWTAuthz(option.JWTSigningKey(), nLogger)
+	controller := NewBaseController(memoryStorage, option, nLogger, worker, authz)
+
+	// Создаем запрос GET
+	req, err := http.NewRequest("GET", "/ping", nil)
+	assert.NoError(t, err, "не ожидалось ошибки при создании запроса")
+
+	// Создаем ResponseRecorder для записи ответа
+	rr := httptest.NewRecorder()
+
+	// Вызываем метод getPing
+	controller.getPing(rr, req)
+
+	// Проверяем, что статус код соответствует ожидаемому
+	assert.Equal(t, http.StatusOK, rr.Code, "ожидался статус код 200")
+
+	memoryStorage = storage.NewMemoryStorage(nil, nLogger)
+	controller = NewBaseController(memoryStorage, option, nLogger, worker, authz)
+
+	// Создаем запрос GET
+	req, err = http.NewRequest("GET", "/ping", nil)
+	assert.NoError(t, err, "не ожидалось ошибки при создании запроса")
+
+	// Создаем ResponseRecorder для записи ответа
+	rr = httptest.NewRecorder()
+
+	// Вызываем метод getPing
+	controller.getPing(rr, req)
+
+	// Проверяем, что статус код соответствует ожидаемому
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "ожидался статус код 500")
+
+}
