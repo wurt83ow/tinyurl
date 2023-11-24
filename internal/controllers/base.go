@@ -107,8 +107,6 @@ type BaseController struct {
 	log     Log
 	worker  Worker
 	authz   Authz
-
-	// delChan chan models.DeleteURL
 }
 
 // Example usage:
