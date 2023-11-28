@@ -1,3 +1,4 @@
+// Package middleware provides HTTP middleware functions.
 package middleware
 
 import (
@@ -7,6 +8,9 @@ import (
 	"github.com/wurt83ow/tinyurl/internal/compress"
 )
 
+// GzipMiddleware is an HTTP middleware that adds support for gzip compression.
+// It compresses the response if the client supports gzip, and decompresses the request
+// if the client sends compressed data in gzip format.
 func GzipMiddleware(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// by default set the original http.ResponseWriter as the one

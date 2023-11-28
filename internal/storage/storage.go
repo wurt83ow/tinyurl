@@ -1,3 +1,5 @@
+// Package storage provides an in-memory storage implementation with CRUD operations for URL and user data.
+// It includes interfaces and a MemoryStorage type implementing these interfaces.
 package storage
 
 import (
@@ -13,13 +15,18 @@ import (
 // ErrConflict indicates a data conflict in the store.
 var ErrConflict = errors.New("data conflict")
 
+// StorageURL represents a mapping of string keys to DataURL values.
 type StorageURL = map[string]models.DataURL
+
+// StorageUser represents a mapping of string keys to DataUser values.
 type StorageUser = map[string]models.DataUser
 
+// Log is an interface representing a logger with Info method.
 type Log interface {
 	Info(string, ...zapcore.Field)
 }
 
+// MemoryStorage is an in-memory storage implementation with CRUD operations for URL and user data.
 type MemoryStorage struct {
 	dmx    sync.RWMutex
 	umx    sync.RWMutex
@@ -29,6 +36,7 @@ type MemoryStorage struct {
 	log    Log
 }
 
+// Keeper is an interface representing methods for loading, saving, and updating data in storage.
 type Keeper interface {
 	Load() (StorageURL, error)
 	LoadUsers() (StorageUser, error)
@@ -40,6 +48,7 @@ type Keeper interface {
 	Close() bool
 }
 
+// NewMemoryStorage creates a new MemoryStorage instance with the provided Keeper and logger.
 func NewMemoryStorage(keeper Keeper, log Log) *MemoryStorage {
 	data := make(StorageURL)
 	users := make(StorageUser)
@@ -65,9 +74,8 @@ func NewMemoryStorage(keeper Keeper, log Log) *MemoryStorage {
 	}
 }
 
-func (s *MemoryStorage) InsertURL(k string,
-	v models.DataURL) (models.DataURL, error) {
-
+// InsertURL inserts a new DataURL into the storage with the specified key.
+func (s *MemoryStorage) InsertURL(k string, v models.DataURL) (models.DataURL, error) {
 	nv, err := s.SaveURL(k, v)
 	if err != nil {
 		return nv, err
@@ -81,8 +89,8 @@ func (s *MemoryStorage) InsertURL(k string,
 	return nv, nil
 }
 
-func (s *MemoryStorage) InsertUser(k string,
-	v models.DataUser) (models.DataUser, error) {
+// InsertUser inserts a new DataUser into the storage with the specified key.
+func (s *MemoryStorage) InsertUser(k string, v models.DataUser) (models.DataUser, error) {
 	nv, err := s.SaveUser(k, v)
 	if err != nil {
 		return nv, err
@@ -96,6 +104,7 @@ func (s *MemoryStorage) InsertUser(k string,
 	return nv, nil
 }
 
+// InsertBatch inserts a batch of DataURL values into the storage.
 func (s *MemoryStorage) InsertBatch(stg StorageURL) error {
 	for k, v := range stg {
 		s.data[k] = v
@@ -109,6 +118,7 @@ func (s *MemoryStorage) InsertBatch(stg StorageURL) error {
 	return nil
 }
 
+// GetURL retrieves a DataURL from the storage with the specified key.
 func (s *MemoryStorage) GetURL(k string) (models.DataURL, error) {
 	s.dmx.RLock()
 	defer s.dmx.RUnlock()
@@ -122,6 +132,7 @@ func (s *MemoryStorage) GetURL(k string) (models.DataURL, error) {
 	return v, nil
 }
 
+// GetUser retrieves a DataUser from the storage with the specified key.
 func (s *MemoryStorage) GetUser(k string) (models.DataUser, error) {
 	s.umx.RLock()
 	defer s.umx.RUnlock()
@@ -134,6 +145,7 @@ func (s *MemoryStorage) GetUser(k string) (models.DataUser, error) {
 	return v, nil
 }
 
+// GetUserURLs retrieves a slice of DataURLite for a specific user from the storage.
 func (s *MemoryStorage) GetUserURLs(userID string) []models.DataURLite {
 	var data []models.DataURLite
 
@@ -149,6 +161,7 @@ func (s *MemoryStorage) GetUserURLs(userID string) []models.DataURLite {
 	return data
 }
 
+// SaveURL saves a DataURL to the storage using the provided key.
 func (s *MemoryStorage) SaveURL(k string, v models.DataURL) (models.DataURL, error) {
 	if s.keeper == nil {
 		return v, nil
@@ -157,6 +170,7 @@ func (s *MemoryStorage) SaveURL(k string, v models.DataURL) (models.DataURL, err
 	return s.keeper.Save(k, v)
 }
 
+// DeleteURLs deletes URLs from the storage based on the provided delete URLs.
 func (s *MemoryStorage) DeleteURLs(delUrls ...models.DeleteURL) error {
 	if s.keeper == nil {
 		return nil
@@ -184,6 +198,7 @@ func (s *MemoryStorage) DeleteURLs(delUrls ...models.DeleteURL) error {
 	return nil
 }
 
+// SaveUser saves a DataUser to the storage using the provided key.
 func (s *MemoryStorage) SaveUser(k string, v models.DataUser) (models.DataUser, error) {
 	if s.keeper == nil {
 		return v, nil
@@ -192,6 +207,7 @@ func (s *MemoryStorage) SaveUser(k string, v models.DataUser) (models.DataUser, 
 	return s.keeper.SaveUser(k, v)
 }
 
+// SaveBatch saves a batch of DataURL values to the storage.
 func (s *MemoryStorage) SaveBatch(stg StorageURL) error {
 	if s.keeper == nil {
 		return nil
@@ -200,6 +216,7 @@ func (s *MemoryStorage) SaveBatch(stg StorageURL) error {
 	return s.keeper.SaveBatch(stg)
 }
 
+// GetBaseConnection checks the connectivity of the underlying storage keeper.
 func (s *MemoryStorage) GetBaseConnection() bool {
 	if s.keeper == nil {
 		return false

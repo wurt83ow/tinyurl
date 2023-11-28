@@ -1,3 +1,4 @@
+// Package authz provides authentication and authorization functionality, including JWT token handling.
 package authz
 
 import (
@@ -15,18 +16,23 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+// Storage is an interface representing methods for inserting user data.
 type Storage interface {
 	InsertUser(k string, v models.DataUser) (models.DataUser, error)
 }
+
+// CustomClaims represents custom claims for JWT token.
 type CustomClaims struct {
 	Email string `json:"email"`
 	jwt.StandardClaims
 }
 
+// Log is an interface representing a logger with Info method.
 type Log interface {
 	Info(string, ...zapcore.Field)
 }
 
+// JWTAuthz provides JWT token creation, decoding, and middleware functionality for authentication and authorization.
 type JWTAuthz struct {
 	jwtSigningKey    []byte
 	log              Log
@@ -34,6 +40,7 @@ type JWTAuthz struct {
 	defaultCookie    http.Cookie
 }
 
+// NewJWTAuthz creates a new JWTAuthz instance with the provided signing key and logger.
 func NewJWTAuthz(signingKey string, log Log) *JWTAuthz {
 	return &JWTAuthz{
 		jwtSigningKey:    []byte(config.GetAsString("JWT_SIGNING_KEY", signingKey)),
@@ -46,12 +53,11 @@ func NewJWTAuthz(signingKey string, log Log) *JWTAuthz {
 	}
 }
 
-// JWTAuthzMiddleware verifies a valid JWT exists in our
-// cookie and if not, encourages the consumer to login again.
+// JWTAuthzMiddleware returns a middleware function that verifies the presence of a valid JWT in the cookie.
+// If not present, it encourages the user to log in again.
 func (j *JWTAuthz) JWTAuthzMiddleware(storage Storage, log Log) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
-
 			// Grab jwt-token cookie
 			jwtCookie, err := r.Cookie("jwt-token")
 
@@ -62,7 +68,6 @@ func (j *JWTAuthz) JWTAuthzMiddleware(storage Storage, log Log) func(next http.H
 					userID = ""
 					log.Info("Error occurred creating a cookie", zap.Error(err))
 				}
-
 			} else {
 				log.Info("Error occurred reading cookie", zap.Error(err))
 			}
@@ -94,7 +99,6 @@ func (j *JWTAuthz) JWTAuthzMiddleware(storage Storage, log Log) func(next http.H
 
 				freshToken := j.CreateJWTTokenForUser(userID)
 				http.SetCookie(w, j.AuthCookie("jwt-token", freshToken))
-				// http.SetCookie(w, authz.AuthCookie("Authorization", freshToken))
 				w.Header().Set("Authorization", freshToken)
 			}
 
@@ -108,6 +112,7 @@ func (j *JWTAuthz) JWTAuthzMiddleware(storage Storage, log Log) func(next http.H
 	}
 }
 
+// CreateJWTTokenForUser creates a JWT token for the specified user ID.
 func (j *JWTAuthz) CreateJWTTokenForUser(userid string) string {
 	claims := CustomClaims{
 		userid,
@@ -124,6 +129,7 @@ func (j *JWTAuthz) CreateJWTTokenForUser(userid string) string {
 	return tokenString
 }
 
+// DecodeJWTToUser decodes a JWT token to retrieve the user ID.
 func (j *JWTAuthz) DecodeJWTToUser(token string) (string, error) {
 	// Decode
 	decodeToken, err := jwt.ParseWithClaims(token, &CustomClaims{}, func(token *jwt.Token) (any, error) {
@@ -143,6 +149,7 @@ func (j *JWTAuthz) DecodeJWTToUser(token string) (string, error) {
 	return "", err
 }
 
+// GetHash computes the SHA-256 hash of the concatenation of email and password.
 func (j *JWTAuthz) GetHash(email string, password string) []byte {
 	src := []byte(email + password)
 
@@ -155,6 +162,7 @@ func (j *JWTAuthz) GetHash(email string, password string) []byte {
 	return h.Sum(nil)
 }
 
+// AuthCookie creates an http.Cookie with the specified name and token value.
 func (j *JWTAuthz) AuthCookie(name string, token string) *http.Cookie {
 	d := j.defaultCookie
 	d.Name = name
