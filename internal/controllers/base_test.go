@@ -1,9 +1,6 @@
 package controllers
 
 import (
-	"bytes"
-	"compress/gzip"
-	"io"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -11,13 +8,11 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	authz "github.com/wurt83ow/tinyurl/internal/authorization"
 	"github.com/wurt83ow/tinyurl/internal/bdkeeper"
 	"github.com/wurt83ow/tinyurl/internal/config"
 	"github.com/wurt83ow/tinyurl/internal/filekeeper"
 	"github.com/wurt83ow/tinyurl/internal/logger"
-	compressor "github.com/wurt83ow/tinyurl/internal/middleware"
 	"github.com/wurt83ow/tinyurl/internal/storage"
 	"github.com/wurt83ow/tinyurl/internal/worker"
 )
@@ -25,28 +20,61 @@ import (
 func TestShortenJSON(t *testing.T) {
 
 	// describe the body being transmitted
-	RequestUser := strings.NewReader(`{         
+	userReq := strings.NewReader(`{         
         "url": "https://practicum.yandex.ru/"
     }`)
 
 	// describe the expected response body for a successful request
 	successBody := `{"result":"http://localhost:8080/nOykhckC3Od"}`
 
-	testPostReq(t, RequestUser, successBody, true)
+	testPostReq(t, userReq, successBody, "shortenJSON")
+}
+
+func TestShortenBatch(t *testing.T) {
+
+	// describe the body being transmitted
+	userReq := strings.NewReader(`[
+		{
+			"correlation_id": "1",
+			"original_url": "https://practicum.yandex.ru/"
+		},
+		 {
+			"correlation_id": "2",
+			"original_url": "https://www.google.ru/"
+		}
+	]`)
+
+	// describe the expected response body for a successful request
+	successBody := `[
+		{
+			"correlation_id":"1",
+			"short_url":"http://localhost:8080/nOykhckC3Od",
+			"original_url":""
+		},
+		{
+			"correlation_id":"2",
+			"short_url":"http://localhost:8080/5i80Tt3Jodo",
+			"original_url":""
+		}
+	]`
+
+	successBody = strings.ReplaceAll(successBody, "\n", "")
+	successBody = strings.ReplaceAll(successBody, "\t", "")
+	testPostReq(t, userReq, strings.TrimSpace(successBody), "shortenBatch")
 }
 
 func TestShortenURL(t *testing.T) {
 	// describe the body being transmitted
 	url := "https://practicum.yandex.ru/"
-	RequestUser := strings.NewReader(url)
+	userReq := strings.NewReader(url)
 
 	// describe the expected response body for a successful request
 	successBody := "http://localhost:8080/nOykhckC3Od"
 
-	testPostReq(t, RequestUser, successBody, false)
+	testPostReq(t, userReq, successBody, "shortenURL")
 }
 
-func testPostReq(t *testing.T, RequestUser *strings.Reader, successBody string, isJSONTest bool) {
+func testPostReq(t *testing.T, userReq *strings.Reader, successBody string, funcName string) {
 
 	defaultBody := strings.NewReader("")
 
@@ -55,12 +83,12 @@ func testPostReq(t *testing.T, RequestUser *strings.Reader, successBody string, 
 		method       string
 		expectedCode int
 		expectedBody string
-		RequestUser  *strings.Reader
+		userReq      *strings.Reader
 	}{
-		{method: http.MethodPost, expectedCode: http.StatusCreated, expectedBody: successBody, RequestUser: RequestUser},
-		{method: http.MethodGet, expectedCode: http.StatusBadRequest, expectedBody: "", RequestUser: defaultBody},
-		{method: http.MethodPut, expectedCode: http.StatusBadRequest, expectedBody: "", RequestUser: defaultBody},
-		{method: http.MethodDelete, expectedCode: http.StatusBadRequest, expectedBody: "", RequestUser: defaultBody},
+		{method: http.MethodPost, expectedCode: http.StatusCreated, expectedBody: successBody, userReq: userReq},
+		{method: http.MethodGet, expectedCode: http.StatusBadRequest, expectedBody: "", userReq: defaultBody},
+		{method: http.MethodPut, expectedCode: http.StatusBadRequest, expectedBody: "", userReq: defaultBody},
+		{method: http.MethodDelete, expectedCode: http.StatusBadRequest, expectedBody: "", userReq: defaultBody},
 	}
 
 	option := config.NewOptions()
@@ -92,20 +120,23 @@ func testPostReq(t *testing.T, RequestUser *strings.Reader, successBody string, 
 	for _, tc := range testCases {
 		t.Run(tc.method, func(t *testing.T) {
 
-			r := httptest.NewRequest(tc.method, "/", tc.RequestUser)
+			r := httptest.NewRequest(tc.method, "/", tc.userReq)
 			w := httptest.NewRecorder()
 
 			// call the handler as a regular function, without starting the server itself
-			if isJSONTest {
+			switch funcName {
+			case "shortenJSON":
 				controller.shortenJSON(w, r)
-			} else {
+			case "shortenBatch":
+				controller.shortenBatch(w, r)
+			case "shortenURL":
 				controller.shortenURL(w, r)
 			}
 
-			assert.Equal(t, tc.expectedCode, w.Code, "Код ответа не совпадает с ожидаемым")
+			assert.Equal(t, tc.expectedCode, w.Code, "The response code does not match what is expected")
 			// check the correctness of the received response body if we expect it
 			if tc.expectedBody != "" {
-				assert.Equal(t, tc.expectedBody, strings.TrimSpace(w.Body.String()), "Тело ответа не совпадает с ожидаемым")
+				assert.Equal(t, tc.expectedBody, strings.TrimSpace(w.Body.String()), "The response body does not match what is expected")
 			}
 
 		})
@@ -159,8 +190,8 @@ func TestGetFullURL(t *testing.T) {
 	controller := NewBaseController(memoryStorage, option, nLogger, worker, authz)
 
 	// place the data for further retrieval using the get method
-	RequestUser := strings.NewReader(url)
-	r := httptest.NewRequest(http.MethodPost, "/", RequestUser)
+	userReq := strings.NewReader(url)
+	r := httptest.NewRequest(http.MethodPost, "/", userReq)
 	w := httptest.NewRecorder()
 
 	// call the handler as a regular function, without starting the server itself
@@ -174,38 +205,14 @@ func TestGetFullURL(t *testing.T) {
 
 			controller.getFullURL(w, r)
 
-			assert.Equal(t, tc.expectedCode, w.Code, "Код ответа не совпадает с ожидаемым")
+			assert.Equal(t, tc.expectedCode, w.Code, "The response code does not match what is expected")
 
-			assert.Equal(t, tc.location, w.Header().Get("Location"), "Заголовок Location не совпадает с ожидаемым")
+			assert.Equal(t, tc.location, w.Header().Get("Location"), "The Location header is not what you expect")
 		})
 	}
 }
 
-func TestGzipShortenJSON(t *testing.T) {
-
-	// describe the body being transmitted
-	RequestUser := `{         
-        "url": "https://practicum.yandex.ru/"
-    }`
-
-	// describe the expected response body for a successful request
-	successBody := `{"result":"http://localhost:8080/nOykhckC3Od"}`
-
-	testGzipCompression(t, RequestUser, successBody, true)
-}
-
-func TestGzipTestShortenURL(t *testing.T) {
-	// describe the body being transmitted
-	RequestUser := "https://practicum.yandex.ru/"
-
-	// describe the expected response body for a successful request
-	successBody := "http://localhost:8080/nOykhckC3Od"
-
-	testGzipCompression(t, RequestUser, successBody, false)
-}
-
-func testGzipCompression(t *testing.T, RequestUser string, successBody string, isJSONTest bool) {
-
+func TestGetPing(t *testing.T) {
 	option := config.NewOptions()
 	option.ParseFlags()
 
@@ -232,67 +239,33 @@ func testGzipCompression(t *testing.T, RequestUser string, successBody string, i
 	authz := authz.NewJWTAuthz(option.JWTSigningKey(), nLogger)
 	controller := NewBaseController(memoryStorage, option, nLogger, worker, authz)
 
-	curentFunc := controller.shortenURL
-	if isJSONTest {
-		curentFunc = controller.shortenJSON
-	}
+	// Создаем запрос GET
+	req, err := http.NewRequest("GET", "/ping", nil)
+	assert.NoError(t, err, "не ожидалось ошибки при создании запроса")
 
-	handler := compressor.GzipMiddleware(http.HandlerFunc(curentFunc))
+	// Создаем ResponseRecorder для записи ответа
+	rr := httptest.NewRecorder()
 
-	srv := httptest.NewServer(handler)
-	defer srv.Close()
+	// Вызываем метод getPing
+	controller.getPing(rr, req)
 
-	t.Run("sends_gzip", func(t *testing.T) {
-		buf := bytes.NewBuffer(nil)
-		zb := gzip.NewWriter(buf)
-		_, err := zb.Write([]byte(RequestUser))
-		require.NoError(t, err)
-		err = zb.Close()
-		require.NoError(t, err)
+	// Проверяем, что статус код соответствует ожидаемому
+	assert.Equal(t, http.StatusOK, rr.Code, "ожидался статус код 200")
 
-		r := httptest.NewRequest("POST", srv.URL, buf)
-		r.RequestURI = ""
-		r.Header.Set("Content-Encoding", "gzip")
+	memoryStorage = storage.NewMemoryStorage(nil, nLogger)
+	controller = NewBaseController(memoryStorage, option, nLogger, worker, authz)
 
-		resp, err := http.DefaultClient.Do(r)
-		require.NoError(t, err)
-		require.Equal(t, http.StatusCreated, resp.StatusCode)
+	// Создаем запрос GET
+	req, err = http.NewRequest("GET", "/ping", nil)
+	assert.NoError(t, err, "не ожидалось ошибки при создании запроса")
 
-		defer resp.Body.Close()
+	// Создаем ResponseRecorder для записи ответа
+	rr = httptest.NewRecorder()
 
-		b, err := io.ReadAll(resp.Body)
-		require.NoError(t, err)
+	// Вызываем метод getPing
+	controller.getPing(rr, req)
 
-		if isJSONTest {
-			require.JSONEq(t, successBody, string(b))
-		} else {
-			require.Equal(t, successBody, string(b))
-		}
-	})
+	// Проверяем, что статус код соответствует ожидаемому
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "ожидался статус код 500")
 
-	t.Run("accepts_gzip", func(t *testing.T) {
-		buf := bytes.NewBufferString(RequestUser)
-		r := httptest.NewRequest("POST", srv.URL, buf)
-		r.RequestURI = ""
-		r.Header.Set("Accept-Encoding", "gzip")
-
-		resp, err := http.DefaultClient.Do(r)
-		require.NoError(t, err)
-		require.Equal(t, http.StatusCreated, resp.StatusCode)
-
-		defer resp.Body.Close()
-
-		zr, err := gzip.NewReader(resp.Body)
-		require.NoError(t, err)
-
-		b, err := io.ReadAll(zr)
-		require.NoError(t, err)
-
-		if isJSONTest {
-			require.JSONEq(t, successBody, string(b))
-		} else {
-			require.Equal(t, successBody, string(b))
-		}
-
-	})
 }

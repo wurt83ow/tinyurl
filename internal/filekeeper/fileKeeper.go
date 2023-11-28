@@ -1,3 +1,6 @@
+// Package filekeeper provides an implementation of the storage.Keeper interface
+// using JSON files for persistence. It allows saving and loading URL and user data
+// to and from JSON files.
 package filekeeper
 
 import (
@@ -11,20 +14,18 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+// Log is an interface for logging operations.
 type Log interface {
 	Info(string, ...zapcore.Field)
 }
 
+// FileKeeper is an implementation of the storage.Keeper interface that uses JSON files for persistence.
 type FileKeeper struct {
 	path func() string
 	log  Log
 }
 
-// UpdateBatch implements storage.Keeper.
-func (*FileKeeper) UpdateBatch(...models.DeleteURL) error {
-	panic("unimplemented")
-}
-
+// NewFileKeeper creates a new instance of FileKeeper with the specified file path and logger.
 func NewFileKeeper(path func() string, log Log) *FileKeeper {
 	addr := path()
 	if addr == "" {
@@ -38,6 +39,7 @@ func NewFileKeeper(path func() string, log Log) *FileKeeper {
 	}
 }
 
+// Load implements storage.Keeper.
 func (kp *FileKeeper) Load() (storage.StorageURL, error) {
 	dataFile := kp.path()
 	data := make(storage.StorageURL)
@@ -48,7 +50,6 @@ func (kp *FileKeeper) Load() (storage.StorageURL, error) {
 	}
 
 	loadFrom, err := os.Open(dataFile)
-
 	if err != nil {
 		kp.log.Info("Empty key/value store!: ", zap.Error(err))
 		return data, err
@@ -69,6 +70,7 @@ func (kp *FileKeeper) Load() (storage.StorageURL, error) {
 	return data, nil
 }
 
+// LoadUsers implements storage.Keeper.
 func (kp *FileKeeper) LoadUsers() (storage.StorageUser, error) {
 	dataFile := kp.path()
 	data := make(storage.StorageUser)
@@ -79,7 +81,6 @@ func (kp *FileKeeper) LoadUsers() (storage.StorageUser, error) {
 	}
 
 	loadFrom, err := os.Open(dataFile)
-
 	if err != nil {
 		kp.log.Info("Empty key/value store!: ", zap.Error(err))
 		return data, err
@@ -100,6 +101,7 @@ func (kp *FileKeeper) LoadUsers() (storage.StorageUser, error) {
 	return data, nil
 }
 
+// Save implements storage.Keeper.
 func (kp *FileKeeper) Save(key string, data models.DataURL) (models.DataURL, error) {
 	dataFile := kp.path()
 	var (
@@ -161,6 +163,7 @@ func (kp *FileKeeper) Save(key string, data models.DataURL) (models.DataURL, err
 	return du, nil
 }
 
+// SaveUser implements storage.Keeper.
 func (kp *FileKeeper) SaveUser(key string, data models.DataUser) (models.DataUser, error) {
 	dataFile := kp.path()
 	var (
@@ -222,6 +225,7 @@ func (kp *FileKeeper) SaveUser(key string, data models.DataUser) (models.DataUse
 	return du, nil
 }
 
+// SaveBatch implements storage.Keeper.
 func (kp *FileKeeper) SaveBatch(data storage.StorageURL) error {
 	dataFile := kp.path()
 	var (
@@ -269,6 +273,13 @@ func (kp *FileKeeper) SaveBatch(data storage.StorageURL) error {
 	return nil
 }
 
+// UpdateBatch implements storage.Keeper.
+func (*FileKeeper) UpdateBatch(...models.DeleteURL) error {
+	return nil
+}
+
+// Ping implements storage.Keeper.
 func (kp *FileKeeper) Ping() bool { return true }
 
+// Close implements storage.Keeper.
 func (kp *FileKeeper) Close() bool { return true }

@@ -1,3 +1,4 @@
+// Package shorturl provides functionality for shortening URLs.
 package shorturl
 
 import (
@@ -11,7 +12,7 @@ const (
 	alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 )
 
-// calculate the string hash from hash uint64
+// strHash calculates the string hash from a uint64 value.
 func strHash(n uint64) string {
 	var s string
 	for n > 0 {
@@ -22,7 +23,7 @@ func strHash(n uint64) string {
 	return s
 }
 
-// calculating big uint64 value of the string
+// strToUint64 calculates the big uint64 value of the string.
 func strToUint64(str string) uint64 {
 	bi := big.NewInt(0)
 	h := md5.New()
@@ -34,7 +35,7 @@ func strToUint64(str string) uint64 {
 	return bi.Uint64()
 }
 
-// calculate the short url from url
+// Shorten generates a short URL from the given URL and base short URL address.
 func Shorten(url string, shortURLAdress string) (string, string) {
 	key := strHash(strToUint64(strings.TrimSpace(url)))
 	shortURLAdress = strings.TrimSpace(shortURLAdress)
@@ -43,4 +44,5 @@ func Shorten(url string, shortURLAdress string) (string, string) {
 	}
 
 	return key, shortURLAdress + key
+
 }

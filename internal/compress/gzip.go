@@ -1,3 +1,7 @@
+// Package compress provides a set of utilities for transparently compressing
+// and decompressing HTTP data using gzip encoding. It includes compressWriter and
+// compressReader types that implement the http.ResponseWriter and io.ReadCloser
+// interfaces, respectively, to enable compression and decompression of transmitted data.
 package compress
 
 import (
@@ -6,65 +10,73 @@ import (
 	"net/http"
 )
 
-// compressWriter implements the http.ResponseWriter interface
+// CompressWriter implements the http.ResponseWriter interface
 // and allows it to be transparent to the server compress
 // transmitted data and set correct HTTP headers
-type compressWriter struct {
+type CompressWriter struct {
 	w  http.ResponseWriter
 	zw *gzip.Writer
 }
 
-func NewCompressWriter(w http.ResponseWriter) *compressWriter {
-	return &compressWriter{
+// NewCompressWriter creates a new CompressWriter using the provided http.ResponseWriter.
+func NewCompressWriter(w http.ResponseWriter) *CompressWriter {
+	return &CompressWriter{
 		w:  w,
 		zw: gzip.NewWriter(w),
 	}
 }
 
-func (c *compressWriter) Header() http.Header {
+// Header returns the http.Header from the underlying http.ResponseWriter.
+func (c *CompressWriter) Header() http.Header {
 	return c.w.Header()
 }
 
-func (c *compressWriter) Write(p []byte) (int, error) {
+// Write writes compressed data to the underlying gzip.Writer.
+func (c *CompressWriter) Write(p []byte) (int, error) {
 	return c.zw.Write(p)
 }
 
-func (c *compressWriter) WriteHeader(statusCode int) {
+// WriteHeader writes the HTTP status code to the underlying http.ResponseWriter,
+// and sets the "Content-Encoding" header to "gzip" if the status code indicates success.
+func (c *CompressWriter) WriteHeader(statusCode int) {
 	if statusCode < 300 || statusCode == 409 {
 		c.w.Header().Set("Content-Encoding", "gzip")
 	}
 	c.w.WriteHeader(statusCode)
 }
 
-// Close закрывает gzip.Writer и досылает все данные из буфера.
-func (c *compressWriter) Close() error {
+// Close closes the underlying gzip.Writer and sends all data from the buffer.
+func (c *CompressWriter) Close() error {
 	return c.zw.Close()
 }
 
-// compressReader implements the io.ReadCloser interface and allows
+// CompressReader implements the io.ReadCloser interface and allows
 // to transparently decompress the data received from the client for the server
-type compressReader struct {
+type CompressReader struct {
 	r  io.ReadCloser
 	zr *gzip.Reader
 }
 
-func NewCompressReader(r io.ReadCloser) (*compressReader, error) {
+// NewCompressReader creates a new CompressReader using the provided io.ReadCloser.
+func NewCompressReader(r io.ReadCloser) (*CompressReader, error) {
 	zr, err := gzip.NewReader(r)
 	if err != nil {
 		return nil, err
 	}
 
-	return &compressReader{
+	return &CompressReader{
 		r:  r,
 		zr: zr,
 	}, nil
 }
 
-func (c compressReader) Read(p []byte) (n int, err error) {
+// Read reads decompressed data from the underlying gzip.Reader.
+func (c CompressReader) Read(p []byte) (n int, err error) {
 	return c.zr.Read(p)
 }
 
-func (c *compressReader) Close() error {
+// Close closes both the underlying io.ReadCloser and gzip.Reader.
+func (c *CompressReader) Close() error {
 	if err := c.r.Close(); err != nil {
 		return err
 	}
