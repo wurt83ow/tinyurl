@@ -70,8 +70,8 @@ func Run() error {
 	// Use request logger middleware and Gzip middleware
 	r.Use(reqLog.RequestLogger)
 	r.Use(middleware.GzipMiddleware)
-
-	// Mount the controller routes
+  
+  // Mount the controller routes
 	r.Mount("/", controller.Route())
 
 	// Get the server address from the configuration
@@ -87,7 +87,6 @@ func Run() error {
 		panic(err)
 	}
 	defer memory.Close()
-
 	// Get statistics on memory usage
 	runtime.GC()
 
