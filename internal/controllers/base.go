@@ -1,6 +1,6 @@
 // Package controllers provides a basic controller for handling user requests.
 // It contains the BaseController struct, constructor NewBaseController and its methods for
-// authorization, logging and processing user requests.
+// authorization, logging and processing user requests. 
 package controllers
 
 import (
