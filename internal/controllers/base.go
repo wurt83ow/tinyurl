@@ -3,7 +3,7 @@
 // authorization, logging and processing user requests.
 package controllers
 
-//test remove
+// test remove
 import (
 	"bytes"
 	"encoding/json"
@@ -260,7 +260,7 @@ func (h *BaseController) Register(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		if err == storage.ErrConflict {
-			w.WriteHeader(http.StatusConflict) //code 409
+			w.WriteHeader(http.StatusConflict) // code 409
 		} else {
 			w.WriteHeader(http.StatusBadRequest) // code 400
 			return

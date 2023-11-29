@@ -111,11 +111,11 @@ func (kp *FileKeeper) Save(key string, data models.DataURL) (models.DataURL, err
 	)
 
 	if _, err = os.Stat(dataFile); err == nil {
-		//file exists. Open file
+		// file exists. Open file
 		cfile, err = os.OpenFile(dataFile, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
 		action = "open"
 	} else {
-		//file not exists. Create file
+		// file not exists. Create file
 		cfile, err = os.Create(dataFile)
 		action = "create"
 	}
@@ -173,11 +173,11 @@ func (kp *FileKeeper) SaveUser(key string, data models.DataUser) (models.DataUse
 	)
 
 	if _, err = os.Stat(dataFile); err == nil {
-		//file exists. Open file
+		// file exists. Open file
 		cfile, err = os.OpenFile(dataFile, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
 		action = "open"
 	} else {
-		//file not exists. Create file
+		// file not exists. Create file
 		cfile, err = os.Create(dataFile)
 		action = "create"
 	}
@@ -235,11 +235,11 @@ func (kp *FileKeeper) SaveBatch(data storage.StorageURL) error {
 	)
 
 	if _, err = os.Stat(dataFile); err == nil {
-		//file exists. Open file
+		// file exists. Open file
 		cfile, err = os.OpenFile(dataFile, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
 		action = "open"
 	} else {
-		//file not exists. Create file
+		// file not exists. Create file
 		cfile, err = os.Create(dataFile)
 		action = "create"
 	}

@@ -7,7 +7,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -120,7 +119,7 @@ func (bdk *BDKeeper) Load() (storage.StorageURL, error) {
 
 		err := rows.Scan(columns...)
 		if err != nil {
-			log.Fatal(err)
+			bdk.log.Info("row scan error: ", zap.Error(err))
 		}
 
 		u, err := url.Parse(record.ShortURL)
@@ -167,7 +166,7 @@ func (bdk *BDKeeper) LoadUsers() (storage.StorageUser, error) {
 
 		err := rows.Scan(columns...)
 		if err != nil {
-			log.Fatal(err)
+			bdk.log.Info("row scan error: ", zap.Error(err))
 		}
 		data[record.Email] = record
 	}
