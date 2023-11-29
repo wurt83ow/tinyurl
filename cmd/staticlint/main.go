@@ -179,5 +179,4 @@ func main() {
 	allcheck = append(allcheck, myDenyOsExitAnalyzer)
 
 	multichecker.Main(allcheck...)
-
 }

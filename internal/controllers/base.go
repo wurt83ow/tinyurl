@@ -319,7 +319,7 @@ func (h *BaseController) Login(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Authorization", freshToken)
 
 		// Respond with a success message
-		err := json.NewEncoder(w).Encode(models.ResponseUser{
+		err = json.NewEncoder(w).Encode(models.ResponseUser{
 			Response: "success",
 		})
 

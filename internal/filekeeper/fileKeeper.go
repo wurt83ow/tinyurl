@@ -131,7 +131,7 @@ func (kp *FileKeeper) Save(key string, data models.DataURL) (models.DataURL, err
 		decoder := json.NewDecoder(cfile)
 		for decoder.More() {
 			var m models.DataURL
-			err := decoder.Decode(&m)
+			err = decoder.Decode(&m)
 			if err != nil {
 				kp.log.Info("cannot decode JSON file: ", zap.Error(err))
 			}
@@ -193,7 +193,7 @@ func (kp *FileKeeper) SaveUser(key string, data models.DataUser) (models.DataUse
 		decoder := json.NewDecoder(cfile)
 		for decoder.More() {
 			var m models.DataUser
-			err := decoder.Decode(&m)
+			err = decoder.Decode(&m)
 			if err != nil {
 				kp.log.Info("cannot decode JSON file: ", zap.Error(err))
 			}

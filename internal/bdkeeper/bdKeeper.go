@@ -117,12 +117,13 @@ func (bdk *BDKeeper) Load() (storage.StorageURL, error) {
 			columns[i] = field.Addr().Interface()
 		}
 
-		err := rows.Scan(columns...)
+		err = rows.Scan(columns...)
 		if err != nil {
 			bdk.log.Info("row scan error: ", zap.Error(err))
 		}
 
-		u, err := url.Parse(record.ShortURL)
+		var u *url.URL
+		u, err = url.Parse(record.ShortURL)
 		if err != nil {
 			panic(err)
 		}
@@ -164,7 +165,7 @@ func (bdk *BDKeeper) LoadUsers() (storage.StorageUser, error) {
 			columns[i] = field.Addr().Interface()
 		}
 
-		err := rows.Scan(columns...)
+		err = rows.Scan(columns...)
 		if err != nil {
 			bdk.log.Info("row scan error: ", zap.Error(err))
 		}
