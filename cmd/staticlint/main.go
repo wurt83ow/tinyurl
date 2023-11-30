@@ -54,11 +54,9 @@
 package main
 
 import (
-	mychecker "github.com/wurt83ow/tinyurl/cmd/staticlint/multichecker"
-
 	gocritic "github.com/go-critic/go-critic/checkers/analyzer"
-
 	"github.com/gordonklaus/ineffassign/pkg/ineffassign"
+	mychecker "github.com/wurt83ow/tinyurl/cmd/staticlint/multichecker"
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/multichecker"
 	"golang.org/x/tools/go/analysis/passes/appends"
@@ -116,7 +114,7 @@ import (
 
 // main is the entry point of the program.
 func main() {
-	
+
 	// filter defines a prefix for selecting specific analyzers from staticcheck.
 	filter := "SA"
 	var statch []*analysis.Analyzer
