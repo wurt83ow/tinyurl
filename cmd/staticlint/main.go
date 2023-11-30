@@ -114,6 +114,7 @@ import (
 
 // main is the entry point of the program.
 func main() {
+
 	// filter defines a prefix for selecting specific analyzers from staticcheck.
 	filter := "SA"
 	var statch []*analysis.Analyzer
@@ -137,7 +138,6 @@ func main() {
 			stylch = append(stylch, v.Analyzer)
 		}
 	}
-
 	// smpl is a map of included simple code quality analyzers.
 	smpl := map[string]bool{
 		"S1000": true,
