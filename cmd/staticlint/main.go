@@ -19,38 +19,6 @@
 // Notes:
 //   - Adjust the filter variable to choose specific analyzers from staticcheck.
 //   - Modify the maps (style, smpl, qckfx) to include or exclude specific analyzers.
-//
-// Example:
-//
-//	package main
-//
-//	import (
-//		mychecker "github.com/wurt83ow/tinyurl/cmd/staticlint/multichecker"
-//
-//		gocritic "github.com/go-critic/go-critic/checkers/analyzer"
-//
-//		"github.com/gordonklaus/ineffassign/pkg/ineffassign"
-//		"golang.org/x/tools/go/analysis"
-//		"golang.org/x/tools/go/analysis/multichecker"
-//		// ... (other imports)
-//	)
-//
-//	func main() {
-//		filter := "SA"
-//		var statch []*analysis.Analyzer
-//		// ... (code continues as before)
-//
-//		// Combine all analyzers into one slice.
-//		allcheck := []*analysis.Analyzer{
-//			// ... (other analyzers)
-//			ineffassign.Analyzer,
-//			gocritic.Analyzer,
-//			mychecker.Analyzer,
-//		}
-//
-//		// Run multichecker with all the combined analyzers.
-//		multichecker.Main(allcheck...)
-//	}
 package main
 
 import (
