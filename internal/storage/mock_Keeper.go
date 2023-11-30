@@ -33,8 +33,10 @@ func (_m *MockKeeper) Load() (map[string]models.DataURL, error) {
 	var r0 map[string]models.DataURL
 	if rf, ok := ret.Get(0).(func() map[string]models.DataURL); ok {
 		r0 = rf()
-	} else if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[string]models.DataURL)		 
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(map[string]models.DataURL)
+		}
 	}
 
 	var r1 error
@@ -54,8 +56,10 @@ func (_m *MockKeeper) LoadUsers() (map[string]models.DataUser, error) {
 	var r0 map[string]models.DataUser
 	if rf, ok := ret.Get(0).(func() map[string]models.DataUser); ok {
 		r0 = rf()
-	} else if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[string]models.DataUser)		 
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(map[string]models.DataUser)
+		}
 	}
 
 	var r1 error

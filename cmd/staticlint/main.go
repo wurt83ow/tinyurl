@@ -236,7 +236,5 @@ func main() {
 	allcheck = append(allcheck, gocriticAnalyzer)
 	allcheck = append(allcheck, myDenyOsExitAnalyzer)
 
-	// os.Setenv("GOCACHE", "/tmp/gocache")
-
 	multichecker.Main(allcheck...)
 }
