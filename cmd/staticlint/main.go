@@ -1,3 +1,56 @@
+// Package main provides a tool to run a collection of static analysis tools in Golang.
+//
+// Usage:
+//  1. Import necessary analyzers from relevant packages.
+//  2. Create maps to specify included analyzers for different rule sets (e.g., staticcheck, stylecheck).
+//  3. Create slices of *analysis.Analyzer for each rule set.
+//  4. Combine all analyzers into one slice.
+//  5. Use multichecker.Main with the combined analyzers to run static analysis.
+//
+// Analyzers:
+//   - staticcheck: A set of analyzers provided by staticcheck.io.
+//   - stylecheck: A set of style-related analyzers.
+//   - simple: A set of simple code quality analyzers.
+//   - quickfix: Analyzers with quick fixes for issues.
+//   - gocritic: Analyzers from the go-critic project.
+//   - ineffassign: Analyzer to detect ineffectual assignments.
+//   - mychecker: Custom analyzer to deny the use of direct os.Exit calls in the main function of the main package.
+//
+// Notes:
+//   - Adjust the filter variable to choose specific analyzers from staticcheck.
+//   - Modify the maps (style, smpl, qckfx) to include or exclude specific analyzers.
+//
+// Example:
+//
+//	package main
+//
+//	import (
+//		mychecker "github.com/wurt83ow/tinyurl/cmd/staticlint/multichecker"
+//
+//		gocritic "github.com/go-critic/go-critic/checkers/analyzer"
+//
+//		"github.com/gordonklaus/ineffassign/pkg/ineffassign"
+//		"golang.org/x/tools/go/analysis"
+//		"golang.org/x/tools/go/analysis/multichecker"
+//		// ... (other imports)
+//	)
+//
+//	func main() {
+//		filter := "SA"
+//		var statch []*analysis.Analyzer
+//		// ... (code continues as before)
+//
+//		// Combine all analyzers into one slice.
+//		allcheck := []*analysis.Analyzer{
+//			// ... (other analyzers)
+//			ineffassign.Analyzer,
+//			gocritic.Analyzer,
+//			mychecker.Analyzer,
+//		}
+//
+//		// Run multichecker with all the combined analyzers.
+//		multichecker.Main(allcheck...)
+//	}
 package main
 
 import (
@@ -61,20 +114,19 @@ import (
 	"honnef.co/go/tools/stylecheck"
 )
 
+// main is the entry point of the program.
 func main() {
-
+	// filter defines a prefix for selecting specific analyzers from staticcheck.
 	filter := "SA"
 	var statch []*analysis.Analyzer
 	for _, v := range staticcheck.Analyzers {
-
-		// all elements already have a prefix specified by the filter, added in case in the future
-		// analyzers with a prefix different from the given one will be added.
+		// Select analyzers with the specified prefix.
 		if v.Analyzer.Name[0:2] == filter {
 			statch = append(statch, v.Analyzer)
 		}
 	}
 
-	// определяем map подключаемых правил
+	// style is a map of included style-related analyzers.
 	style := map[string]bool{
 		"ST1000": true,
 		"ST1001": true,
@@ -82,13 +134,13 @@ func main() {
 	}
 	var stylch []*analysis.Analyzer
 	for _, v := range stylecheck.Analyzers {
-		// добавляем в массив нужные проверки
+		// Include analyzers based on the style map.
 		if style[v.Analyzer.Name] {
 			stylch = append(stylch, v.Analyzer)
 		}
 	}
 
-	// определяем map подключаемых правил
+	// smpl is a map of included simple code quality analyzers.
 	smpl := map[string]bool{
 		"S1000": true,
 		"S1001": true,
@@ -96,13 +148,13 @@ func main() {
 	}
 	var simplch []*analysis.Analyzer
 	for _, v := range simple.Analyzers {
-		// добавляем в массив нужные проверки
+		// Include analyzers based on the smpl map.
 		if smpl[v.Analyzer.Name] {
 			simplch = append(simplch, v.Analyzer)
 		}
 	}
 
-	// определяем map подключаемых правил
+	// qckfx is a map of included analyzers with quick fixes.
 	qckfx := map[string]bool{
 		"qf1001": true,
 		"qf1002": true,
@@ -110,65 +162,71 @@ func main() {
 	}
 	var quickch []*analysis.Analyzer
 	for _, v := range quickfix.Analyzers {
-		// добавляем в массив нужные проверки
+		// Include analyzers based on the qckfx map.
 		if qckfx[v.Analyzer.Name] {
 			quickch = append(quickch, v.Analyzer)
 		}
 	}
 
+	// gocriticAnalyzer is an analyzer from the go-critic project.
 	gocriticAnalyzer := gocritic.Analyzer
 
+	// ineffassignAnalyzer is an analyzer to detect ineffectual assignments.
 	ineffassignAnalyzer := ineffassign.Analyzer
+
+	// myDenyOsExitAnalyzer is a custom analyzer to deny the use of direct os.Exit calls in the main function.
 	myDenyOsExitAnalyzer := mychecker.Analyzer
 
 	allcheck := []*analysis.Analyzer{
-		appends.Analyzer,
-		asmdecl.Analyzer,
-		assign.Analyzer,
-		atomic.Analyzer,
-		atomicalign.Analyzer,
-		bools.Analyzer,
-		buildssa.Analyzer,
-		buildtag.Analyzer,
-		cgocall.Analyzer,
-		composite.Analyzer,
-		copylock.Analyzer,
-		ctrlflow.Analyzer,
-		deepequalerrors.Analyzer,
-		defers.Analyzer,
-		directive.Analyzer,
-		errorsas.Analyzer,
-		fieldalignment.Analyzer,
-		findcall.Analyzer,
-		framepointer.Analyzer,
-		httpmux.Analyzer,
-		httpresponse.Analyzer,
-		ifaceassert.Analyzer,
-		inspect.Analyzer,
-		loopclosure.Analyzer,
-		lostcancel.Analyzer,
-		nilfunc.Analyzer,
-		nilness.Analyzer,
-		pkgfact.Analyzer,
-		printf.Analyzer,
-		reflectvaluecompare.Analyzer,
-		shadow.Analyzer,
-		shift.Analyzer,
-		sigchanyzer.Analyzer,
-		slog.Analyzer,
-		sortslice.Analyzer,
-		stdmethods.Analyzer,
-		stringintconv.Analyzer,
-		structtag.Analyzer,
-		testinggoroutine.Analyzer,
-		tests.Analyzer,
-		timeformat.Analyzer,
-		unmarshal.Analyzer,
-		unreachable.Analyzer,
-		unsafeptr.Analyzer,
-		unusedresult.Analyzer,
-		unusedwrite.Analyzer,
-		usesgenerics.Analyzer}
+		// Common Go Analysis Tools
+		appends.Analyzer,             // Detects calls to append where the result is not used.
+		asmdecl.Analyzer,             // Reports assembly declarations and calls to assembly functions.
+		assign.Analyzer,              // Detects implicit assignments.
+		atomic.Analyzer,              // Detects common mistakes using the sync/atomic package.
+		atomicalign.Analyzer,         // Detects non-atomic struct field alignment.
+		bools.Analyzer,               // Suggests simplified or corrected boolean expressions.
+		buildssa.Analyzer,            // Builds a single, unified SSA form for the entire package.
+		buildtag.Analyzer,            // Detects and suggests fixes for suspicious build tags.
+		cgocall.Analyzer,             // Detects misuse of cgo.
+		composite.Analyzer,           // Suggests a range of simplifications for composite literals.
+		copylock.Analyzer,            // Detects passing a lock by value.
+		ctrlflow.Analyzer,            // Inspects control flow structures.
+		deepequalerrors.Analyzer,     // Finds calls to reflect.DeepEqual that can produce errors.
+		defers.Analyzer,              // Checks for deferred calls within commonly-mistaken code.
+		directive.Analyzer,           // Checks for poorly formatted or unnecessary build constraints.
+		errorsas.Analyzer,            // Finds common cases of using errors.As incorrectly.
+		fieldalignment.Analyzer,      // Checks for struct fields that could have been wider if aligned differently.
+		findcall.Analyzer,            // Looks for the occurrence of a specified function call.
+		framepointer.Analyzer,        // Detects incorrect or suspicious uses of the frame pointer.
+		httpmux.Analyzer,             // Detects suspicious http.ServeMux usage.
+		httpresponse.Analyzer,        // Suggests improvements for HTTP response handling.
+		ifaceassert.Analyzer,         // Suggests a type switch instead of a series of type assertions.
+		inspect.Analyzer,             // Examines all functions.
+		loopclosure.Analyzer,         // Detects references to loop variables from within nested functions.
+		lostcancel.Analyzer,          // Finds contexts that are not canceled when their owner function returns.
+		nilfunc.Analyzer,             // Checks for self assignments of functions to their own receiver.
+		nilness.Analyzer,             // Finds dereferences of possibly nil pointers.
+		pkgfact.Analyzer,             // Detects incorrect usage of go:linkname.
+		printf.Analyzer,              // Checks printf-like functions for consistency.
+		reflectvaluecompare.Analyzer, // Detects equality comparisons against reflect.Value.
+		shadow.Analyzer,              // Finds variables that may have been unintentionally shadowed.
+		shift.Analyzer,               // Detects shifts that equal their left-hand operand.
+		sigchanyzer.Analyzer,         // Checks for common mistakes using signals and channels.
+		slog.Analyzer,                // Checks for common mistakes using the log package.
+		sortslice.Analyzer,           // Detects slice sorts with ineffective comparison functions.
+		stdmethods.Analyzer,          // Checks for calls to methods defined on interfaces in the stdlib.
+		stringintconv.Analyzer,       // Suggests simplifications for conversions between strings and integers.
+		structtag.Analyzer,           // Suggests simplifications for struct field tags.
+		testinggoroutine.Analyzer,    // Checks that tests do not leave goroutines undeleted.
+		tests.Analyzer,               // Finds suspicious test code.
+		timeformat.Analyzer,          // Suggests changes to time format strings.
+		unmarshal.Analyzer,           // Checks for unmarshal calls with invalid struct tags.
+		unreachable.Analyzer,         // Detects unreachable code.
+		unsafeptr.Analyzer,           // Detects unsafe.Pointer conversions that can be removed.
+		unusedresult.Analyzer,        // Detects unused results of function calls.
+		unusedwrite.Analyzer,         // Detects writes to variables that are never read.
+		usesgenerics.Analyzer,        // Checks for uses of type parameters with constraints.
+	}
 
 	allcheck = append(allcheck, statch...)
 	allcheck = append(allcheck, stylch...)
@@ -177,6 +235,8 @@ func main() {
 	allcheck = append(allcheck, ineffassignAnalyzer)
 	allcheck = append(allcheck, gocriticAnalyzer)
 	allcheck = append(allcheck, myDenyOsExitAnalyzer)
+
+	// os.Setenv("GOCACHE", "/tmp/gocache")
 
 	multichecker.Main(allcheck...)
 }

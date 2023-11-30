@@ -8,6 +8,11 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
+var (
+	packageName = "main"
+	funcName    = "main"
+)
+
 // Analyzer is the main entry point for the deny_os_exit analyzer.
 var Analyzer = &analysis.Analyzer{
 	Name: "deny_os_exit",
@@ -19,7 +24,7 @@ var Analyzer = &analysis.Analyzer{
 // It inspects each file in the main package and checks for the use of os.Exit in the main function.
 func runDenyOsExitAnalyzer(pass *analysis.Pass) (interface{}, error) {
 	for _, file := range pass.Files {
-		if file.Name.Name == "main" {
+		if file.Name.Name == packageName {
 			ast.Inspect(file, inspectFuncDecl(pass))
 		}
 	}
@@ -39,7 +44,7 @@ func inspectFuncDecl(pass *analysis.Pass) func(n ast.Node) bool {
 // checkMainFunction checks if the provided function declaration is the main function,
 // and then checks each statement in the body for os.Exit calls.
 func checkMainFunction(pass *analysis.Pass, stmt *ast.FuncDecl) {
-	if stmt.Name.Name == "main" {
+	if stmt.Name.Name == funcName {
 		for _, bodyStmt := range stmt.Body.List {
 			if callExpr, ok := bodyStmt.(*ast.ExprStmt); ok {
 				checkExitCall(pass, callExpr)
