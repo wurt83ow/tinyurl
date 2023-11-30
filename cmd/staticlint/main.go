@@ -114,7 +114,6 @@ import (
 
 // main is the entry point of the program.
 func main() {
-
 	// filter defines a prefix for selecting specific analyzers from staticcheck.
 	filter := "SA"
 	var statch []*analysis.Analyzer
