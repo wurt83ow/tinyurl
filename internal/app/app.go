@@ -24,7 +24,6 @@ import (
 
 // Run starts the tinyurl server.
 func Run() error {
-
 	// Parse command line flags and environment variables for configuration options
 	option := config.NewOptions()
 	option.ParseFlags()
