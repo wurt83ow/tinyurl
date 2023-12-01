@@ -7,6 +7,8 @@
 // https://github.com/wurt83ow/tinyurl/
 package main
 
+//go:generate go run . "buildVersion" "1.2.3" "buildDate" "2023-01-01" "buildCommit" "abc123"
+
 import (
 	"fmt"
 
@@ -15,7 +17,7 @@ import (
 
 // buildVersion, buildDate, and buildCommit are global variables to store build information.
 // You can use the following build command to set variable values:
-// go build -ldflags="-X main.buildVersion=1.0.0 -X main.buildDate=2023-01-01 -X main.buildCommit=abc123" -o shortener
+// go build -ldflags="-X main.buildVersion=1.1.1 -X main.buildDate=2023-11-11 -X main.buildCommit=abc777" -o shortener
 var (
 	buildVersion string
 	buildDate    string
