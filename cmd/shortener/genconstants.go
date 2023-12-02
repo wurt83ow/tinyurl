@@ -8,7 +8,7 @@ import (
 )
 
 func init() {
-	if _, err := os.Stat("const.go"); err == nil || len(os.Args) == 1 {
+	if _, err := os.Stat("const.go"); len(os.Args) == 1 || err == nil {
 		return
 	}
 
