@@ -16,6 +16,7 @@ func init() {
 	values := make(map[string]string)
 	if (len(os.Args)-1)%2 != 0 {
 		fmt.Println("bad args")
+		return
 	}
 	for i := 1; i < len(os.Args); i += 2 {
 		values[os.Args[i]] = os.Args[i+1]
@@ -41,10 +42,12 @@ package main
 	formatted, err := format.Source(generated)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
 	err = os.WriteFile("const.go", formatted, 0644)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 }
