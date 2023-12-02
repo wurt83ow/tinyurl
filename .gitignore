@@ -15,7 +15,6 @@
 cmd/shortener/main
 cmd/shortener/shortener
 shortenertestbeta
-cmd/shortener/genconstants.go
 
 # Dependency directories (remove the comment below to include it)
 vendor/
