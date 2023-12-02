@@ -7,8 +7,6 @@
 // https://github.com/wurt83ow/tinyurl/
 package main
 
-//go:generate go run . "buildVersion" "1.2.3" "buildDate" "2023-01-01" "buildCommit" "abc123"
-
 import (
 	"fmt"
 
