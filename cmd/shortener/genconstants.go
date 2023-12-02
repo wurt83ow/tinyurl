@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func init() {
+func GenerateCode() {
 	if _, err := os.Stat("const.go"); len(os.Args) == 1 || err == nil {
 		return
 	}
