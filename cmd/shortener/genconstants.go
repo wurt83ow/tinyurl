@@ -7,14 +7,15 @@ import (
 	"strings"
 )
 
-func GenerateCode() {
+func init() {
+
 	if _, err := os.Stat("const.go"); len(os.Args) == 1 || err == nil {
 		return
 	}
 
 	values := make(map[string]string)
 	if (len(os.Args)-1)%2 != 0 {
-		panic("bad args")
+		fmt.Println("bad args")
 	}
 	for i := 1; i < len(os.Args); i += 2 {
 		values[os.Args[i]] = os.Args[i+1]
@@ -39,11 +40,11 @@ package main
 	generated := []byte(sb.String())
 	formatted, err := format.Source(generated)
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
 	}
 
 	err = os.WriteFile("const.go", formatted, 0644)
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
 	}
 }
