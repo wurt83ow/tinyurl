@@ -25,7 +25,6 @@ var (
 )
 
 func main() {
-
 	// Print build information using formatted strings and default values if the variables are empty.
 	fmt.Printf("Build version: %s\n", getOrDefault(buildVersion, "N/A"))
 	fmt.Printf("Build date: %s\n", getOrDefault(buildDate, "N/A"))
