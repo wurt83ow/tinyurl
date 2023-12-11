@@ -103,5 +103,4 @@ func Run() error {
 		nLogger.Info("HTTPS disabled")
 		return http.ListenAndServe(flagRunAddr, r)
 	}
-	
 }
