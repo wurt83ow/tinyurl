@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"expvar"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/pprof"
@@ -245,6 +246,7 @@ func (h *BaseController) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_, err := h.storage.GetUser(regReq.Email)
+	fmt.Println(regReq.Email)
 	if err == nil {
 		h.log.Info("the user is already registered: ", zap.Error(err))
 		w.WriteHeader(http.StatusBadRequest) // 400
