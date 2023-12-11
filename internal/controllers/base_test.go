@@ -80,10 +80,10 @@ func testPostReq(t *testing.T, userReq *strings.Reader, successBody string, func
 
 	// describe the data set: request method, expected response code, expected body
 	testCases := []struct {
-		method       string
-		expectedCode int
-		expectedBody string
 		userReq      *strings.Reader
+		method       string
+		expectedBody string
+		expectedCode int
 	}{
 		{method: http.MethodPost, expectedCode: http.StatusCreated, expectedBody: successBody, userReq: userReq},
 		{method: http.MethodGet, expectedCode: http.StatusBadRequest, expectedBody: "", userReq: defaultBody},
@@ -154,8 +154,8 @@ func TestGetFullURL(t *testing.T) {
 	testCases := []struct {
 		method       string
 		path         string
-		expectedCode int
 		location     string
+		expectedCode int
 	}{
 		{method: http.MethodGet, path: path, expectedCode: http.StatusTemporaryRedirect, location: url},
 		{method: http.MethodPost, path: defaultPath, expectedCode: http.StatusBadRequest},

@@ -3,6 +3,7 @@
 // authorization, logging and processing user requests.
 package controllers
 
+// test remove
 import (
 	"bytes"
 	"encoding/json"
@@ -259,7 +260,7 @@ func (h *BaseController) Register(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		if err == storage.ErrConflict {
-			w.WriteHeader(http.StatusConflict) //code 409
+			w.WriteHeader(http.StatusConflict) // code 409
 		} else {
 			w.WriteHeader(http.StatusBadRequest) // code 400
 			return
@@ -318,7 +319,7 @@ func (h *BaseController) Login(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Authorization", freshToken)
 
 		// Respond with a success message
-		err := json.NewEncoder(w).Encode(models.ResponseUser{
+		err = json.NewEncoder(w).Encode(models.ResponseUser{
 			Response: "success",
 		})
 

@@ -28,12 +28,12 @@ type Log interface {
 
 // MemoryStorage is an in-memory storage implementation with CRUD operations for URL and user data.
 type MemoryStorage struct {
-	dmx    sync.RWMutex
-	umx    sync.RWMutex
 	data   StorageURL
 	users  StorageUser
 	keeper Keeper
 	log    Log
+	dmx    sync.RWMutex
+	umx    sync.RWMutex
 }
 
 // Keeper is an interface representing methods for loading, saving, and updating data in storage.
