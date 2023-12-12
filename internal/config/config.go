@@ -69,7 +69,7 @@ func (o *Options) ParseFlags() {
 	regStringVar(&o.flagFileStoragePath, "f", "/tmp/short-url-db.json", "")
 	regStringVar(&o.flagDataBaseDSN, "d", "", "")
 	regStringVar(&o.flagJWTSigningKey, "j", "test_key", "jwt signing key")
-	flag.BoolVar(&o.flagEnableHTTPS, "s", false, "enable https")
+	regBoolVar(&o.flagEnableHTTPS, "s", false, "enable https")
 
 	// parse the arguments passed to the server into registered variables
 	flag.Parse()
@@ -150,6 +150,13 @@ func (o *Options) EnableHTTPS() bool {
 func regStringVar(p *string, name string, value string, usage string) {
 	if flag.Lookup(name) == nil {
 		flag.StringVar(p, name, value, usage)
+	}
+}
+
+// regBoolVar registers a bool flag with the specified name, default value, and usage string.
+func regBoolVar(p *bool, name string, value bool, usage string) {
+	if flag.Lookup(name) == nil {
+		flag.BoolVar(p, name, value, usage)
 	}
 }
 
