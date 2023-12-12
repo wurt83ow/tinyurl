@@ -384,7 +384,8 @@ func (bdk *BDKeeper) Ping() bool {
 
 // Close closes the connection to the PostgreSQL database and returns true if successful, otherwise false.
 func (bdk *BDKeeper) Close() bool {
+	bdk.log.Info("Stop database")
 	bdk.conn.Close()
-
+	bdk.log.Info("All sql queries are completed")
 	return true
 }

@@ -5,8 +5,10 @@ import (
 	"context"
 	"net/http"
 	"os"
+	"os/signal"
 	"runtime"
 	"runtime/pprof"
+	"syscall"
 	"time"
 
 	"github.com/go-chi/chi"
@@ -81,6 +83,34 @@ func Run() error {
 	// Allow some time for the server to start before profiling
 	time.Sleep(50 * time.Millisecond)
 
+	// Create a channel to listen for OS signals
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+
+	// Создайте HTTP-сервер
+	server := &http.Server{
+		Addr:    flagRunAddr,
+		Handler: r,
+	}
+
+	// Используйте отдельную горутину для прослушивания сигналов ОС и грациозного завершения сервера
+	go func() {
+		sig := <-stop
+		nLogger.Info("Received signal. Shutting down...", zap.String("signal", sig.String()))
+
+		// Прекратить принятие новых запросов и дождитесь завершения оставшихся запросов
+		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+		defer cancel()
+
+		// Start the worker
+		worker.Stop()
+
+		// Shutdown грациозно закрывает сервер, включая ожидание завершения запросов
+		if err := server.Shutdown(ctx); err != nil {
+			nLogger.Info("Error shutting down server", zap.Error(err))
+		}
+	}()
+
 	// Create a memory profiling log file
 	memory, err := os.Create(`result.pprof`)
 	if err != nil {
@@ -98,10 +128,10 @@ func Run() error {
 	// Start the HTTP/HTTPS server
 	if option.EnableHTTPS() {
 		nLogger.Info("HTTPS enabled")
-		return http.ListenAndServeTLS(flagRunAddr, "server.crt", "server.key", r)
+		return server.ListenAndServeTLS("server.crt", "server.key")
 	} else {
 		nLogger.Info("HTTPS disabled")
-		return http.ListenAndServe(flagRunAddr, r)
+		return server.ListenAndServe()
 	}
 
 }

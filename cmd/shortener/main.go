@@ -11,6 +11,8 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"net/http"
 
 	"github.com/wurt83ow/tinyurl/internal/app"
 )
@@ -30,9 +32,10 @@ func main() {
 	fmt.Printf("Build date: %s\n", getOrDefault(buildDate, "N/A"))
 	fmt.Printf("Build commit: %s\n", getOrDefault(buildCommit, "N/A"))
 
-	if err := app.Run(); err != nil {
+	if err := app.Run(); err != nil && err != http.ErrServerClosed {
 		panic(err)
 	}
+	log.Printf("server stopped")
 }
 
 // getOrDefault returns the provided value or a default value if the provided value is empty.
