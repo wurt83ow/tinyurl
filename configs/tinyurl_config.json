@@ -1,0 +1,9 @@
+{
+    "server_address": ":8080",  
+    "base_url": "http://localhost:8080/",  
+    "log_level": "info",  
+    "file_storage_path": "/tmp/short-url-db.json",  
+    "database_dsn": "",  
+    "jwt_signing_key": "test_key",  
+    "enable_https": true  
+}
