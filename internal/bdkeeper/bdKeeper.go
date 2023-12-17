@@ -65,6 +65,12 @@ func NewBDKeeper(dsn func() string, log Log) *BDKeeper {
 		log.Info("Error checking for existing table: ", zap.Error(err))
 		return nil
 	}
+
+	if err = rows.Err(); err != nil {
+		log.Info("Error checking for existing table: ", zap.Error(err))
+		return nil
+	}
+
 	defer rows.Close()
 
 	var tableExists bool
