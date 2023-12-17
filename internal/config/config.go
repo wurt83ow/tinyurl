@@ -65,10 +65,11 @@ func NewOptions() *Options {
 
 // ParseFlags parses the command line arguments and sets the corresponding option values.
 func (o *Options) ParseFlags() {
+
 	regStringVar(&o.flagRunAddr, "a", ":8080", "address and port to run server")
 	regStringVar(&o.flagShortURLAdress, "b", "http://localhost:8080/", "server`s address for shor url")
 	regStringVar(&o.flagLogLevel, "l", "info", "log level")
-	regStringVar(&o.flagFileStoragePath, "f", "/tmp/short-url-db.json", "")
+	regStringVar(&o.flagFileStoragePath, "f", "test777", "")
 	regStringVar(&o.flagDataBaseDSN, "d", "", "")
 	regStringVar(&o.flagJWTSigningKey, "j", "test_key", "jwt signing key")
 	regStringVar(&o.flagConfigFile, "c", "", "path to configuration file in JSON format")
@@ -121,11 +122,12 @@ func (o *Options) ParseFlags() {
 	//if they are present in the file
 	if o.flagConfigFile != "" {
 		// Load options from config file
-		err := o.loadFromConfigFile(o.flagConfigFile)
+		err := o.LoadFromConfigFile(o.flagConfigFile)
 		if err != nil {
 			fmt.Println("Error loading configuration from file:", err)
 		}
 	}
+
 }
 
 // RunAddr returns the configured server address.
@@ -197,7 +199,7 @@ func GetAsString(key string, defaultValue string) string {
 }
 
 // loadFromConfigFile loads configuration options from a JSON file.
-func (o *Options) loadFromConfigFile(filePath string) error {
+func (o *Options) LoadFromConfigFile(filePath string) error {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return err

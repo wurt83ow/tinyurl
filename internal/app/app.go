@@ -3,6 +3,7 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -30,6 +31,7 @@ func Run() error {
 	option := config.NewOptions()
 	option.ParseFlags()
 
+	fmt.Println("111111111111111111111111111111111111", option.FileStoragePath())
 	// Initialize logger
 	nLogger, err := logger.NewLogger(option.LogLevel())
 	if err != nil {

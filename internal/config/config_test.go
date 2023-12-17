@@ -31,7 +31,7 @@ func TestShorten(t *testing.T) {
 	}{
 		{name: "test func RunAddr", testfunc: option.RunAddr, result: ":8080"},
 		{name: "test func LogLevel", testfunc: option.LogLevel, result: "info"},
-		{name: "test func FileStoragePath", testfunc: option.FileStoragePath, result: "/tmp/short-url-db.json"},
+		{name: "test func FileStoragePath", testfunc: option.FileStoragePath, result: "test777"},
 		{name: "test func JWTSigningKey", testfunc: option.JWTSigningKey, result: "test_key"},
 	}
 
