@@ -90,7 +90,8 @@ func NewBDKeeper(dsn func() string, log Log) *BDKeeper {
 
 		// fix error test path
 		var path string
-		if filepath.Base(dir) == "shortener" {
+		if filepath.Base(dir) ==
+			"shortener" || filepath.Base(dir) == "bdkeeper" {
 			path = "../../"
 		}
 
