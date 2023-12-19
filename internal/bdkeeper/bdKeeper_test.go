@@ -35,9 +35,10 @@ func (suite *BDKeeperSuite) SetupSuite() {
 
 		suite.T().Fatal(err)
 	}
+	keeper := NewBDKeeper(option.DataBaseDSN, nLogger)
 
 	// Initialize storage keeper based on configuration
-	suite.keeper = NewBDKeeper(option.DataBaseDSN, nLogger)
+	suite.keeper = keeper
 }
 
 // SetupTest is called before each test to ensure a clean state.
@@ -46,20 +47,40 @@ func (suite *BDKeeperSuite) SetupTest() {
 	suite.clearDB()
 }
 
-// TestLoad tests the Load method of BDKeeper.
 func (suite *BDKeeperSuite) TestLoad() {
-	// Your test logic for Load method.
+	// Создаем тестовую запись в базе данных
+	_, err := suite.keeper.conn.Exec("INSERT INTO dataurl (correlation_id, short_url, original_url, user_id, is_deleted) VALUES ($1, $2, $3, $4, $5)",
+		"123", "http://example.com/123", "http://original.com", "user123", false)
+	suite.Require().NoError(err)
+
+	// Тестируем метод Load
 	data, err := suite.keeper.Load()
+
+	// Проверяем, что нет ошибок и данные соответствуют ожиданиям
 	suite.NoError(err)
 	suite.NotNil(data)
+	suite.Equal(1, len(data)) // Убедимся, что есть одна запись, как ожидается
 }
 
-// TestLoadUsers tests the LoadUsers method of BDKeeper.
 func (suite *BDKeeperSuite) TestLoadUsers() {
+	// Insert test data into the database
+	_, err := suite.keeper.conn.Exec("INSERT INTO users (id, name, email, hash) VALUES (1, 'John Doe', 'john@example.com', 'hashed_password')")
+	suite.NoError(err)
+
 	// Your test logic for LoadUsers method.
 	users, err := suite.keeper.LoadUsers()
 	suite.NoError(err)
 	suite.NotNil(users)
+
+	// Assuming that you inserted one user in the database, you can assert the expected result
+	expectedUser := models.DataUser{
+		UUID:  "1",
+		Name:  "John Doe",
+		Email: "john@example.com",
+		Hash:  []byte("hashed_password"),
+	}
+
+	suite.Equal(expectedUser, users["john@example.com"])
 }
 
 // TestUpdateBatch tests the UpdateBatch method of BDKeeper.
