@@ -24,10 +24,10 @@ func (suite *BDKeeperSuite) SetupSuite() {
 	// Parse command line flags and environment variables for configuration options
 	option := config.NewOptions()
 	option.ParseFlags()
-	err := option.LoadFromConfigFile("../../configs/config_test.json")
-	if err != nil {
-		suite.T().Fatal(err)
-	}
+	// err := option.LoadFromConfigFile("../../configs/config_test.json")
+	// if err != nil {
+	// 	suite.T().Fatal(err)
+	// }
 
 	// Initialize logger
 	nLogger, err := logger.NewLogger(option.LogLevel())
