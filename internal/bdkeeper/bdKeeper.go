@@ -59,60 +59,37 @@ func NewBDKeeper(dsn func() string, log Log) *BDKeeper {
 		return nil
 	}
 
-	// Check if the table 'dataurl' exists
-	rows, err := conn.Query("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'dataurl')")
+	dir, err := os.Getwd()
 	if err != nil {
-		log.Info("Error checking for existing table: ", zap.Error(err))
+		log.Info("Error getting getwd: ", zap.Error(err))
 		return nil
 	}
 
-	if err = rows.Err(); err != nil {
-		log.Info("Error checking for existing table: ", zap.Error(err))
+	// fix error test path
+	var path string
+	if filepath.Base(dir) ==
+		"shortener" || filepath.Base(dir) == "bdkeeper" {
+		path = "../../"
+	}
+
+	m, err := migrate.NewWithDatabaseInstance(
+		fmt.Sprintf("file://%smigrations", path),
+		"postgres",
+		driver)
+
+	if err != nil {
+		log.Info("Error creating migration instance: ", zap.Error(err))
 		return nil
 	}
 
-	defer rows.Close()
-
-	var tableExists bool
-	if rows.Next() {
-		if err := rows.Scan(&tableExists); err != nil {
-			log.Info("Error scanning for existing table: ", zap.Error(err))
-			return nil
-		}
+	// Check if migration is needed
+	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+		log.Info("Error while performing migration: ", zap.Error(err))
+		return nil
 	}
 
-	if !tableExists {
-		dir, err := os.Getwd()
-		if err != nil {
-			log.Info("Error getting getwd: ", zap.Error(err))
-			return nil
-		}
+	log.Info("Connected!")
 
-		// fix error test path
-		var path string
-		if filepath.Base(dir) ==
-			"shortener" || filepath.Base(dir) == "bdkeeper" {
-			path = "../../"
-		}
-
-		m, err := migrate.NewWithDatabaseInstance(
-			fmt.Sprintf("file://%smigrations", path),
-			"postgres",
-			driver)
-
-		if err != nil {
-			log.Info("Error creating migration instance: ", zap.Error(err))
-			return nil
-		}
-
-		err = m.Up()
-		if err != nil {
-			log.Info("Error while performing migration: ", zap.Error(err))
-			return nil
-		}
-
-		log.Info("Connected!")
-	}
 	return &BDKeeper{
 		conn: conn,
 		log:  log,
