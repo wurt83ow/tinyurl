@@ -1,7 +1,6 @@
 package bdkeeper
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -29,7 +28,6 @@ func (suite *BDKeeperSuite) SetupSuite() {
 	if err != nil {
 		suite.T().Fatal(err)
 	}
-	fmt.Println("7777777777777777777777777777777777777777", option.DataBaseDSN())
 
 	// Initialize logger
 	nLogger, err := logger.NewLogger(option.LogLevel())

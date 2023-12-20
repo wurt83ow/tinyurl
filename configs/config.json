@@ -3,7 +3,7 @@
     "base_url": "http://localhost:8080/",  
     "log_level": "info",  
     "file_storage_path": "test3.json",  
-    "database_dsn": "host=localhost user=tinyurl password=example dbname=tinyurl sslmode=disable",    
+    "database_dsn": "host=localhost user=tinyurl password=example dbname=tinyurl sslmode=disable",
     "jwt_signing_key": "test_key",  
     "enable_https": true,  
     "https_cert_file": "server.crt",
