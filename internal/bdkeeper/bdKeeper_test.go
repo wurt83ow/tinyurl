@@ -1,6 +1,7 @@
 package bdkeeper
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -24,10 +25,11 @@ func (suite *BDKeeperSuite) SetupSuite() {
 	// Parse command line flags and environment variables for configuration options
 	option := config.NewOptions()
 	option.ParseFlags()
-	// err := option.LoadFromConfigFile("../../configs/config_test.json")
-	// if err != nil {
-	// 	suite.T().Fatal(err)
-	// }
+	err := option.LoadFromConfigFile("../../configs/config_test.json")
+	if err != nil {
+		suite.T().Fatal(err)
+	}
+	fmt.Println("7777777777777777777777777777777777777777", option.DataBaseDSN())
 
 	// Initialize logger
 	nLogger, err := logger.NewLogger(option.LogLevel())
