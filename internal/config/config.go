@@ -56,6 +56,8 @@ type Options struct {
 	flagJWTSigningKey   string
 	flagConfigFile      string
 	flagEnableHTTPS     bool
+	flagHTTPSCertFile   string
+	flagHTTPSKeyFile    string
 }
 
 // NewOptions creates a new instance of Options.
@@ -74,7 +76,8 @@ func (o *Options) ParseFlags() {
 	regStringVar(&o.flagJWTSigningKey, "j", "test_key", "jwt signing key")
 	regStringVar(&o.flagConfigFile, "c", "", "path to configuration file in JSON format")
 	regBoolVar(&o.flagEnableHTTPS, "s", false, "enable https")
-
+	regStringVar(&o.flagHTTPSCertFile, "r", "", "path to https cert file")
+	regStringVar(&o.flagHTTPSKeyFile, "k", "", "path to https key file")
 	// parse the arguments passed to the server into registered variables
 	flag.Parse()
 
@@ -101,6 +104,14 @@ func (o *Options) ParseFlags() {
 
 	if envJWTSigningKey := os.Getenv("JWT_SIGNING_KEY"); envJWTSigningKey != "" {
 		o.flagJWTSigningKey = envJWTSigningKey
+	}
+
+	if envHTTPSCertFile := os.Getenv("HTTPS_CERT_FILE"); envHTTPSCertFile != "" {
+		o.flagHTTPSCertFile = envHTTPSCertFile
+	}
+
+	if envHTTPSKeyFile := os.Getenv("HTTPS_KEY_FILE"); envHTTPSKeyFile != "" {
+		o.flagHTTPSKeyFile = envHTTPSKeyFile
 	}
 
 	if envConfigFile := os.Getenv("CONFIG"); envConfigFile != "" {
@@ -158,6 +169,16 @@ func (o *Options) DataBaseDSN() string {
 // JWTSigningKey returns the configured JWT signing key.
 func (o *Options) JWTSigningKey() string {
 	return getStringFlag("j")
+}
+
+// HTTPSCertFile returns the path to HTTPS cert file.
+func (o *Options) HTTPSCertFile() string {
+	return getStringFlag("r")
+}
+
+// HTTPSCertFile returns the path to HTTPS key file.
+func (o *Options) HTTPSKeyFile() string {
+	return getStringFlag("k")
 }
 
 // EnableHTTPS returns whether HTTPS is enabled.
@@ -220,6 +241,8 @@ func (o *Options) LoadFromConfigFile(filePath string) error {
 	o.setIfNotEmpty(&o.flagFileStoragePath, config["file_storage_path"])
 	o.setIfNotEmpty(&o.flagDataBaseDSN, config["database_dsn"])
 	o.setIfNotEmpty(&o.flagJWTSigningKey, config["jwt_signing_key"])
+	o.setIfNotEmpty(&o.flagHTTPSCertFile, config["https_cert_file"])
+	o.setIfNotEmpty(&o.flagHTTPSKeyFile, config["https_key_file"])
 
 	// Handle boolean value for enable_https
 	if enableHTTPS, ok := config["enable_https"].(bool); ok {
