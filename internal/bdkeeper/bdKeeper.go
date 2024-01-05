@@ -183,6 +183,25 @@ func (bdk *BDKeeper) LoadUsers() (storage.StorageUser, error) {
 	return data, nil
 }
 
+// GetUsersAndURLsCount retrieves user and url counts from the PostgreSQL database.
+func (bdk *BDKeeper) GetUsersAndURLsCount() (int, int, error) {
+	ctx := context.Background()
+
+	var userCount, urlCount int
+
+	// Query to get counts in a single round-trip
+	err := bdk.conn.QueryRowContext(ctx, `
+		SELECT (SELECT COUNT(*) FROM users) AS user_count,
+			   (SELECT COUNT(*) FROM dataurl) AS url_count;
+	`).Scan(&userCount, &urlCount)
+
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return userCount, urlCount, nil
+}
+
 // UpdateBatch updates the is_deleted flag for the specified URLs in the PostgreSQL database.
 func (bdk *BDKeeper) UpdateBatch(data ...models.DeleteURL) error {
 	ctx := context.Background()

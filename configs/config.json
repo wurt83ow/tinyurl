@@ -7,5 +7,6 @@
     "jwt_signing_key": "test_key",  
     "enable_https": true,  
     "https_cert_file": "server.crt",
-    "https_key_file":"server.key"     
+    "https_key_file":"server.key",  
+    "trusted_subnet":"::1/128"    
 }

@@ -101,6 +101,45 @@ func (kp *FileKeeper) LoadUsers() (storage.StorageUser, error) {
 	return data, nil
 }
 
+// GetUsersAndURLsCount retrieves user and url counts from the json file.
+func (kp *FileKeeper) GetUsersAndURLsCount() (int, int, error) {
+	dataFile := kp.path()
+
+	if _, err := os.Stat(dataFile); err != nil {
+		kp.log.Info("file not found: ", zap.Error(err))
+		return 0, 0, err
+	}
+
+	loadFrom, err := os.Open(dataFile)
+	if err != nil {
+		kp.log.Info("Empty key/value store!: ", zap.Error(err))
+		return 0, 0, err
+	}
+	defer loadFrom.Close()
+
+	decoder := json.NewDecoder(loadFrom)
+	uniqueUsers, uniqueURLs := make(map[string]struct{}), make(map[string]struct{})
+
+	for decoder.More() {
+		var m map[string]interface{} // Assuming the structure of your data can be different
+		err := decoder.Decode(&m)
+
+		if email, ok := m["email"].(string); ok {
+			uniqueUsers[email] = struct{}{}
+		}
+
+		if shortURL, ok := m["short_url"].(string); ok {
+			uniqueURLs[shortURL] = struct{}{}
+		}
+
+		if err != nil {
+			kp.log.Info("cannot decode JSON file: ", zap.Error(err))
+		}
+	}
+
+	return len(uniqueUsers), len(uniqueURLs), nil
+}
+
 // Save implements storage.Keeper.
 func (kp *FileKeeper) Save(key string, data models.DataURL) (models.DataURL, error) {
 	dataFile := kp.path()

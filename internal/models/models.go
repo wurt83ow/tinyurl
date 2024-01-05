@@ -55,3 +55,8 @@ type DeleteURL struct {
 	UserID    string   `db:"user_id" json:"user_id"`
 	ShortURLs []string `db:"short_url" json:"short_url"`
 }
+
+type StatsResponse struct {
+	Urls  int `json:"urls"`
+	Users int `json:"users"`
+}

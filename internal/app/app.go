@@ -71,7 +71,7 @@ func Run() error {
 
 	// Use request logger middleware and Gzip middleware
 	r.Use(reqLog.RequestLogger)
-	r.Use(middleware.GzipMiddleware)
+	// r.Use(middleware.GzipMiddleware)
 
 	// Mount the controller routes
 	r.Mount("/", controller.Route())

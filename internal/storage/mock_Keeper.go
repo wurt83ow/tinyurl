@@ -72,6 +72,34 @@ func (_m *MockKeeper) LoadUsers() (map[string]models.DataUser, error) {
 	return r0, r1
 }
 
+// GetUsersAndURLsCount provides a mock function with given fields:
+func (m *MockKeeper) GetUsersAndURLsCount() (int, int, error) {
+	args := m.Called()
+
+	var count1 int
+	if rf, ok := args.Get(0).(func() int); ok {
+		count1 = rf()
+	} else {
+		count1 = args.Int(0)
+	}
+
+	var count2 int
+	if rf, ok := args.Get(1).(func() int); ok {
+		count2 = rf()
+	} else {
+		count2 = args.Int(1)
+	}
+
+	var err error
+	if rf, ok := args.Get(2).(func() error); ok {
+		err = rf()
+	} else {
+		err = args.Error(2)
+	}
+
+	return count1, count2, err
+}
+
 // Ping provides a mock function with given fields:
 func (_m *MockKeeper) Ping() bool {
 	ret := _m.Called()
