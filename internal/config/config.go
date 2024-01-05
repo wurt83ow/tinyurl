@@ -68,7 +68,6 @@ func NewOptions() *Options {
 
 // ParseFlags parses the command line arguments and sets the corresponding option values.
 func (o *Options) ParseFlags() {
-
 	regStringVar(&o.flagRunAddr, "a", ":8080", "address and port to run server")
 	regStringVar(&o.flagShortURLAdress, "b", "http://localhost:8080/", "server`s address for shor url")
 	regStringVar(&o.flagLogLevel, "l", "info", "log level")
