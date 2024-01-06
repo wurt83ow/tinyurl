@@ -39,6 +39,7 @@
 package config
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -53,6 +54,7 @@ type Options struct {
 	flagFileStoragePath string
 	flagDataBaseDSN     string
 	flagJWTSigningKey   string
+	flagConfigFile      string
 	flagEnableHTTPS     bool
 }
 
@@ -69,6 +71,7 @@ func (o *Options) ParseFlags() {
 	regStringVar(&o.flagFileStoragePath, "f", "/tmp/short-url-db.json", "")
 	regStringVar(&o.flagDataBaseDSN, "d", "", "")
 	regStringVar(&o.flagJWTSigningKey, "j", "test_key", "jwt signing key")
+	regStringVar(&o.flagConfigFile, "c", "", "path to configuration file in JSON format")
 	regBoolVar(&o.flagEnableHTTPS, "s", false, "enable https")
 
 	// parse the arguments passed to the server into registered variables
@@ -99,6 +102,10 @@ func (o *Options) ParseFlags() {
 		o.flagJWTSigningKey = envJWTSigningKey
 	}
 
+	if envConfigFile := os.Getenv("CONFIG"); envConfigFile != "" {
+		o.flagConfigFile = envConfigFile
+	}
+
 	if envEnableHTTPS := os.Getenv("ENABLE_HTTPS"); envEnableHTTPS != "" {
 		// Assuming "ENABLE_HTTPS" should be a boolean value
 		enableHTTPS, err := strconv.ParseBool(envEnableHTTPS)
@@ -107,6 +114,16 @@ func (o *Options) ParseFlags() {
 		} else {
 			// Handle the error (failed to parse as boolean)
 			fmt.Println("Failed to parse ENABLE_HTTPS as a boolean value:", err)
+		}
+	}
+
+	// Check if config file path is provided. Redefine the parameters
+	//if they are present in the file
+	if o.flagConfigFile != "" {
+		// Load options from config file
+		err := o.loadFromConfigFile(o.flagConfigFile)
+		if err != nil {
+			fmt.Println("Error loading configuration from file:", err)
 		}
 	}
 }
@@ -177,4 +194,46 @@ func GetAsString(key string, defaultValue string) string {
 	}
 
 	return defaultValue
+}
+
+// loadFromConfigFile loads configuration options from a JSON file.
+func (o *Options) loadFromConfigFile(filePath string) error {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	decoder := json.NewDecoder(file)
+	config := make(map[string]interface{})
+	err = decoder.Decode(&config)
+	if err != nil {
+		return err
+	}
+
+	// Set values from config file
+	o.setIfNotEmpty(&o.flagRunAddr, config["server_address"])
+	o.setIfNotEmpty(&o.flagShortURLAdress, config["base_url"])
+	o.setIfNotEmpty(&o.flagLogLevel, config["log_level"])
+	o.setIfNotEmpty(&o.flagFileStoragePath, config["file_storage_path"])
+	o.setIfNotEmpty(&o.flagDataBaseDSN, config["database_dsn"])
+	o.setIfNotEmpty(&o.flagJWTSigningKey, config["jwt_signing_key"])
+
+	// Handle boolean value for enable_https
+	if enableHTTPS, ok := config["enable_https"].(bool); ok {
+		o.flagEnableHTTPS = enableHTTPS
+	}
+
+	return nil
+}
+
+// setIfNotEmpty sets the target variable if the value is not empty.
+func (o *Options) setIfNotEmpty(target *string, value interface{}) {
+	if *target != "" {
+		// Если значение уже установлено, возврат из функции
+		return
+	}
+	if strValue, ok := value.(string); ok && strValue != "" {
+		*target = strValue
+	}
 }
