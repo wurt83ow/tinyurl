@@ -67,9 +67,9 @@ func (w *worker) Start(pctx context.Context) {
 
 // Stop stops the worker.
 func (w *worker) Stop() {
-	w.log.Warn("Stop worker")
 	w.cancelFunc()
 	w.wg.Wait()
+	close(w.jobChan) // Закрываем канал, чтобы прервать цикл выбора в spawnWorkers
 	w.log.Warn("All workers exited!")
 }
 
@@ -81,7 +81,7 @@ func (w *worker) Add(d models.DeleteURL) {
 // spawnWorkers is a goroutine that handles jobs and periodically performs the actual deletion.
 func (w *worker) spawnWorkers(ctx context.Context) {
 	defer w.wg.Done()
-	w.log.Warn(" start ")
+
 	t := time.NewTicker(10 * time.Second)
 
 	for {

@@ -62,11 +62,13 @@ func NewBDKeeper(dsn func() string, log Log) *BDKeeper {
 	dir, err := os.Getwd()
 	if err != nil {
 		log.Info("Error getting getwd: ", zap.Error(err))
+		return nil
 	}
 
 	// fix error test path
 	var path string
-	if filepath.Base(dir) == "shortener" {
+	if filepath.Base(dir) ==
+		"shortener" || filepath.Base(dir) == "bdkeeper" {
 		path = "../../"
 	}
 
@@ -77,11 +79,13 @@ func NewBDKeeper(dsn func() string, log Log) *BDKeeper {
 
 	if err != nil {
 		log.Info("Error creating migration instance: ", zap.Error(err))
+		return nil
 	}
 
-	err = m.Up()
-	if err != nil {
+	// Check if migration is needed
+	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
 		log.Info("Error while performing migration: ", zap.Error(err))
+		return nil
 	}
 
 	log.Info("Connected!")
@@ -384,7 +388,8 @@ func (bdk *BDKeeper) Ping() bool {
 
 // Close closes the connection to the PostgreSQL database and returns true if successful, otherwise false.
 func (bdk *BDKeeper) Close() bool {
+	bdk.log.Info("Stop database")
 	bdk.conn.Close()
-
+	bdk.log.Info("All sql queries are completed")
 	return true
 }

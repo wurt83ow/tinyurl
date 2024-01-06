@@ -56,6 +56,8 @@ type Options struct {
 	flagJWTSigningKey   string
 	flagConfigFile      string
 	flagEnableHTTPS     bool
+	flagHTTPSCertFile   string
+	flagHTTPSKeyFile    string
 }
 
 // NewOptions creates a new instance of Options.
@@ -65,15 +67,17 @@ func NewOptions() *Options {
 
 // ParseFlags parses the command line arguments and sets the corresponding option values.
 func (o *Options) ParseFlags() {
+
 	regStringVar(&o.flagRunAddr, "a", ":8080", "address and port to run server")
 	regStringVar(&o.flagShortURLAdress, "b", "http://localhost:8080/", "server`s address for shor url")
 	regStringVar(&o.flagLogLevel, "l", "info", "log level")
-	regStringVar(&o.flagFileStoragePath, "f", "/tmp/short-url-db.json", "")
+	regStringVar(&o.flagFileStoragePath, "f", "test777", "")
 	regStringVar(&o.flagDataBaseDSN, "d", "", "")
 	regStringVar(&o.flagJWTSigningKey, "j", "test_key", "jwt signing key")
 	regStringVar(&o.flagConfigFile, "c", "", "path to configuration file in JSON format")
 	regBoolVar(&o.flagEnableHTTPS, "s", false, "enable https")
-
+	regStringVar(&o.flagHTTPSCertFile, "r", "", "path to https cert file")
+	regStringVar(&o.flagHTTPSKeyFile, "k", "", "path to https key file")
 	// parse the arguments passed to the server into registered variables
 	flag.Parse()
 
@@ -102,6 +106,14 @@ func (o *Options) ParseFlags() {
 		o.flagJWTSigningKey = envJWTSigningKey
 	}
 
+	if envHTTPSCertFile := os.Getenv("HTTPS_CERT_FILE"); envHTTPSCertFile != "" {
+		o.flagHTTPSCertFile = envHTTPSCertFile
+	}
+
+	if envHTTPSKeyFile := os.Getenv("HTTPS_KEY_FILE"); envHTTPSKeyFile != "" {
+		o.flagHTTPSKeyFile = envHTTPSKeyFile
+	}
+
 	if envConfigFile := os.Getenv("CONFIG"); envConfigFile != "" {
 		o.flagConfigFile = envConfigFile
 	}
@@ -121,11 +133,12 @@ func (o *Options) ParseFlags() {
 	//if they are present in the file
 	if o.flagConfigFile != "" {
 		// Load options from config file
-		err := o.loadFromConfigFile(o.flagConfigFile)
+		err := o.LoadFromConfigFile(o.flagConfigFile)
 		if err != nil {
 			fmt.Println("Error loading configuration from file:", err)
 		}
 	}
+
 }
 
 // RunAddr returns the configured server address.
@@ -156,6 +169,16 @@ func (o *Options) DataBaseDSN() string {
 // JWTSigningKey returns the configured JWT signing key.
 func (o *Options) JWTSigningKey() string {
 	return getStringFlag("j")
+}
+
+// HTTPSCertFile returns the path to HTTPS cert file.
+func (o *Options) HTTPSCertFile() string {
+	return getStringFlag("r")
+}
+
+// HTTPSCertFile returns the path to HTTPS key file.
+func (o *Options) HTTPSKeyFile() string {
+	return getStringFlag("k")
 }
 
 // EnableHTTPS returns whether HTTPS is enabled.
@@ -197,7 +220,7 @@ func GetAsString(key string, defaultValue string) string {
 }
 
 // loadFromConfigFile loads configuration options from a JSON file.
-func (o *Options) loadFromConfigFile(filePath string) error {
+func (o *Options) LoadFromConfigFile(filePath string) error {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return err
@@ -218,6 +241,8 @@ func (o *Options) loadFromConfigFile(filePath string) error {
 	o.setIfNotEmpty(&o.flagFileStoragePath, config["file_storage_path"])
 	o.setIfNotEmpty(&o.flagDataBaseDSN, config["database_dsn"])
 	o.setIfNotEmpty(&o.flagJWTSigningKey, config["jwt_signing_key"])
+	o.setIfNotEmpty(&o.flagHTTPSCertFile, config["https_cert_file"])
+	o.setIfNotEmpty(&o.flagHTTPSKeyFile, config["https_key_file"])
 
 	// Handle boolean value for enable_https
 	if enableHTTPS, ok := config["enable_https"].(bool); ok {
