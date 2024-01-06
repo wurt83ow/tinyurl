@@ -63,7 +63,7 @@ func (kp *FileKeeper) Load() (storage.StorageURL, error) {
 		data[m.ShortURL] = m
 
 		if err != nil {
-			kp.log.Info("cannot decode JSON file: ", zap.Error(err))
+			kp.log.Info("cannot decode JSON file1: ", zap.Error(err))
 		}
 	}
 
@@ -94,7 +94,7 @@ func (kp *FileKeeper) LoadUsers() (storage.StorageUser, error) {
 		data[m.Email] = m
 
 		if err != nil {
-			kp.log.Info("cannot decode JSON file: ", zap.Error(err))
+			kp.log.Info("cannot decode JSON file2: ", zap.Error(err))
 		}
 	}
 
@@ -133,7 +133,7 @@ func (kp *FileKeeper) GetUsersAndURLsCount() (int, int, error) {
 		}
 
 		if err != nil {
-			kp.log.Info("cannot decode JSON file: ", zap.Error(err))
+			kp.log.Info("cannot decode JSON file3: ", zap.Error(err))
 		}
 	}
 
@@ -172,7 +172,7 @@ func (kp *FileKeeper) Save(key string, data models.DataURL) (models.DataURL, err
 			var m models.DataURL
 			err = decoder.Decode(&m)
 			if err != nil {
-				kp.log.Info("cannot decode JSON file: ", zap.Error(err))
+				kp.log.Info("cannot decode JSON file4: ", zap.Error(err))
 			}
 			if m.ShortURL == key {
 				return m, storage.ErrConflict
@@ -234,7 +234,7 @@ func (kp *FileKeeper) SaveUser(key string, data models.DataUser) (models.DataUse
 			var m models.DataUser
 			err = decoder.Decode(&m)
 			if err != nil {
-				kp.log.Info("cannot decode JSON file: ", zap.Error(err))
+				kp.log.Info("cannot decode JSON file5: ", zap.Error(err))
 			}
 			if m.Email == key {
 				return m, storage.ErrConflict
