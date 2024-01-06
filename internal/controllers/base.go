@@ -10,6 +10,7 @@ import (
 	"expvar"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/http/pprof"
 	"strings"
@@ -60,6 +61,8 @@ type Storage interface {
 
 	// GetBaseConnection checks the base connection status.
 	GetBaseConnection() bool
+
+	GetUsersAndURLsCount() (int, int, error)
 }
 
 // Options represents an interface for parsing command line options.
@@ -72,6 +75,8 @@ type Options interface {
 
 	// ShortURLAdress returns the short URL address.
 	ShortURLAdress() string
+
+	TrustedSubnet() string
 }
 
 // Log represents an interface for logging functionality.
@@ -147,6 +152,7 @@ func (h *BaseController) Route() *chi.Mux {
 	r.Post("/register", h.Register)
 	r.Post("/login", h.Login)
 	r.Get("/{name}", h.getFullURL)
+	r.Get("/api/internal/stats", h.getStatsHandler)
 	r.Get("/ping", h.getPing)
 
 	r.Get("/pprof/*", pprof.Index)
@@ -175,6 +181,71 @@ func (h *BaseController) Route() *chi.Mux {
 	})
 
 	return r
+}
+
+func (h *BaseController) getStatsHandler(w http.ResponseWriter, r *http.Request) {
+	// Checking the trusted subnet
+	clientIP := getClientIP(r)
+
+	// Get the trusted subnet from the options
+	trustedSubnet := h.options.TrustedSubnet()
+
+	if trustedSubnet == "" || !h.isInTrustedSubnet(clientIP, trustedSubnet) {
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+
+	userCount, urlCount, err := h.storage.GetUsersAndURLsCount()
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	statsResponse := models.StatsResponse{
+		Urls:  urlCount,
+		Users: userCount,
+	}
+
+	// Send a response
+	w.Header().Set("Content-Type", "application/json")
+
+	// Respond with an OK status code and serialize the response
+	w.WriteHeader(http.StatusOK) // Code 200
+	enc := json.NewEncoder(w)
+	if err := enc.Encode(statsResponse); err != nil {
+		h.log.Info("error encoding response: ", zap.Error(err))
+		return
+	}
+}
+
+func (h *BaseController) isInTrustedSubnet(ip string, trustedSubnet string) bool {
+	_, trustedNet, err := net.ParseCIDR(trustedSubnet)
+	if err != nil {
+		fmt.Println("Error parsing trusted subnet:", err)
+		return false
+	}
+
+	clientAddr := net.ParseIP(ip)
+	return trustedNet.Contains(clientAddr)
+}
+
+func getClientIP(r *http.Request) string {
+	xRealIP := r.Header.Get("X-Real-IP")
+	if xRealIP != "" {
+		return xRealIP
+	}
+
+	xForwardedFor := r.Header.Get("X-Forwarded-For")
+	if xForwardedFor != "" {
+		return xForwardedFor
+	}
+
+	remoteAddr, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		return ""
+	}
+
+	return remoteAddr
 }
 
 // deleteUserURLs is a handler method for deleting user URLs.

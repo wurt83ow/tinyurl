@@ -58,6 +58,7 @@ type Options struct {
 	flagEnableHTTPS     bool
 	flagHTTPSCertFile   string
 	flagHTTPSKeyFile    string
+	flagTrustedSubnet   string
 }
 
 // NewOptions creates a new instance of Options.
@@ -67,7 +68,6 @@ func NewOptions() *Options {
 
 // ParseFlags parses the command line arguments and sets the corresponding option values.
 func (o *Options) ParseFlags() {
-
 	regStringVar(&o.flagRunAddr, "a", ":8080", "address and port to run server")
 	regStringVar(&o.flagShortURLAdress, "b", "http://localhost:8080/", "server`s address for shor url")
 	regStringVar(&o.flagLogLevel, "l", "info", "log level")
@@ -78,6 +78,7 @@ func (o *Options) ParseFlags() {
 	regBoolVar(&o.flagEnableHTTPS, "s", false, "enable https")
 	regStringVar(&o.flagHTTPSCertFile, "r", "", "path to https cert file")
 	regStringVar(&o.flagHTTPSKeyFile, "k", "", "path to https key file")
+	regStringVar(&o.flagTrustedSubnet, "t", "", "trusted subnet")
 	// parse the arguments passed to the server into registered variables
 	flag.Parse()
 
@@ -114,6 +115,10 @@ func (o *Options) ParseFlags() {
 		o.flagHTTPSKeyFile = envHTTPSKeyFile
 	}
 
+	if envTrustedSubnet := os.Getenv("TRUSTED_SUBNET"); envTrustedSubnet != "" {
+		o.flagTrustedSubnet = envTrustedSubnet
+	}
+
 	if envConfigFile := os.Getenv("CONFIG"); envConfigFile != "" {
 		o.flagConfigFile = envConfigFile
 	}
@@ -135,10 +140,10 @@ func (o *Options) ParseFlags() {
 		// Load options from config file
 		err := o.LoadFromConfigFile(o.flagConfigFile)
 		if err != nil {
+			fmt.Println(o.flagConfigFile)
 			fmt.Println("Error loading configuration from file:", err)
 		}
 	}
-
 }
 
 // RunAddr returns the configured server address.
@@ -179,6 +184,11 @@ func (o *Options) HTTPSCertFile() string {
 // HTTPSCertFile returns the path to HTTPS key file.
 func (o *Options) HTTPSKeyFile() string {
 	return getStringFlag("k")
+}
+
+// HTTPSCertFile returns the path to HTTPS key file.
+func (o *Options) TrustedSubnet() string {
+	return getStringFlag("t")
 }
 
 // EnableHTTPS returns whether HTTPS is enabled.
@@ -243,6 +253,7 @@ func (o *Options) LoadFromConfigFile(filePath string) error {
 	o.setIfNotEmpty(&o.flagJWTSigningKey, config["jwt_signing_key"])
 	o.setIfNotEmpty(&o.flagHTTPSCertFile, config["https_cert_file"])
 	o.setIfNotEmpty(&o.flagHTTPSKeyFile, config["https_key_file"])
+	o.setIfNotEmpty(&o.flagTrustedSubnet, config["trusted_subnet"])
 
 	// Handle boolean value for enable_https
 	if enableHTTPS, ok := config["enable_https"].(bool); ok {

@@ -23,6 +23,12 @@ func (m *MockKeeper) LoadUsers() (storage.StorageUser, error) {
 	return args.Get(0).(storage.StorageUser), args.Error(1)
 }
 
+// GetUsersAndURLsCount - мок-метод для получения количества пользователей и URL
+func (m *MockKeeper) GetUsersAndURLsCount() (int, int, error) {
+	args := m.Called()
+	return args.Int(0), args.Int(1), args.Error(2)
+}
+
 // Save - мок-метод для сохранения данных
 func (m *MockKeeper) Save(k string, v models.DataURL) (models.DataURL, error) {
 	args := m.Called(k, v)

@@ -40,6 +40,7 @@ type MemoryStorage struct {
 type Keeper interface {
 	Load() (StorageURL, error)
 	LoadUsers() (StorageUser, error)
+	GetUsersAndURLsCount() (int, int, error)
 	Save(string, models.DataURL) (models.DataURL, error)
 	SaveUser(string, models.DataUser) (models.DataUser, error)
 	SaveBatch(StorageURL) error
@@ -72,6 +73,11 @@ func NewMemoryStorage(keeper Keeper, log Log) *MemoryStorage {
 		keeper: keeper,
 		log:    log,
 	}
+}
+
+// GetUsersAndURLsCount получает количество пользователей и URL из Keeper.
+func (s *MemoryStorage) GetUsersAndURLsCount() (int, int, error) {
+	return s.keeper.GetUsersAndURLsCount()
 }
 
 // InsertURL inserts a new DataURL into the storage with the specified key.
