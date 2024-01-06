@@ -41,11 +41,11 @@ type BDKeeper struct {
 // NewBDKeeper creates a new BDKeeper instance with the provided DSN (data source name) function and logger.
 // It establishes a connection to the PostgreSQL database, performs any required migrations, and returns the BDKeeper instance.
 func NewBDKeeper(dsn func() string, log Log) *BDKeeper {
-	addr := dsn()
-	if addr == "" {
-		log.Info("database dsn is empty")
-		return nil
-	}
+	// addr := dsn()
+	// if addr == "" {
+	// 	log.Info("database dsn is empty")
+	// 	return nil
+	// }
 
 	conn, err := sql.Open("pgx", dsn())
 	if err != nil {
