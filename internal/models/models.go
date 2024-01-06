@@ -56,6 +56,7 @@ type DeleteURL struct {
 	ShortURLs []string `db:"short_url" json:"short_url"`
 }
 
+// StatsResponse describes the response with urls and users counts.
 type StatsResponse struct {
 	Urls  int `json:"urls"`
 	Users int `json:"users"`
