@@ -144,7 +144,6 @@ func (o *Options) ParseFlags() {
 			fmt.Println("Error loading configuration from file:", err)
 		}
 	}
-
 }
 
 // RunAddr returns the configured server address.
