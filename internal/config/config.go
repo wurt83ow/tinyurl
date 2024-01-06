@@ -40,7 +40,9 @@ package config
 
 import (
 	"flag"
+	"fmt"
 	"os"
+	"strconv"
 )
 
 // Options holds the configuration options for the application.
@@ -51,6 +53,7 @@ type Options struct {
 	flagFileStoragePath string
 	flagDataBaseDSN     string
 	flagJWTSigningKey   string
+	flagEnableHTTPS     bool
 }
 
 // NewOptions creates a new instance of Options.
@@ -66,6 +69,7 @@ func (o *Options) ParseFlags() {
 	regStringVar(&o.flagFileStoragePath, "f", "/tmp/short-url-db.json", "")
 	regStringVar(&o.flagDataBaseDSN, "d", "", "")
 	regStringVar(&o.flagJWTSigningKey, "j", "test_key", "jwt signing key")
+	regBoolVar(&o.flagEnableHTTPS, "s", false, "enable https")
 
 	// parse the arguments passed to the server into registered variables
 	flag.Parse()
@@ -93,6 +97,17 @@ func (o *Options) ParseFlags() {
 
 	if envJWTSigningKey := os.Getenv("JWT_SIGNING_KEY"); envJWTSigningKey != "" {
 		o.flagJWTSigningKey = envJWTSigningKey
+	}
+
+	if envEnableHTTPS := os.Getenv("ENABLE_HTTPS"); envEnableHTTPS != "" {
+		// Assuming "ENABLE_HTTPS" should be a boolean value
+		enableHTTPS, err := strconv.ParseBool(envEnableHTTPS)
+		if err == nil {
+			o.flagEnableHTTPS = enableHTTPS
+		} else {
+			// Handle the error (failed to parse as boolean)
+			fmt.Println("Failed to parse ENABLE_HTTPS as a boolean value:", err)
+		}
 	}
 }
 
@@ -126,6 +141,11 @@ func (o *Options) JWTSigningKey() string {
 	return getStringFlag("j")
 }
 
+// EnableHTTPS returns whether HTTPS is enabled.
+func (o *Options) EnableHTTPS() bool {
+	return getBoolFlag("s")
+}
+
 // regStringVar registers a string flag with the specified name, default value, and usage string.
 func regStringVar(p *string, name string, value string, usage string) {
 	if flag.Lookup(name) == nil {
@@ -133,9 +153,21 @@ func regStringVar(p *string, name string, value string, usage string) {
 	}
 }
 
+// regBoolVar registers a bool flag with the specified name, default value, and usage string.
+func regBoolVar(p *bool, name string, value bool, usage string) {
+	if flag.Lookup(name) == nil {
+		flag.BoolVar(p, name, value, usage)
+	}
+}
+
 // getStringFlag retrieves the string value of the specified flag.
 func getStringFlag(name string) string {
 	return flag.Lookup(name).Value.(flag.Getter).Get().(string)
+}
+
+// getBoolFlag retrieves the bool value of the specified flag.
+func getBoolFlag(name string) bool {
+	return flag.Lookup(name).Value.(flag.Getter).Get().(bool)
 }
 
 // GetAsString reads an environment variable or returns a default value.

@@ -95,7 +95,13 @@ func Run() error {
 		panic(err)
 	}
 
-	// Start the HTTP server
-	return http.ListenAndServe(flagRunAddr, r)
+	// Start the HTTP/HTTPS server
+	if option.EnableHTTPS() {
+		nLogger.Info("HTTPS enabled")
+		return http.ListenAndServeTLS(flagRunAddr, "server.crt", "server.key", r)
+	} else {
+		nLogger.Info("HTTPS disabled")
+		return http.ListenAndServe(flagRunAddr, r)
+	}
 
 }
