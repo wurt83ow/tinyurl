@@ -3,6 +3,9 @@ package app
 
 import (
 	"context"
+	"fmt"
+	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -16,12 +19,15 @@ import (
 	"github.com/wurt83ow/tinyurl/internal/bdkeeper"
 	"github.com/wurt83ow/tinyurl/internal/config"
 	"github.com/wurt83ow/tinyurl/internal/controllers"
+	pb "github.com/wurt83ow/tinyurl/internal/controllers/proto"
 	"github.com/wurt83ow/tinyurl/internal/filekeeper"
 	"github.com/wurt83ow/tinyurl/internal/logger"
 	"github.com/wurt83ow/tinyurl/internal/middleware"
 	"github.com/wurt83ow/tinyurl/internal/storage"
 	"github.com/wurt83ow/tinyurl/internal/worker"
 	"go.uber.org/zap"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 // Run starts the tinyurl server.
@@ -59,6 +65,29 @@ func Run() error {
 	worker := worker.NewWorker(nLogger, memoryStorage)
 	authz := authz.NewJWTAuthz(option.JWTSigningKey(), nLogger)
 	controller := controllers.NewBaseController(memoryStorage, option, nLogger, worker, authz)
+
+	// Создайте экземпляр gRPC-сервера
+	grpcServer := grpc.NewServer()
+
+	// Регистрируйте ваш сервис gRPC
+	pb.RegisterUsersServer(grpcServer, controllers.NewUsersServer())
+
+	// Добавьте поддержку reflection API
+	reflection.Register(grpcServer)
+	// Создайте слушателя для gRPC
+	grpcListener, err := net.Listen("tcp", fmt.Sprintf(":%d", 50051))
+	if err != nil {
+		return fmt.Errorf("failed to listen for gRPC: %v", err)
+	}
+	defer grpcListener.Close()
+
+	// Ваша логика для запуска gRPC-сервера
+	go func() {
+		log.Printf("gRPC server is listening on port 50051")
+		if err := grpcServer.Serve(grpcListener); err != nil {
+			log.Fatalf("failed to serve gRPC: %v", err)
+		}
+	}()
 
 	// Initialize request logger middleware
 	reqLog := middleware.NewReqLog(nLogger)

@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package grpc;
+
+option go_package = "grpc/proto";
+
+message AddURLRequest {
+  string fullurl = 1;
+}
+
+message AddURLResponse {
+  string shurl = 1;
+  string error = 2;
+} 
+
+service Users {
+  rpc ShortenURL(AddURLRequest) returns (AddURLResponse);  
+}
