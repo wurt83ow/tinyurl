@@ -75,7 +75,7 @@ func NewMemoryStorage(keeper Keeper, log Log) *MemoryStorage {
 	}
 }
 
-// GetUsersAndURLsCount получает количество пользователей и URL из Keeper.
+// GetUsersAndURLsCount Gets the number of users and URLs from Keeper.
 func (s *MemoryStorage) GetUsersAndURLsCount() (int, int, error) {
 	return s.keeper.GetUsersAndURLsCount()
 }

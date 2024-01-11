@@ -69,7 +69,7 @@ func (w *worker) Start(pctx context.Context) {
 func (w *worker) Stop() {
 	w.cancelFunc()
 	w.wg.Wait()
-	close(w.jobChan) // Закрываем канал, чтобы прервать цикл выбора в spawnWorkers
+	close(w.jobChan) // Closing the channel to break the selection loop in spawnWorkers
 	w.log.Warn("All workers exited!")
 }
 

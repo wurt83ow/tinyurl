@@ -62,40 +62,37 @@ func TestWorker_StartStop(t *testing.T) {
 }
 
 func TestWorker_Add(t *testing.T) {
-	// Создаем новый экземпляр вашего воркера с моковым логгером и хранилищем
+	// Create a new instance of your worker with a mock logger and storage
 	log := new(MockLog)
 	storage := new(MockStorage)
 	worker := NewWorker(log, storage)
 
-	// Устанавливаем ожидания для метода Warn
+	// Set expectations for the Warn method
 	log.On("Warn", mock.Anything, mock.Anything).Once()
 
-	// Запускаем воркер
+	// Start the worker
 	worker.Start(context.TODO())
 
-	// Добавляем задачу в воркер
+	// Add a task to the worker
 	storage.On("AddURL", mock.Anything).Return(nil).Once()
 
-	// Ваш остальной код теста здесь
 }
 
 func TestWorker_DoWork(t *testing.T) {
-	// Создаем новый экземпляр вашего воркера с моковым логгером и хранилищем
+	// Create a new instance of your worker with a mock logger and storage
 	log := new(MockLog)
 	storage := new(MockStorage)
 	worker := NewWorker(log, storage)
 
-	// Устанавливаем ожидания для метода Warn
+	// Set expectations for the Warn method
 	log.On("Warn", mock.Anything, mock.Anything).Once()
 
-	// Запускаем воркер
+	// Start the worker
 	worker.Start(context.TODO())
 
-	// Добавляем задачу в воркер
+	// Add a task to the worker
 	storage.On("AddURL", mock.Anything).Return(nil).Once()
 
-	// Ваш код, вызывающий DoWork() здесь
-
-	// Проверяем, что метод Warn был вызван с ожидаемыми аргументами
+	// Check that the Warn method was called with the expected arguments
 	log.AssertExpectations(t)
 }
