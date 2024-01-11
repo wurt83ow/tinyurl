@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	authz "github.com/wurt83ow/tinyurl/internal/authorization"
 	"github.com/wurt83ow/tinyurl/internal/controllers"
-	"github.com/wurt83ow/tinyurl/internal/controllers/proto"
 	pb "github.com/wurt83ow/tinyurl/internal/controllers/proto"
 	"github.com/wurt83ow/tinyurl/internal/models"
 	"go.uber.org/zap/zapcore"
@@ -263,12 +262,12 @@ func TestShortenJSON(t *testing.T) {
 	testContext := NewTestContext(t)
 	testCases := []struct {
 		name      string
-		request   *proto.ShortenJSONRequest
+		request   *pb.ShortenJSONRequest
 		expectErr bool
 	}{
 		{
 			name: "SuccessfulShortenJSON",
-			request: &proto.ShortenJSONRequest{
+			request: &pb.ShortenJSONRequest{
 				Url: "http://example.com",
 			},
 			expectErr: false,
@@ -300,12 +299,12 @@ func TestShortenURL(t *testing.T) {
 
 	testCases := []struct {
 		name      string
-		request   *proto.AddURLRequest
+		request   *pb.AddURLRequest
 		expectErr bool
 	}{
 		{
 			name: "SuccessfulShortenURL",
-			request: &proto.AddURLRequest{
+			request: &pb.AddURLRequest{
 				Fullurl: "http://example.com",
 			},
 			expectErr: false,
@@ -349,7 +348,7 @@ func TestGetUserURLs(t *testing.T) {
 
 	// Perform the test
 	ctx := metadata.NewIncomingContext(context.Background(), metadata.Pairs("authorization", testContext.FakeToken))
-	resp, err := testContext.Server.GetUserURLs(ctx, &proto.GetUserURLsRequest{})
+	resp, err := testContext.Server.GetUserURLs(ctx, &pb.GetUserURLsRequest{})
 
 	// Assertions
 	assert.NoError(t, err)
@@ -362,13 +361,13 @@ func TestShortenBatch(t *testing.T) {
 	testContext := NewTestContext(t)
 	testCases := []struct {
 		name      string
-		request   *proto.ShortenBatchRequest
+		request   *pb.ShortenBatchRequest
 		expectErr bool
 	}{
 		{
 			name: "SuccessfulShortenBatch",
-			request: &proto.ShortenBatchRequest{
-				Urls: []*proto.UrlToShorten{
+			request: &pb.ShortenBatchRequest{
+				Urls: []*pb.UrlToShorten{
 					{Uuid: "1", OriginalUrl: "http://example.com"},
 					{Uuid: "2", OriginalUrl: "http://example.org"},
 				},
