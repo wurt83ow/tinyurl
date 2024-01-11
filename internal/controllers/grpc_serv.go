@@ -62,10 +62,6 @@ func (s *UsersServer) ShortenURL(ctx context.Context, req *pb.AddURLRequest) (*p
 
 	// Shorten the URL
 	_, shortenedURL := shorturl.Shorten(fullURL, shortURLAddress)
-	if err != nil {
-		// If an error occurred while shortening the URL, return the error to the client
-		return nil, err
-	}
 
 	// Write the data to the database
 	dataURL := models.DataURL{
