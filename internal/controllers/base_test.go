@@ -21,13 +21,13 @@ import (
 var controller *BaseController
 
 func TestMain(m *testing.M) {
-	// Выполните однократную инициализацию, например, создание bdKeeper, перед запуском тестов
+	// Perform one-time initialization, such as creating bdKeeper, before running tests
 	setup()
 
-	// Запустите тесты
+	// Run tests
 	exitCode := m.Run()
 
-	// Выход с кодом завершения тестов
+	// Exit with the test completion code
 	os.Exit(exitCode)
 }
 
@@ -40,13 +40,14 @@ func setup() {
 		log.Fatalf("Unable to setup logger: %s\n", err)
 	}
 	keeperMock := new(MockKeeper)
-	// Настройка мока для метода Load
+	// Set up a mock for the Load method
 	keeperMock.On("Load").Return(storage.StorageURL{}, nil)
 
-	// Настройка мока для метода Load
+	// Set up a mock for the LoadUsers method
 	keeperMock.On("LoadUsers").Return(storage.StorageUser{}, nil)
 
-	// Настраиваем ожидание для метода GetUser, чтобы возвращать ошибку, указывающую, что пользователь уже существует
+	// Set up a wait for the GetUser method to return an error indicating
+	//that the user already exists
 	keeperMock.On("GetUser", "test@example.com").Return(storage.ErrConflict)
 
 	data := storage.StorageURL{
@@ -56,23 +57,23 @@ func setup() {
 	}
 
 	keeperMock.On("SaveBatch", data).Return(nil)
-	// Настраиваем ожидания для методов, которые будут вызваны внутри функции Register
-	keeperMock.On("GetUser", "test@example.com").Return(nil) // Пример: метод GetUser возвращает ошибку, что пользователя не существует
+	// Set up expectations for methods that will be called inside the Register function
+	keeperMock.On("GetUser", "test@example.com").Return(nil) // Example: GetUser method returns an error that the user does not exist
 	keeperMock.On("InsertUser", "test@example.com", mock.AnythingOfType("models.DataUser")).Return(nil)
 
 	keeperMock.On("Ping").Return(true)
 
-	// Генерация уникального ключа для теста
+	// Generate a unique key for the test
 	key := "nOykhckC3Od"
 
-	// Генерация данных для метода Save
+	// Generate data for the Save method
 	dataURL := models.DataURL{
 		UUID:        "",
 		OriginalURL: "https://practicum.yandex.ru/",
 		ShortURL:    "http://localhost:8080/" + key,
 	}
 
-	// Настройка мока для метода Save
+	// Set up a mock for the Save method
 	keeperMock.On("Save", key, dataURL).Return(dataURL, nil)
 
 	memoryStorage := storage.NewMemoryStorage(keeperMock, nLogger)
@@ -198,20 +199,20 @@ func TestGetFullURL(t *testing.T) {
 
 func TestGetPing(t *testing.T) {
 
-	// Создаем запрос GET
+	// Create a GET request
 	req, err := http.NewRequest("GET", "/ping", nil)
-	assert.NoError(t, err, "не ожидалось ошибки при создании запроса")
+	assert.NoError(t, err, "no error was expected when creating the request")
 
-	// Создаем ResponseRecorder для записи ответа
+	// Create a ResponseRecorder to record the response
 	rr := httptest.NewRecorder()
 
-	// Вызываем метод getPing
+	// Call the getPing method
 	controller.getPing(rr, req)
 
-	// Проверяем, что статус код соответствует ожидаемому
-	assert.Equal(t, http.StatusOK, rr.Code, "ожидался статус код 200")
+	// Check that the status code matches the expected one
+	assert.Equal(t, http.StatusOK, rr.Code, "expected status code 200")
 
-	// Проверяем работу кода, без переданного keeper
+	// Check if the code works without the passed keeper
 	option := config.NewOptions()
 	option.ParseFlags()
 
@@ -226,18 +227,18 @@ func TestGetPing(t *testing.T) {
 
 	contr := NewBaseController(memoryStorage, option, nLogger, worker, authz)
 
-	// Создаем запрос GET
+	// Create a GET request
 	req, err = http.NewRequest("GET", "/ping", nil)
-	assert.NoError(t, err, "не ожидалось ошибки при создании запроса")
+	assert.NoError(t, err, "no error was expected when creating the request")
 
-	// Создаем ResponseRecorder для записи ответа
+	// Create a ResponseRecorder to record the response
 	rr = httptest.NewRecorder()
 
-	// Вызываем метод getPing
+	// Call the getPing method
 	contr.getPing(rr, req)
 
-	// Проверяем, что статус код соответствует ожидаемому
-	assert.Equal(t, http.StatusInternalServerError, rr.Code, "ожидался статус код 500")
+	// Check that the status code matches the expected one
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "expected status code 500")
 
 }
 
@@ -267,7 +268,7 @@ func TestGetFullURLNotFound(t *testing.T) {
 }
 
 func TestGetPingNoKeeper(t *testing.T) {
-	// Создаем новый контроллер без keeper'а
+	// Create a new controller without a keeper
 	option := config.NewOptions()
 	option.ParseFlags()
 
@@ -276,23 +277,23 @@ func TestGetPingNoKeeper(t *testing.T) {
 		log.Fatalf("Unable to setup logger: %s\n", err)
 	}
 
-	memoryStorage := storage.NewMemoryStorage(nil, nLogger) // передаем nil вместо мока
+	memoryStorage := storage.NewMemoryStorage(nil, nLogger) // pass nil instead of mock
 
 	worker := worker.NewWorker(nLogger, memoryStorage)
 	authz := authz.NewJWTAuthz(option.JWTSigningKey(), nLogger)
 
 	contr := NewBaseController(memoryStorage, option, nLogger, worker, authz)
 
-	// Создаем запрос GET
+	// Create a GET request
 	req, err := http.NewRequest("GET", "/ping", nil)
-	assert.NoError(t, err, "не ожидалось ошибки при создании запроса")
+	assert.NoError(t, err, "no error was expected when creating the request")
 
-	// Создаем ResponseRecorder для записи ответа
+	// Create a ResponseRecorder to record the response
 	rr := httptest.NewRecorder()
 
-	// Вызываем метод getPing
+	// Call the getPing method
 	contr.getPing(rr, req)
 
-	// Проверяем, что статус код соответствует ожидаемому
-	assert.Equal(t, http.StatusInternalServerError, rr.Code, "ожидался статус код 500")
+	// Check that the status code matches the expected one
+	assert.Equal(t, http.StatusInternalServerError, rr.Code, "expected status code 500")
 }

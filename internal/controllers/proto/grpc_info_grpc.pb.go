@@ -19,89 +19,237 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Users_ShortenURL_FullMethodName = "/grpc.Users/ShortenURL"
+	URLService_ShortenURL_FullMethodName     = "/grpc.URLService/ShortenURL"
+	URLService_RegisterUser_FullMethodName   = "/grpc.URLService/RegisterUser"
+	URLService_Login_FullMethodName          = "/grpc.URLService/Login"
+	URLService_GetFullURL_FullMethodName     = "/grpc.URLService/GetFullURL"
+	URLService_DeleteUserURLs_FullMethodName = "/grpc.URLService/DeleteUserURLs"
 )
 
-// UsersClient is the client API for Users service.
+// URLServiceClient is the client API for URLService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type UsersClient interface {
+type URLServiceClient interface {
 	ShortenURL(ctx context.Context, in *AddURLRequest, opts ...grpc.CallOption) (*AddURLResponse, error)
+	RegisterUser(ctx context.Context, in *RegisterUserRequest, opts ...grpc.CallOption) (*RegisterUserResponse, error)
+	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error)
+	GetFullURL(ctx context.Context, in *GetURLRequest, opts ...grpc.CallOption) (*GetURLResponse, error)
+	DeleteUserURLs(ctx context.Context, in *DeleteUserURLsRequest, opts ...grpc.CallOption) (*DeleteUserURLsResponse, error)
 }
 
-type usersClient struct {
+type uRLServiceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewUsersClient(cc grpc.ClientConnInterface) UsersClient {
-	return &usersClient{cc}
+func NewURLServiceClient(cc grpc.ClientConnInterface) URLServiceClient {
+	return &uRLServiceClient{cc}
 }
 
-func (c *usersClient) ShortenURL(ctx context.Context, in *AddURLRequest, opts ...grpc.CallOption) (*AddURLResponse, error) {
+func (c *uRLServiceClient) ShortenURL(ctx context.Context, in *AddURLRequest, opts ...grpc.CallOption) (*AddURLResponse, error) {
 	out := new(AddURLResponse)
-	err := c.cc.Invoke(ctx, Users_ShortenURL_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, URLService_ShortenURL_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// UsersServer is the server API for Users service.
-// All implementations must embed UnimplementedUsersServer
+func (c *uRLServiceClient) RegisterUser(ctx context.Context, in *RegisterUserRequest, opts ...grpc.CallOption) (*RegisterUserResponse, error) {
+	out := new(RegisterUserResponse)
+	err := c.cc.Invoke(ctx, URLService_RegisterUser_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *uRLServiceClient) Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error) {
+	out := new(LoginResponse)
+	err := c.cc.Invoke(ctx, URLService_Login_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *uRLServiceClient) GetFullURL(ctx context.Context, in *GetURLRequest, opts ...grpc.CallOption) (*GetURLResponse, error) {
+	out := new(GetURLResponse)
+	err := c.cc.Invoke(ctx, URLService_GetFullURL_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *uRLServiceClient) DeleteUserURLs(ctx context.Context, in *DeleteUserURLsRequest, opts ...grpc.CallOption) (*DeleteUserURLsResponse, error) {
+	out := new(DeleteUserURLsResponse)
+	err := c.cc.Invoke(ctx, URLService_DeleteUserURLs_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// URLServiceServer is the server API for URLService service.
+// All implementations must embed UnimplementedURLServiceServer
 // for forward compatibility
-type UsersServer interface {
+type URLServiceServer interface {
 	ShortenURL(context.Context, *AddURLRequest) (*AddURLResponse, error)
-	mustEmbedUnimplementedUsersServer()
+	RegisterUser(context.Context, *RegisterUserRequest) (*RegisterUserResponse, error)
+	Login(context.Context, *LoginRequest) (*LoginResponse, error)
+	GetFullURL(context.Context, *GetURLRequest) (*GetURLResponse, error)
+	DeleteUserURLs(context.Context, *DeleteUserURLsRequest) (*DeleteUserURLsResponse, error)
+	mustEmbedUnimplementedURLServiceServer()
 }
 
-// UnimplementedUsersServer must be embedded to have forward compatible implementations.
-type UnimplementedUsersServer struct {
+// UnimplementedURLServiceServer must be embedded to have forward compatible implementations.
+type UnimplementedURLServiceServer struct {
 }
 
-func (UnimplementedUsersServer) ShortenURL(context.Context, *AddURLRequest) (*AddURLResponse, error) {
+func (UnimplementedURLServiceServer) ShortenURL(context.Context, *AddURLRequest) (*AddURLResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ShortenURL not implemented")
 }
-func (UnimplementedUsersServer) mustEmbedUnimplementedUsersServer() {}
+func (UnimplementedURLServiceServer) RegisterUser(context.Context, *RegisterUserRequest) (*RegisterUserResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RegisterUser not implemented")
+}
+func (UnimplementedURLServiceServer) Login(context.Context, *LoginRequest) (*LoginResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Login not implemented")
+}
+func (UnimplementedURLServiceServer) GetFullURL(context.Context, *GetURLRequest) (*GetURLResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetFullURL not implemented")
+}
+func (UnimplementedURLServiceServer) DeleteUserURLs(context.Context, *DeleteUserURLsRequest) (*DeleteUserURLsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteUserURLs not implemented")
+}
+func (UnimplementedURLServiceServer) mustEmbedUnimplementedURLServiceServer() {}
 
-// UnsafeUsersServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to UsersServer will
+// UnsafeURLServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to URLServiceServer will
 // result in compilation errors.
-type UnsafeUsersServer interface {
-	mustEmbedUnimplementedUsersServer()
+type UnsafeURLServiceServer interface {
+	mustEmbedUnimplementedURLServiceServer()
 }
 
-func RegisterUsersServer(s grpc.ServiceRegistrar, srv UsersServer) {
-	s.RegisterService(&Users_ServiceDesc, srv)
+func RegisterURLServiceServer(s grpc.ServiceRegistrar, srv URLServiceServer) {
+	s.RegisterService(&URLService_ServiceDesc, srv)
 }
 
-func _Users_ShortenURL_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _URLService_ShortenURL_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AddURLRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(UsersServer).ShortenURL(ctx, in)
+		return srv.(URLServiceServer).ShortenURL(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Users_ShortenURL_FullMethodName,
+		FullMethod: URLService_ShortenURL_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UsersServer).ShortenURL(ctx, req.(*AddURLRequest))
+		return srv.(URLServiceServer).ShortenURL(ctx, req.(*AddURLRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// Users_ServiceDesc is the grpc.ServiceDesc for Users service.
+func _URLService_RegisterUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RegisterUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(URLServiceServer).RegisterUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: URLService_RegisterUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(URLServiceServer).RegisterUser(ctx, req.(*RegisterUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _URLService_Login_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LoginRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(URLServiceServer).Login(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: URLService_Login_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(URLServiceServer).Login(ctx, req.(*LoginRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _URLService_GetFullURL_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetURLRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(URLServiceServer).GetFullURL(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: URLService_GetFullURL_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(URLServiceServer).GetFullURL(ctx, req.(*GetURLRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _URLService_DeleteUserURLs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteUserURLsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(URLServiceServer).DeleteUserURLs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: URLService_DeleteUserURLs_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(URLServiceServer).DeleteUserURLs(ctx, req.(*DeleteUserURLsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// URLService_ServiceDesc is the grpc.ServiceDesc for URLService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var Users_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "grpc.Users",
-	HandlerType: (*UsersServer)(nil),
+var URLService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "grpc.URLService",
+	HandlerType: (*URLServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "ShortenURL",
-			Handler:    _Users_ShortenURL_Handler,
+			Handler:    _URLService_ShortenURL_Handler,
+		},
+		{
+			MethodName: "RegisterUser",
+			Handler:    _URLService_RegisterUser_Handler,
+		},
+		{
+			MethodName: "Login",
+			Handler:    _URLService_Login_Handler,
+		},
+		{
+			MethodName: "GetFullURL",
+			Handler:    _URLService_GetFullURL_Handler,
+		},
+		{
+			MethodName: "DeleteUserURLs",
+			Handler:    _URLService_DeleteUserURLs_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

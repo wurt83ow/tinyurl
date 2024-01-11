@@ -104,6 +104,8 @@ type Authz interface {
 
 	// AuthCookie creates an HTTP cookie for authorization purposes.
 	AuthCookie(name string, token string) *http.Cookie
+
+	DecodeJWTToUser(token string) (string, error)
 }
 
 // BaseController represents a basic controller for handling user requests.

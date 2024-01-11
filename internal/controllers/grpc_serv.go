@@ -1,50 +1,226 @@
 package controllers
 
 import (
-	// импортируем пакет со сгенерированными protobuf-файлами
+	// import the package with the generated protobuf files
+	"bytes"
 	"context"
+	"errors"
 	"fmt"
 
+	"github.com/google/uuid"
 	pb "github.com/wurt83ow/tinyurl/internal/controllers/proto"
+	"github.com/wurt83ow/tinyurl/internal/models"
+	"github.com/wurt83ow/tinyurl/internal/services/shorturl"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 )
 
-// UsersServer поддерживает все необходимые методы сервера.
+// UsersServer supports all necessary server methods.
 type UsersServer struct {
-	// нужно встраивать тип pb.Unimplemented<TypeName>
-	// для совместимости с будущими версиями
-	pb.UnimplementedUsersServer
+	storage Storage
+	options Options
+	log     Log
+	worker  Worker
+	authz   Authz
+	// need to embed type pb.Unimplemented<TypeName>
+	// for compatibility with future versions
+	pb.UnimplementedURLServiceServer
 }
 
-// NewUsersServer создает новый экземпляр UsersServer.
-func NewUsersServer() *UsersServer {
-	// нужно встраивать тип pb.Unimplemented<TypeName>
-	// для совместимости с будущими версиями
-	return &UsersServer{
-		UnimplementedUsersServer: pb.UnimplementedUsersServer{},
+// NewUsersServer creates a new UsersServer instance.
+func NewUsersServer(storage Storage, options Options, log Log, worker Worker, authz Authz) *UsersServer {
+
+	instance := &UsersServer{
+		storage: storage,
+		options: options,
+		log:     log,
+		worker:  worker,
+		authz:   authz,
+		// need to embed type pb.Unimplemented<TypeName>
+		// for compatibility with future versions
+		UnimplementedURLServiceServer: pb.UnimplementedURLServiceServer{},
 	}
+
+	return instance
 }
 
-// ShortenURL реализует метод ShortenURL из protobuf-сервиса Users.
+// ShortenURL implements the ShortenURL method from the Users protobuf service.
 func (s *UsersServer) ShortenURL(ctx context.Context, req *pb.AddURLRequest) (*pb.AddURLResponse, error) {
-	// Ваша логика обработки запроса на сокращение URL
+	// Authenticate the user
+	userID, err := s.authenticate(ctx)
+	if err != nil {
+		// Return an error instead of nil to inform the client about an authentication error
+		return nil, err
+	}
+
+	// Describe the logic for processing a URL shortening request
 	fullURL := req.GetFullurl()
 
-	// Здесь вы можете добавить логику для сокращения URL
-	// Например, можно использовать внешнюю библиотеку для генерации коротких URL
-	shortURL := generateShortURL(fullURL)
+	// Get the address for the short link from the settings
+	shortURLAddress := s.options.ShortURLAdress()
 
-	// Возврат ответа
-	response := &pb.AddURLResponse{
-		Shurl: shortURL,
+	// Shorten the URL
+	_, shortenedURL := shorturl.Shorten(fullURL, shortURLAddress)
+	if err != nil {
+		// If an error occurred while shortening the URL, return the error to the client
+		return nil, err
 	}
-	fmt.Println("7777777777777777777777777777777777777", response)
+
+	// Write the data to the database
+	dataURL := models.DataURL{
+		ShortURL:    shortenedURL,
+		OriginalURL: fullURL,
+		UserID:      userID,
+	}
+
+	// Use the InsertURL method from the repository
+	_, err = s.storage.InsertURL(shortenedURL, dataURL)
+	if err != nil {
+		// Return an error to the client with an error code and an error message
+		return nil, status.Errorf(codes.Internal, "failed to save URL to storage: %v", err)
+	}
+
+	// Return the response
+	response := &pb.AddURLResponse{
+		Shurl: shortenedURL,
+	}
+
+	// Display information about the user and shortened link
+	fmt.Println("User ID:", userID)
+	fmt.Println("Shortened URL:", shortenedURL)
 
 	return response, nil
 }
 
-// Пример функции для генерации короткого URL (замените на свою логику)
-func generateShortURL(fullURL string) string {
-	// Ваша логика для генерации короткого URL
-	// Например, можно использовать хэш-функции или другие методы
-	return fmt.Sprintf("http://short.url/%s", fullURL)
+// getFullURL implements the getFullURL method from the Users protobuf service.
+func (s *UsersServer) GetFullURL(ctx context.Context, req *pb.GetURLRequest) (*pb.GetURLResponse, error) {
+	// Extract the key from the request
+	key := req.GetKey()
+
+	// Return the NotFound error code if the key is empty
+	if key == "" {
+		return nil, status.Error(codes.InvalidArgument, "empty key")
+	}
+
+	// Get the full URL from the storage
+	data, err := s.storage.GetURL(key)
+
+	// Return a NotFound error code if the URL was not found or an error occurred
+	if err != nil || data.OriginalURL == "" {
+		return nil, status.Error(codes.NotFound, "URL not found")
+	}
+
+	// Return the answer
+	response := &pb.GetURLResponse{
+		OriginalUrl: data.OriginalURL,
+	}
+
+	return response, nil
+}
+
+// DeleteUserURLs implements a method for deleting user URLs from the Users protobuf service.
+func (s *UsersServer) DeleteUserURLs(ctx context.Context, req *pb.DeleteUserURLsRequest) (*pb.DeleteUserURLsResponse, error) {
+	// Get a list of URL IDs from the request
+	ids := req.GetUrls()
+
+	// Get the user ID from the context
+	userID, err := s.authenticate(ctx)
+	if err != nil {
+		// Return an error instead of nil to inform the client about an authentication error
+		return nil, err
+	}
+
+	// Add tasks to worker for asynchronous removal
+	s.worker.Add(models.DeleteURL{UserID: userID, ShortURLs: ids})
+
+	// Return the answer
+	response := &pb.DeleteUserURLsResponse{
+		Key: userID,
+	}
+	return response, nil
+}
+
+func (s *UsersServer) authenticate(ctx context.Context) (string, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return "", errors.New("failed to get metadata")
+	}
+
+	authHeader, ok := md["authorization"]
+	if !ok || len(authHeader) == 0 {
+		return "", errors.New("authorization header is missing")
+	}
+
+	// Describe the logic for checking the JWT token and retrieving the userID
+	userID, err := s.authz.DecodeJWTToUser(authHeader[0])
+	if err != nil {
+		return "", err
+	}
+
+	return userID, nil
+}
+
+// RegisterUser handles user registration in gRPC.
+func (s *UsersServer) RegisterUser(ctx context.Context, req *pb.RegisterUserRequest) (*pb.RegisterUserResponse, error) {
+	// Extract the request parameters from the protobuf structure
+	email := req.GetEmail()
+	password := req.GetPassword()
+	name := req.GetName()
+
+	// Check if a user with this email exists
+	_, err := s.storage.GetUser(email)
+	if err == nil {
+		return nil, status.Errorf(codes.AlreadyExists, "User with email %s already exists", email)
+	}
+
+	// Generate a password hash
+	hash := s.authz.GetHash(email, password)
+
+	// Create a DataUser object to save to storage
+	dataUser := &models.DataUser{
+		UUID:  uuid.New().String(),
+		Email: email,
+		Hash:  hash,
+		Name:  name,
+	}
+
+	// Save the user to storage
+	_, err = s.storage.InsertUser(email, *dataUser)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "Failed to register user: %v", err)
+	}
+
+	// Return a successful response
+	return &pb.RegisterUserResponse{
+		Message: fmt.Sprintf("User %s registered successfully", email),
+	}, nil
+}
+
+// Login implements the Login method from the Users protobuf service.
+func (s *UsersServer) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResponse, error) {
+	// Extract data from the request
+	email := req.GetEmail()
+	password := req.GetPassword()
+
+	// Get the user from the storage via email
+	user, err := s.storage.GetUser(email)
+	if err != nil {
+		// If the user does not exist, then return an error
+		return nil, status.Errorf(codes.NotFound, "User not found")
+	}
+
+	// Check the password
+	if bytes.Equal(user.Hash, s.authz.GetHash(email, password)) {
+		// Generate a new JWT token for the user
+		freshToken := s.authz.CreateJWTTokenForUser(user.UUID)
+
+		// Return a successful response with a token
+		return &pb.LoginResponse{
+			Token: freshToken,
+		}, nil
+	}
+
+	// If the password is incorrect, return an authentication error
+	return nil, status.Errorf(codes.Unauthenticated, "Incorrect email/password")
 }

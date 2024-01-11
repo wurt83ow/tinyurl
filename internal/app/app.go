@@ -66,22 +66,22 @@ func Run() error {
 	authz := authz.NewJWTAuthz(option.JWTSigningKey(), nLogger)
 	controller := controllers.NewBaseController(memoryStorage, option, nLogger, worker, authz)
 
-	// Создайте экземпляр gRPC-сервера
+	// Create a gRPC server instance
 	grpcServer := grpc.NewServer()
 
-	// Регистрируйте ваш сервис gRPC
-	pb.RegisterUsersServer(grpcServer, controllers.NewUsersServer())
+	// Register the gRPC service
+	pb.RegisterURLServiceServer(grpcServer, controllers.NewUsersServer(memoryStorage, option, nLogger, worker, authz))
 
-	// Добавьте поддержку reflection API
+	// Add support for reflection API
 	reflection.Register(grpcServer)
-	// Создайте слушателя для gRPC
+	// Create a listener for gRPC
 	grpcListener, err := net.Listen("tcp", fmt.Sprintf(":%d", 50051))
 	if err != nil {
 		return fmt.Errorf("failed to listen for gRPC: %v", err)
 	}
 	defer grpcListener.Close()
 
-	// Ваша логика для запуска gRPC-сервера
+	// Describe the logic for launching the gRPC server
 	go func() {
 		log.Printf("gRPC server is listening on port 50051")
 		if err := grpcServer.Serve(grpcListener); err != nil {
@@ -116,25 +116,25 @@ func Run() error {
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
 
-	// Создайте HTTP-сервер
+	// Create an HTTP server
 	server := &http.Server{
 		Addr:    flagRunAddr,
 		Handler: r,
 	}
 
-	// Используйте отдельную горутину для прослушивания сигналов ОС и грациозного завершения сервера
+	// Started a separate goroutine listening to OS signals and graceful shutdown of the server
 	go func() {
 		sig := <-stop
 		nLogger.Info("Received signal. Shutting down...", zap.String("signal", sig.String()))
 
-		// Прекратить принятие новых запросов и дождитесь завершения оставшихся запросов
+		// Stop accepting new requests and wait for the remaining requests to complete
 		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 		defer cancel()
 
 		// Start the worker
 		worker.Stop()
 
-		// Shutdown грациозно закрывает сервер, включая ожидание завершения запросов
+		// Shutdown gracefully shuts down the server, including waiting for requests to complete
 		if err := server.Shutdown(ctx); err != nil {
 			nLogger.Info("Error shutting down server", zap.Error(err))
 		}
