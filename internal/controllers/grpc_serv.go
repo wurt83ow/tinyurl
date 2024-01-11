@@ -11,6 +11,7 @@ import (
 	pb "github.com/wurt83ow/tinyurl/internal/controllers/proto"
 	"github.com/wurt83ow/tinyurl/internal/models"
 	"github.com/wurt83ow/tinyurl/internal/services/shorturl"
+	"github.com/wurt83ow/tinyurl/internal/storage"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -43,6 +44,108 @@ func NewUsersServer(storage Storage, options Options, log Log, worker Worker, au
 	}
 
 	return instance
+}
+
+// ShortenBatch implements the ShortenBatch method from the URLService protobuf service.
+func (s *UsersServer) ShortenBatch(ctx context.Context, req *pb.ShortenBatchRequest) (*pb.ShortenBatchResponse, error) {
+	// Get the user ID from the context
+	userID, err := s.authenticate(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get the short URL address from the options
+	shortURLAdress := s.options.ShortURLAdress()
+
+	// Initialize a map to store data about shortened URLs
+	dataURL := make(storage.StorageURL)
+
+	// Initialize the response for the client
+	resp := &pb.ShortenBatchResponse{}
+
+	// Iterate through each URL in the batch
+	for _, url := range req.Urls {
+		// Shorten the original URL
+		key, shurl := shorturl.Shorten(url.OriginalUrl, shortURLAdress)
+
+		// Save the full URL to storage with the key received earlier
+		data := models.DataURL{UUID: url.Uuid, ShortURL: shurl, OriginalURL: url.OriginalUrl, UserID: userID}
+		dataURL[key] = data
+
+		// Add the shortened URL to the response
+		resp.Urls = append(resp.Urls, &pb.ShortenedURL{
+			Uuid:     url.Uuid,
+			ShortUrl: shurl,
+		})
+	}
+
+	// Insert the batch of URLs into storage
+	err = s.storage.InsertBatch(dataURL)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "Error inserting batch into storage")
+	}
+
+	// Return a successful response
+	return resp, nil
+}
+
+// ShortenJSON is a handler method for shortening a single URL from a JSON request.
+// It takes a context.Context, *pb.ShortenJSONRequest, and returns *pb.ShortenJSONResponse and error.
+func (s *UsersServer) ShortenJSON(ctx context.Context, req *pb.ShortenJSONRequest) (*pb.ShortenJSONResponse, error) {
+	// Convert request model from protobuf to internal model
+	internalReq := &models.Request{
+		URL: req.GetUrl(),
+	}
+
+	// Deserialize the request into the model structure
+	s.log.Info("decoding request")
+
+	// Check if the request JSON body is empty
+	if internalReq.URL == "" {
+		// Log the error and respond with a Bad Request status code
+		s.log.Info("request JSON body is empty")
+		return nil, status.Error(codes.InvalidArgument, "request JSON body is empty")
+	}
+
+	// Get the short URL address from the options
+	shortURLAdress := s.options.ShortURLAdress()
+
+	// Shorten the original URL
+	key, shurl := shorturl.Shorten(internalReq.URL, shortURLAdress)
+
+	// Retrieve the user ID from the request context
+	userID, err := s.authenticate(ctx)
+	if err != nil {
+		// Return an error instead of nil to inform the client about an authentication error
+		return nil, err
+	}
+
+	// Save the full URL to storage with the key received earlier
+	m, err := s.storage.InsertURL(key, models.DataURL{ShortURL: shurl, OriginalURL: internalReq.URL, UserID: userID})
+	if err != nil {
+		if err == storage.ErrConflict {
+			// Respond with a Conflict status code for conflicts
+			return nil, status.Error(codes.AlreadyExists, "URL conflict")
+		} else {
+			// Respond with a Bad Request status code for other errors
+			return nil, status.Error(codes.Internal, "error inserting URL into storage")
+		}
+	}
+
+	// Convert response model from internal to protobuf
+	internalResp := &models.Response{
+		Result: m.ShortURL,
+	}
+
+	// Fill in the response model
+	resp := &pb.ShortenJSONResponse{
+		Result: internalResp.Result,
+	}
+
+	// Log the successful response
+	s.log.Info("sending response")
+
+	return resp, nil
 }
 
 // ShortenURL implements the ShortenURL method from the Users protobuf service.
@@ -155,6 +258,50 @@ func (s *UsersServer) authenticate(ctx context.Context) (string, error) {
 	}
 
 	return userID, nil
+}
+
+// GetUserURLs retrieves user URLs.
+func (s *UsersServer) GetUserURLs(ctx context.Context, req *pb.GetUserURLsRequest) (*pb.GetUserURLsResponse, error) {
+	// Get the user ID from the context
+	userID, err := s.authenticate(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get URLs associated with the user from the storage
+	data := s.storage.GetUserURLs(userID)
+
+	// Convert data to the format expected by the client
+	var userURLs []*pb.UserURL
+	for _, url := range data {
+		userURL := &pb.UserURL{
+			OriginalUrl: url.OriginalURL,
+			ShortUrl:    url.ShortURL,
+		}
+		userURLs = append(userURLs, userURL)
+	}
+
+	// Formulate the response
+	response := &pb.GetUserURLsResponse{
+		Urls: userURLs,
+	}
+
+	return response, nil
+}
+
+// HealthCheck checks storage availability and returns the appropriate status.
+func (s *UsersServer) HealthCheck(ctx context.Context, req *pb.HealthCheckRequest) (*pb.HealthCheckResponse, error) {
+	if s.storage.GetBaseConnection() {
+		// Storage available
+		return &pb.HealthCheckResponse{
+			Status: pb.HealthCheckResponse_OK,
+		}, nil
+	}
+
+	// Storage unavailable
+	return &pb.HealthCheckResponse{
+		Status: pb.HealthCheckResponse_ERROR,
+	}, nil
 }
 
 // RegisterUser handles user registration in gRPC.

@@ -54,10 +54,70 @@ message DeleteUserURLsResponse {
   string key = 1;
 }
 
+message HealthCheckRequest {   
+}
+
+message HealthCheckResponse {
+  enum Status {
+    OK = 0;
+    ERROR = 1;
+  }
+
+  Status status = 1;
+}
+
+message GetUserURLsRequest {
+}
+
+message UserURL {
+  string original_url = 1;
+  string short_url = 2;  
+}
+
+message GetUserURLsResponse {
+  repeated UserURL urls = 1;
+}
+
+// Request message for the ShortenJSON method
+message ShortenJSONRequest {
+  string url = 1;
+}
+
+// Response message for the ShortenJSON method
+message ShortenJSONResponse {
+  string result = 1;
+}
+
+// Message definition for a batch URL shortening request
+message ShortenBatchRequest {
+  repeated UrlToShorten urls = 1;
+}
+
+// Message definition for a URL in the batch to be shortened
+message UrlToShorten {
+  string uuid = 1;
+  string original_url = 2;
+}
+
+// Message definition for the response to a batch URL shortening request
+message ShortenBatchResponse {
+  repeated ShortenedURL urls = 1;
+}
+
+// Message definition for a shortened URL in the batch
+message ShortenedURL {
+  string uuid = 1;
+  string short_url = 2;
+}
+
 service URLService {
   rpc ShortenURL(AddURLRequest) returns (AddURLResponse);  
   rpc RegisterUser(RegisterUserRequest) returns (RegisterUserResponse);
   rpc Login(LoginRequest) returns (LoginResponse); 
   rpc GetFullURL(GetURLRequest) returns (GetURLResponse);
   rpc DeleteUserURLs(DeleteUserURLsRequest) returns (DeleteUserURLsResponse);
+  rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+  rpc GetUserURLs(GetUserURLsRequest) returns (GetUserURLsResponse);
+  rpc ShortenJSON (ShortenJSONRequest) returns (ShortenJSONResponse);
+  rpc ShortenBatch (ShortenBatchRequest) returns (ShortenBatchResponse);
 }

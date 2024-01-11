@@ -24,6 +24,10 @@ const (
 	URLService_Login_FullMethodName          = "/grpc.URLService/Login"
 	URLService_GetFullURL_FullMethodName     = "/grpc.URLService/GetFullURL"
 	URLService_DeleteUserURLs_FullMethodName = "/grpc.URLService/DeleteUserURLs"
+	URLService_HealthCheck_FullMethodName    = "/grpc.URLService/HealthCheck"
+	URLService_GetUserURLs_FullMethodName    = "/grpc.URLService/GetUserURLs"
+	URLService_ShortenJSON_FullMethodName    = "/grpc.URLService/ShortenJSON"
+	URLService_ShortenBatch_FullMethodName   = "/grpc.URLService/ShortenBatch"
 )
 
 // URLServiceClient is the client API for URLService service.
@@ -35,6 +39,10 @@ type URLServiceClient interface {
 	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error)
 	GetFullURL(ctx context.Context, in *GetURLRequest, opts ...grpc.CallOption) (*GetURLResponse, error)
 	DeleteUserURLs(ctx context.Context, in *DeleteUserURLsRequest, opts ...grpc.CallOption) (*DeleteUserURLsResponse, error)
+	HealthCheck(ctx context.Context, in *HealthCheckRequest, opts ...grpc.CallOption) (*HealthCheckResponse, error)
+	GetUserURLs(ctx context.Context, in *GetUserURLsRequest, opts ...grpc.CallOption) (*GetUserURLsResponse, error)
+	ShortenJSON(ctx context.Context, in *ShortenJSONRequest, opts ...grpc.CallOption) (*ShortenJSONResponse, error)
+	ShortenBatch(ctx context.Context, in *ShortenBatchRequest, opts ...grpc.CallOption) (*ShortenBatchResponse, error)
 }
 
 type uRLServiceClient struct {
@@ -90,6 +98,42 @@ func (c *uRLServiceClient) DeleteUserURLs(ctx context.Context, in *DeleteUserURL
 	return out, nil
 }
 
+func (c *uRLServiceClient) HealthCheck(ctx context.Context, in *HealthCheckRequest, opts ...grpc.CallOption) (*HealthCheckResponse, error) {
+	out := new(HealthCheckResponse)
+	err := c.cc.Invoke(ctx, URLService_HealthCheck_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *uRLServiceClient) GetUserURLs(ctx context.Context, in *GetUserURLsRequest, opts ...grpc.CallOption) (*GetUserURLsResponse, error) {
+	out := new(GetUserURLsResponse)
+	err := c.cc.Invoke(ctx, URLService_GetUserURLs_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *uRLServiceClient) ShortenJSON(ctx context.Context, in *ShortenJSONRequest, opts ...grpc.CallOption) (*ShortenJSONResponse, error) {
+	out := new(ShortenJSONResponse)
+	err := c.cc.Invoke(ctx, URLService_ShortenJSON_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *uRLServiceClient) ShortenBatch(ctx context.Context, in *ShortenBatchRequest, opts ...grpc.CallOption) (*ShortenBatchResponse, error) {
+	out := new(ShortenBatchResponse)
+	err := c.cc.Invoke(ctx, URLService_ShortenBatch_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // URLServiceServer is the server API for URLService service.
 // All implementations must embed UnimplementedURLServiceServer
 // for forward compatibility
@@ -99,6 +143,10 @@ type URLServiceServer interface {
 	Login(context.Context, *LoginRequest) (*LoginResponse, error)
 	GetFullURL(context.Context, *GetURLRequest) (*GetURLResponse, error)
 	DeleteUserURLs(context.Context, *DeleteUserURLsRequest) (*DeleteUserURLsResponse, error)
+	HealthCheck(context.Context, *HealthCheckRequest) (*HealthCheckResponse, error)
+	GetUserURLs(context.Context, *GetUserURLsRequest) (*GetUserURLsResponse, error)
+	ShortenJSON(context.Context, *ShortenJSONRequest) (*ShortenJSONResponse, error)
+	ShortenBatch(context.Context, *ShortenBatchRequest) (*ShortenBatchResponse, error)
 	mustEmbedUnimplementedURLServiceServer()
 }
 
@@ -120,6 +168,18 @@ func (UnimplementedURLServiceServer) GetFullURL(context.Context, *GetURLRequest)
 }
 func (UnimplementedURLServiceServer) DeleteUserURLs(context.Context, *DeleteUserURLsRequest) (*DeleteUserURLsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteUserURLs not implemented")
+}
+func (UnimplementedURLServiceServer) HealthCheck(context.Context, *HealthCheckRequest) (*HealthCheckResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method HealthCheck not implemented")
+}
+func (UnimplementedURLServiceServer) GetUserURLs(context.Context, *GetUserURLsRequest) (*GetUserURLsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUserURLs not implemented")
+}
+func (UnimplementedURLServiceServer) ShortenJSON(context.Context, *ShortenJSONRequest) (*ShortenJSONResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ShortenJSON not implemented")
+}
+func (UnimplementedURLServiceServer) ShortenBatch(context.Context, *ShortenBatchRequest) (*ShortenBatchResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ShortenBatch not implemented")
 }
 func (UnimplementedURLServiceServer) mustEmbedUnimplementedURLServiceServer() {}
 
@@ -224,6 +284,78 @@ func _URLService_DeleteUserURLs_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _URLService_HealthCheck_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(HealthCheckRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(URLServiceServer).HealthCheck(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: URLService_HealthCheck_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(URLServiceServer).HealthCheck(ctx, req.(*HealthCheckRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _URLService_GetUserURLs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUserURLsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(URLServiceServer).GetUserURLs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: URLService_GetUserURLs_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(URLServiceServer).GetUserURLs(ctx, req.(*GetUserURLsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _URLService_ShortenJSON_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ShortenJSONRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(URLServiceServer).ShortenJSON(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: URLService_ShortenJSON_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(URLServiceServer).ShortenJSON(ctx, req.(*ShortenJSONRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _URLService_ShortenBatch_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ShortenBatchRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(URLServiceServer).ShortenBatch(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: URLService_ShortenBatch_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(URLServiceServer).ShortenBatch(ctx, req.(*ShortenBatchRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // URLService_ServiceDesc is the grpc.ServiceDesc for URLService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -250,6 +382,22 @@ var URLService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteUserURLs",
 			Handler:    _URLService_DeleteUserURLs_Handler,
+		},
+		{
+			MethodName: "HealthCheck",
+			Handler:    _URLService_HealthCheck_Handler,
+		},
+		{
+			MethodName: "GetUserURLs",
+			Handler:    _URLService_GetUserURLs_Handler,
+		},
+		{
+			MethodName: "ShortenJSON",
+			Handler:    _URLService_ShortenJSON_Handler,
+		},
+		{
+			MethodName: "ShortenBatch",
+			Handler:    _URLService_ShortenBatch_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
