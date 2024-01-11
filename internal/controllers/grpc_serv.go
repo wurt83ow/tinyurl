@@ -116,6 +116,7 @@ func (s *UsersServer) ShortenJSON(ctx context.Context, req *pb.ShortenJSONReques
 	// Retrieve the user ID from the request context
 	userID, err := s.authenticate(ctx)
 	if err != nil {
+
 		// Return an error instead of nil to inform the client about an authentication error
 		return nil, err
 	}
