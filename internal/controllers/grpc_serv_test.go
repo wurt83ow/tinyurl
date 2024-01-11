@@ -271,8 +271,7 @@ func TestShortenJSON(t *testing.T) {
 				Url: "http://example.com",
 			},
 			expectErr: false,
-		},
-		// Add more test cases as needed
+		},		
 	}
 
 	for _, tc := range testCases {
@@ -308,8 +307,7 @@ func TestShortenURL(t *testing.T) {
 				Fullurl: "http://example.com",
 			},
 			expectErr: false,
-		},
-		// Add more test cases as needed
+		},		
 	}
 
 	for _, tc := range testCases {
@@ -373,8 +371,7 @@ func TestShortenBatch(t *testing.T) {
 				},
 			},
 			expectErr: false,
-		},
-		// Add more test cases as needed
+		},		
 	}
 
 	for _, tc := range testCases {
@@ -419,8 +416,7 @@ func TestHealthCheck(t *testing.T) {
 		{
 			name:      "StorageUnavailable",
 			expectErr: false,
-		},
-		// Add more test cases as needed
+		},		
 	}
 
 	for _, tc := range testCases {
@@ -525,8 +521,7 @@ func TestDeleteUserURLs(t *testing.T) {
 			name:      "EmptyRequest",
 			request:   &pb.DeleteUserURLsRequest{Urls: []string{}},
 			expectErr: false, // It is valid to delete an empty list of URLs
-		},
-		// Add more test cases as needed
+		},		
 	}
 
 	// Iterate through test cases
@@ -594,8 +589,7 @@ func TestRegisterUser(t *testing.T) {
 			},
 			expectErr:   true,
 			expectedMsg: "User with email existingUser@example.com already exists",
-		},
-		// Add more test cases as needed
+		},		 
 	}
 
 	// Iterate through test cases
@@ -681,8 +675,7 @@ func TestLogin(t *testing.T) {
 			},
 			expectErr:     true,
 			expectedToken: "", // No token expected if password is incorrect
-		},
-		// Add more test cases as needed
+		},		 
 	}
 
 	// Iterate through test cases

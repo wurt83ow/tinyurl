@@ -52,8 +52,7 @@ func setup() {
 
 	data := storage.StorageURL{
 		"1": {UUID: "", ShortURL: "", OriginalURL: "https://practicum.yandex.ru/"},
-		"2": {UUID: "", ShortURL: "", OriginalURL: "https://www.google.ru/"},
-		// Add more test data as needed
+		"2": {UUID: "", ShortURL: "", OriginalURL: "https://www.google.ru/"},		
 	}
 
 	keeperMock.On("SaveBatch", data).Return(nil)
