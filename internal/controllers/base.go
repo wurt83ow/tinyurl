@@ -62,7 +62,8 @@ type Storage interface {
 	// GetBaseConnection checks the base connection status.
 	GetBaseConnection() bool
 
-	GetUsersAndURLsCount() (int, int, error)
+	GetUsersCount() (int, error)
+	GetURLsCount() (int, error)
 }
 
 // Options represents an interface for parsing command line options.
@@ -197,7 +198,13 @@ func (h *BaseController) getStatsHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	userCount, urlCount, err := h.storage.GetUsersAndURLsCount()
+	userCount, err := h.storage.GetUsersCount()
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	urlCount, err := h.storage.GetURLsCount()
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return

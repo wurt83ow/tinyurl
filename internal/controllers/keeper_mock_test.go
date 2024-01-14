@@ -23,10 +23,16 @@ func (m *MockKeeper) LoadUsers() (storage.StorageUser, error) {
 	return args.Get(0).(storage.StorageUser), args.Error(1)
 }
 
-// GetUsersAndURLsCount - mock method for getting the number of users and URLs
-func (m *MockKeeper) GetUsersAndURLsCount() (int, int, error) {
+// GetUsersCount - mock method for getting the number of users and URLs
+func (m *MockKeeper) GetUsersCount() (int, error) {
 	args := m.Called()
-	return args.Int(0), args.Int(1), args.Error(2)
+	return args.Int(0), args.Error(1)
+}
+
+// GetURLsCount - mock method for getting the number of users and URLs
+func (m *MockKeeper) GetURLsCount() (int, error) {
+	args := m.Called()
+	return args.Int(0), args.Error(1)
 }
 
 // Save - mock method for saving data

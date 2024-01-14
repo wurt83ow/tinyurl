@@ -85,19 +85,20 @@ func (m *mockAuthz) JWTAuthzMiddleware(storage authz.Storage, log authz.Log) fun
 }
 
 type mockStorage struct {
-	insertURLFunc            func(string, models.DataURL) (models.DataURL, error)
-	insertBatchFunc          func(map[string]models.DataURL) error
-	getURLFunc               func(string) (models.DataURL, error)
-	getUserURLsFunc          func(string) []models.DataURLite
-	deleteUserURLsFunc       func(string, []string)
-	deleteURLsFunc           func(...models.DeleteURL) error
-	getBaseConnectionFunc    func() bool
-	getUserFunc              func(string) (models.DataUser, error)
-	getUsersAndURLsCountFunc func() (int, int, error)
-	insertUserFunc           func(string, models.DataUser) (models.DataUser, error)
-	saveBatchFunc            func(map[string]models.DataURL) error
-	saveURLFunc              func(string, models.DataURL) (models.DataURL, error)
-	saveUserFunc             func(string, models.DataUser) (models.DataUser, error)
+	insertURLFunc         func(string, models.DataURL) (models.DataURL, error)
+	insertBatchFunc       func(map[string]models.DataURL) error
+	getURLFunc            func(string) (models.DataURL, error)
+	getUserURLsFunc       func(string) []models.DataURLite
+	deleteUserURLsFunc    func(string, []string)
+	deleteURLsFunc        func(...models.DeleteURL) error
+	getBaseConnectionFunc func() bool
+	getUserFunc           func(string) (models.DataUser, error)
+	getUsersCountFunc     func() (int, error)
+	getURLsCountFunc      func() (int, error)
+	insertUserFunc        func(string, models.DataUser) (models.DataUser, error)
+	saveBatchFunc         func(map[string]models.DataURL) error
+	saveURLFunc           func(string, models.DataURL) (models.DataURL, error)
+	saveUserFunc          func(string, models.DataUser) (models.DataUser, error)
 }
 
 func (m *mockStorage) InsertURL(key string, data models.DataURL) (models.DataURL, error) {
@@ -132,8 +133,11 @@ func (m *mockStorage) GetUser(email string) (models.DataUser, error) {
 	return m.getUserFunc(email)
 }
 
-func (m *mockStorage) GetUsersAndURLsCount() (int, int, error) {
-	return m.getUsersAndURLsCountFunc()
+func (m *mockStorage) GetUsersCount() (int, error) {
+	return m.getUsersCountFunc()
+}
+func (m *mockStorage) GetURLsCount() (int, error) {
+	return m.getURLsCountFunc()
 }
 
 func (m *mockStorage) InsertUser(email string, data models.DataUser) (models.DataUser, error) {
@@ -177,9 +181,14 @@ func NewTestContext(t *testing.T) *TestContext {
 			// Code for checking and/or emulating method behavior GetBaseConnection
 			return true
 		},
-		getUsersAndURLsCountFunc: func() (int, int, error) {
-			// Code for checking and/or emulating method behavior GetUsersAndURLsCount
-			return 0, 0, nil
+		getUsersCountFunc: func() (int, error) {
+			// Code for checking and/or emulating method behavior getUsersCountFunc
+			return 0, nil
+		},
+
+		getURLsCountFunc: func() (int, error) {
+			// Code for checking and/or emulating method behavior getURLsCountFunc
+			return 0, nil
 		},
 		insertUserFunc: func(email string, data models.DataUser) (models.DataUser, error) {
 			// Code for checking and/or emulating method behavior InsertUser
@@ -271,7 +280,7 @@ func TestShortenJSON(t *testing.T) {
 				Url: "http://example.com",
 			},
 			expectErr: false,
-		},		
+		},
 	}
 
 	for _, tc := range testCases {
@@ -307,7 +316,7 @@ func TestShortenURL(t *testing.T) {
 				Fullurl: "http://example.com",
 			},
 			expectErr: false,
-		},		
+		},
 	}
 
 	for _, tc := range testCases {
@@ -371,7 +380,7 @@ func TestShortenBatch(t *testing.T) {
 				},
 			},
 			expectErr: false,
-		},		
+		},
 	}
 
 	for _, tc := range testCases {
@@ -416,7 +425,7 @@ func TestHealthCheck(t *testing.T) {
 		{
 			name:      "StorageUnavailable",
 			expectErr: false,
-		},		
+		},
 	}
 
 	for _, tc := range testCases {
@@ -521,7 +530,7 @@ func TestDeleteUserURLs(t *testing.T) {
 			name:      "EmptyRequest",
 			request:   &pb.DeleteUserURLsRequest{Urls: []string{}},
 			expectErr: false, // It is valid to delete an empty list of URLs
-		},		
+		},
 	}
 
 	// Iterate through test cases
@@ -589,7 +598,7 @@ func TestRegisterUser(t *testing.T) {
 			},
 			expectErr:   true,
 			expectedMsg: "User with email existingUser@example.com already exists",
-		},		 
+		},
 	}
 
 	// Iterate through test cases
@@ -675,7 +684,7 @@ func TestLogin(t *testing.T) {
 			},
 			expectErr:     true,
 			expectedToken: "", // No token expected if password is incorrect
-		},		 
+		},
 	}
 
 	// Iterate through test cases
