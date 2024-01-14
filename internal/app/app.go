@@ -138,6 +138,9 @@ func Run() error {
 		if err := server.Shutdown(ctx); err != nil {
 			nLogger.Info("Error shutting down server", zap.Error(err))
 		}
+
+		// Graceful shutdown for gRPC server
+		grpcServer.GracefulStop()
 	}()
 
 	// Create a memory profiling log file
