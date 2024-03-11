@@ -101,43 +101,49 @@ func (kp *FileKeeper) LoadUsers() (storage.StorageUser, error) {
 	return data, nil
 }
 
-// GetUsersAndURLsCount retrieves user and url counts from the json file.
-func (kp *FileKeeper) GetUsersAndURLsCount() (int, int, error) {
+// getCounts retrieves counts based on the provided field name from the json file.
+func (kp *FileKeeper) getCounts(fieldName string) (int, error) {
 	dataFile := kp.path()
 
 	if _, err := os.Stat(dataFile); err != nil {
 		kp.log.Info("file not found: ", zap.Error(err))
-		return 0, 0, err
+		return 0, err
 	}
 
 	loadFrom, err := os.Open(dataFile)
 	if err != nil {
 		kp.log.Info("Empty key/value store!: ", zap.Error(err))
-		return 0, 0, err
+		return 0, err
 	}
 	defer loadFrom.Close()
 
 	decoder := json.NewDecoder(loadFrom)
-	uniqueUsers, uniqueURLs := make(map[string]struct{}), make(map[string]struct{})
+	uniqueValues := make(map[string]struct{})
 
 	for decoder.More() {
 		var m map[string]interface{} // Assuming the structure of your data can be different
 		err := decoder.Decode(&m)
 
-		if email, ok := m["email"].(string); ok {
-			uniqueUsers[email] = struct{}{}
-		}
-
-		if shortURL, ok := m["short_url"].(string); ok {
-			uniqueURLs[shortURL] = struct{}{}
+		if fieldValue, ok := m[fieldName].(string); ok {
+			uniqueValues[fieldValue] = struct{}{}
 		}
 
 		if err != nil {
-			kp.log.Info("cannot decode JSON file3: ", zap.Error(err))
+			kp.log.Info("cannot decode JSON file: ", zap.Error(err))
 		}
 	}
 
-	return len(uniqueUsers), len(uniqueURLs), nil
+	return len(uniqueValues), nil
+}
+
+// GetUsersCount retrieves user counts from the json file.
+func (kp *FileKeeper) GetUsersCount() (int, error) {
+	return kp.getCounts("email")
+}
+
+// GetURLsCount retrieves url counts from the json file.
+func (kp *FileKeeper) GetURLsCount() (int, error) {
+	return kp.getCounts("short_url")
 }
 
 // Save implements storage.Keeper.

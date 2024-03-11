@@ -266,7 +266,7 @@ func (o *Options) LoadFromConfigFile(filePath string) error {
 // setIfNotEmpty sets the target variable if the value is not empty.
 func (o *Options) setIfNotEmpty(target *string, value interface{}) {
 	if *target != "" {
-		// Если значение уже установлено, возврат из функции
+		// If the value is already set, return from the function
 		return
 	}
 	if strValue, ok := value.(string); ok && strValue != "" {
