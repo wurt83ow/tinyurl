@@ -1,45 +1,72 @@
-# Tinyurl
+### Tinyurl
 
-"Tinyurl" - это современный сервис сокращения URL, разработанный с использованием Golang, предназначенный для упрощения и ускорения доступа к веб-ресурсам. Проект демонстрирует применение широкого спектра технологий и пакетов Golang, включая работу с HTTP, чтение аргументов командной строки, логирование, сериализацию и десериализацию данных, сжатие данных, взаимодействие с файловой системой, управление временем выполнения и базами данных SQL.
+Tinyurl is a modern URL shortening service developed using Golang, designed to simplify and expedite access to web resources. This project showcases the application of a wide range of Golang technologies and packages, including handling HTTP requests, reading command-line arguments, logging, data serialization and deserialization, data compression, file system interaction, runtime management, and SQL databases.
 
-## Основные возможности
+#### Key Features
 
-- Безопасность информации с помощью хеширования и криптографии.
-- Поддержка многопоточности для обработки большого количества запросов.
-- Использование паттернов проектирования и антипаттернов для обеспечения качества кода.
-- Профилирование для оптимизации производительности.
-- Стилизация для улучшения пользовательского опыта.
-- Тщательная документация для облегчения понимания и поддержки кода.
+- **Information Security**: Ensures data security through hashing and cryptography.
+- **Multithreading Support**: Handles a high volume of requests concurrently.
+- **Design Patterns**: Employs design patterns and antipatterns to maintain code quality.
+- **Profiling**: Optimizes performance through profiling.
+- **Styling**: Enhances user experience through visual design.
+- **Documentation**: Provides thorough documentation to facilitate code understanding and maintenance.
 
-## Технологии и пакеты
+#### Technologies and Packages
 
-- **HTTP**: Работа с HTTP для обработки запросов и ответов.
-- **Аргументы командной строки**: Чтение и обработка аргументов командной строки.
-- **Логирование**: Использование логирования для отслеживания и анализа поведения приложения.
-- **Сериализация и десериализация данных**: Преобразование данных в формат, подходящий для хранения или передачи, и обратно.
-- **Сжатие данных**: Снижение объема данных для улучшения производительности.
-- **Взаимодействие с файловой системой**: Чтение, запись и управление файлами.
-- **Управление временем выполнения**: Планирование и отмена задач, управление таймаутами.
-- **Базы данных SQL**: Взаимодействие с SQL базами данных для хранения и извлечения данных.
-- **Обработка ошибок**: Грамотное управление и обработка ошибок.
-- **Безопасность информации**: Использование хеширования и криптографии для защиты данных.
-- **Многопоточность**: Обработка нескольких задач одновременно для улучшения производительности.
-- **Паттерны проектирования и антипаттерны**: Применение лучших практик и избегание распространенных ошибок.
-- **Профилирование**: Анализ производительности приложения для оптимизации.
-- **Стилизация**: Улучшение пользовательского опыта с помощью визуального дизайна.
-- **Документация**: Создание и поддержка документации для упрощения использования и поддержки.
+- **HTTP**: Manages HTTP requests and responses.
+- **Command-Line Arguments**: Reads and processes command-line arguments.
+- **Logging**: Uses logging to track and analyze application behavior.
+- **Data Serialization/Deserialization**: Converts data to and from storage or transmission formats.
+- **Data Compression**: Reduces data size for improved performance.
+- **File System Interaction**: Reads, writes, and manages files.
+- **Runtime Management**: Schedules and cancels tasks, manages timeouts.
+- **SQL Databases**: Interacts with SQL databases for data storage and retrieval.
+- **Error Handling**: Manages and handles errors effectively.
+- **Information Security**: Utilizes hashing and cryptography for data protection.
+- **Multithreading**: Handles multiple tasks concurrently for better performance.
+- **Design Patterns/Antipatterns**: Applies best practices and avoids common mistakes.
+- **Profiling**: Analyzes application performance for optimization.
+- **Styling**: Improves user experience with visual design.
+- **Documentation**: Maintains comprehensive documentation for ease of use and support.
 
-## Стандартная библиотека Golang
+#### Standard Library Features
 
-- **Генерация случайных чисел**: Для создания уникальных идентификаторов.
-- **Чтение данных и работа с буфером**: Для эффективной обработки входных данных.
-- **Работа с операционной системой и сетью**: Для взаимодействия с внешним миром.
-- **Protocol buffers и gRPC**: Для эффективной сериализации и взаимодействия между сервисами.
+- **Random Number Generation**: Creates unique identifiers.
+- **Data Reading and Buffering**: Efficiently processes input data.
+- **OS and Network Interaction**: Communicates with the external environment.
+- **Protocol Buffers and gRPC**: Enables efficient serialization and inter-service communication.
 
-## Примитивы синхронизации
+#### Synchronization Primitives
 
-- Использование примитивов синхронизации для обеспечения безопасности при многопоточном доступе к общим ресурсам.
+- **Thread Safety**: Ensures safe access to shared resources in a multithreaded environment using synchronization primitives.
 
-## Заключение
+#### Conclusion
 
-"Tinyurl" является примером того, как современные технологии и пакеты Golang могут быть использованы для создания эффективных и надежных веб-сервисов, демонстрируя глубокие знания в области разработки на Golang и применение лучших практик программирования.
+Tinyurl exemplifies how modern Golang technologies and packages can be leveraged to create efficient and reliable web services, demonstrating a deep understanding of Golang development and the application of best programming practices.
+
+#### Project Structure
+
+Here is a brief overview of the project structure and key files:
+
+- **cmd/**: Contains command-line utilities.
+  - **shortener/**: Main application entry point.
+  - **staticlint/**: Static analysis tools.
+- **configs/**: Configuration files.
+- **internal/**: Internal packages for application logic.
+  - **app/**: Main application logic.
+  - **authorization/**: JWT authentication.
+  - **bdkeeper/**: Database interactions.
+  - **compress/**: Data compression utilities.
+  - **config/**: Configuration management.
+  - **controllers/**: Request handling and gRPC services.
+  - **filekeeper/**: File system interactions.
+  - **logger/**: Logging utilities.
+  - **middleware/**: Middleware components for request processing.
+  - **models/**: Data models.
+  - **services/**: Core services like URL shortening.
+  - **storage/**: Data storage solutions.
+  - **worker/**: Background workers.
+- **migrations/**: Database migration scripts.
+- **profiles/**: Profiling data for performance analysis.
+
+This structure ensures a clean separation of concerns, making the codebase easier to navigate and maintain.
